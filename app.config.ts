@@ -14,7 +14,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#FF6B6B"
+    backgroundColor: "#000000"
   },
   ios: {
     supportsTablet: true,
@@ -26,7 +26,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSLocationWhenInUseUsageDescription: "SHY utilise votre position pour vous montrer des personnes à proximité.",
       NSLocationAlwaysUsageDescription: "SHY utilise votre position pour vous montrer des personnes à proximité.",
       NSPhotoLibraryUsageDescription: "SHY a besoin d'accéder à vos photos pour votre profil.",
-      NSCameraUsageDescription: "SHY a besoin d'accéder à votre caméra pour prendre des photos de profil.",
+      NSCameraUsageDescription: "SHY a besoin d'accéder à votre caméra pour prendre des photos de profil et la vérification faciale.",
+      NSFaceIDUsageDescription: "SHY utilise la reconnaissance faciale pour vérifier votre identité.",
+      NSUserTrackingUsageDescription: "SHY utilise ces données pour améliorer votre expérience et vous proposer des profils pertinents.",
       ITSAppUsesNonExemptEncryption: false
     }
   },
@@ -39,7 +41,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#FF6B6B"
+      backgroundColor: "#000000"
     },
     edgeToEdgeEnabled: true,
     permissions: [
@@ -74,7 +76,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-notifications",
       {
         icon: "./assets/notification-icon.png",
-        color: "#FF6B6B",
+        color: "#FF00FF",
         sounds: []
       }
     ],
