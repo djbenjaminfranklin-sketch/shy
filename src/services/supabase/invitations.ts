@@ -284,21 +284,7 @@ export const invitationsService = {
         return { connection: null, error: `Erreur lors de l'acceptation: ${updateError.message}` };
       }
 
-      // Creer la conversation
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .insert({})
-        .select()
-        .single();
-
-      if (convError) {
-        return {
-          connection: null,
-          error: `Erreur lors de la creation de la conversation: ${convError.message}`,
-        };
-      }
-
-      // Creer la connection
+      // Creer la connection d'abord (car conversations.connection_id est NOT NULL)
       const [user1, user2] = [invitation.sender_id, invitation.receiver_id].sort();
 
       const { data: connection, error: connError } = await supabase
@@ -307,7 +293,6 @@ export const invitationsService = {
           user1_id: user1,
           user2_id: user2,
           invitation_id: invitationId,
-          conversation_id: conversation.id,
         })
         .select()
         .single();
@@ -316,6 +301,20 @@ export const invitationsService = {
         return {
           connection: null,
           error: `Erreur lors de la creation de la connection: ${connError.message}`,
+        };
+      }
+
+      // Creer la conversation avec le connection_id
+      const { error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          connection_id: connection.id,
+        });
+
+      if (convError) {
+        return {
+          connection: null,
+          error: `Erreur lors de la creation de la conversation: ${convError.message}`,
         };
       }
 
