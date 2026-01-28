@@ -27,9 +27,11 @@ COPY main.py .
 # Exposer le port
 EXPOSE 8000
 
-# Variable d'environnement pour le secret API
+# Variables d'environnement
 ENV API_SECRET=shy-verification-secret-change-me
 ENV PORT=8000
+ENV TF_USE_LEGACY_KERAS=1
+ENV TF_CPP_MIN_LOG_LEVEL=2
 
 # Lancer le serveur
 CMD ["python", "main.py"]
