@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  deepface:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - API_SECRET=${API_SECRET:-shy-verification-secret-change-me}
+      - PORT=8000
+    restart: unless-stopped
+    # Limiter la mémoire pour éviter les dépassements
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G

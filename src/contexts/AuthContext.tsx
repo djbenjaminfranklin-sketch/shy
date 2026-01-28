@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { authService } from '../services/supabase/auth';
 import { profilesService } from '../services/supabase/profiles';
+import { supabase } from '../services/supabase/client';
 import type { Profile } from '../types/profile';
 
 interface AuthState {
@@ -14,7 +17,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; hasCompletedOnboarding: boolean }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
@@ -40,6 +43,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return profile;
   }, []);
 
+  // Enregistrer le push token si disponible
+  const registerPushToken = useCallback(async (userId: string) => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        console.log('Push notification permission not granted');
+        return;
+      }
+
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig?.extra?.eas?.projectId,
+      });
+
+      // Sauvegarder le token dans le profil
+      await supabase
+        .from('profiles')
+        .update({ push_token: token.data })
+        .eq('id', userId);
+
+      console.log('Push token registered:', token.data);
+    } catch (error) {
+      console.log('Error registering push token:', error);
+    }
+  }, []);
+
   // Initialiser l'état d'authentification
   useEffect(() => {
     const initAuth = async () => {
@@ -57,6 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isAuthenticated: true,
             hasCompletedOnboarding: !!profile?.intention,
           });
+
+          // Enregistrer le push token après le chargement du profil
+          await registerPushToken(session.user.id);
         } else {
           setState((prev) => ({
             ...prev,
@@ -87,6 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: true,
           hasCompletedOnboarding: !!profile?.intention,
         });
+
+        // Enregistrer le push token après connexion
+        await registerPushToken(typedSession.user.id);
       } else if (event === 'SIGNED_OUT') {
         setState({
           user: null,
@@ -102,29 +143,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [loadProfile]);
+  }, [loadProfile, registerPushToken]);
 
   // Connexion
   const signIn = useCallback(async (email: string, password: string) => {
-    const { user, error } = await authService.signIn({ email, password });
+    try {
+      console.log('[AuthContext] signIn: Attempting login...');
+      const { user, error } = await authService.signIn({ email, password });
 
-    if (error) {
-      return { error: error.message };
+      if (error) {
+        console.log('[AuthContext] signIn: Auth error:', error.message);
+        return { error: error.message, hasCompletedOnboarding: false };
+      }
+
+      if (user) {
+        console.log('[AuthContext] signIn: User authenticated, loading profile...');
+        const profile = await loadProfile(user.id);
+        const completed = !!profile?.intention;
+        console.log('[AuthContext] signIn: Profile loaded, hasCompletedOnboarding:', completed);
+
+        setState((prev) => ({
+          ...prev,
+          user,
+          profile,
+          isAuthenticated: true,
+          hasCompletedOnboarding: completed,
+        }));
+
+        return { error: null, hasCompletedOnboarding: completed };
+      }
+
+      console.log('[AuthContext] signIn: No user returned');
+      return { error: null, hasCompletedOnboarding: false };
+    } catch (err) {
+      console.error('[AuthContext] signIn: Unexpected error:', err);
+      return { error: 'Une erreur inattendue est survenue', hasCompletedOnboarding: false };
     }
-
-    if (user) {
-      const profile = await loadProfile(user.id);
-
-      setState((prev) => ({
-        ...prev,
-        user,
-        profile,
-        isAuthenticated: true,
-        hasCompletedOnboarding: !!profile?.intention,
-      }));
-    }
-
-    return { error: null };
   }, [loadProfile]);
 
   // Inscription
@@ -136,9 +190,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (user) {
+      // Vérifier qu'on a une session valide
+      const { session } = await authService.getSession();
+
+      if (!session) {
+        // Pas de session = confirmation email probablement requise
+        console.log('[AuthContext] signUp: User created but no session (email confirmation may be required)');
+      } else {
+        console.log('[AuthContext] signUp: User created with valid session');
+      }
+
+      // On met isAuthenticated à true si on a un user, même sans session
+      // La vérification de session sera faite au moment de créer le profil
       setState((prev) => ({
         ...prev,
         user,
+        session: session || null,
         isAuthenticated: true,
         hasCompletedOnboarding: false,
       }));

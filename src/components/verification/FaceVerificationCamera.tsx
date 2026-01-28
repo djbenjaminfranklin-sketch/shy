@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { spacing, borderRadius } from '../../theme/spacing';
+import { verificationService } from '../../services/supabase/verification';
+import { useAuth } from '../../contexts/AuthContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAMERA_SIZE = SCREEN_WIDTH - spacing.lg * 2;
@@ -56,11 +59,13 @@ export function FaceVerificationCamera({
   onVerificationComplete,
   onCancel,
 }: Props) {
+  const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [status, setStatus] = useState<'ready' | 'countdown' | 'capturing' | 'success' | 'done'>('ready');
+  const [status, setStatus] = useState<'ready' | 'countdown' | 'capturing' | 'success' | 'done' | 'verifying' | 'failed'>('ready');
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [verificationMessage, setVerificationMessage] = useState<string>('');
 
   const cameraRef = useRef<CameraView>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -68,9 +73,15 @@ export function FaceVerificationCamera({
   const autoStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const capturedPhotosRef = useRef<string[]>([]); // Ref pour éviter les problèmes de closure
   const isCapturingRef = useRef(false); // Éviter les captures multiples
+  const currentStepIndexRef = useRef(currentStepIndex); // Ref pour avoir la valeur à jour dans les callbacks
 
-  const currentStep = STEPS[currentStepIndex];
-  const isLastStep = currentStepIndex === STEPS.length - 1;
+  const currentStep = STEPS[currentStepIndex] || STEPS[STEPS.length - 1];
+  const isLastStep = currentStepIndex >= STEPS.length - 1;
+
+  // Garder la ref à jour
+  useEffect(() => {
+    currentStepIndexRef.current = currentStepIndex;
+  }, [currentStepIndex]);
 
   // Reset refs on mount and cleanup on unmount
   useEffect(() => {
@@ -105,7 +116,8 @@ export function FaceVerificationCamera({
 
   // Démarrer automatiquement le countdown après un délai
   useEffect(() => {
-    if (status === 'ready' && permission?.granted && !isCapturingRef.current) {
+    // Ne pas démarrer si on a déjà terminé toutes les étapes
+    if (status === 'ready' && permission?.granted && !isCapturingRef.current && currentStepIndex < STEPS.length) {
       // Clear any existing timer
       if (autoStartTimerRef.current) {
         clearTimeout(autoStartTimerRef.current);
@@ -116,7 +128,8 @@ export function FaceVerificationCamera({
       const delay = currentStepIndex === 0 ? 2000 : 1500;
 
       autoStartTimerRef.current = setTimeout(() => {
-        if (status === 'ready' && !isCapturingRef.current) {
+        // Vérifier à nouveau les conditions avec les refs à jour
+        if (!isCapturingRef.current && currentStepIndexRef.current < STEPS.length) {
           startCountdown();
         }
       }, delay);
@@ -131,6 +144,11 @@ export function FaceVerificationCamera({
   }, [status, currentStepIndex, permission?.granted, startCountdown]);
 
   const startCountdown = useCallback(() => {
+    // Ne pas démarrer si on a déjà terminé
+    if (currentStepIndexRef.current >= STEPS.length) {
+      return;
+    }
+
     setStatus('countdown');
     setCountdown(3);
 
@@ -184,13 +202,16 @@ export function FaceVerificationCamera({
         setTimeout(() => {
           isCapturingRef.current = false;
 
-          if (currentStepIndex >= STEPS.length - 1) {
+          // Utiliser la ref pour avoir la valeur à jour
+          const stepIndex = currentStepIndexRef.current;
+
+          if (stepIndex >= STEPS.length - 1) {
             // Toutes les photos capturées - finaliser
             setStatus('done');
             finalizeVerification(newPhotos);
           } else {
             // Passer à l'étape suivante
-            setCurrentStepIndex(prev => prev + 1);
+            setCurrentStepIndex(stepIndex + 1);
             setStatus('ready');
           }
         }, 1200);
@@ -207,10 +228,94 @@ export function FaceVerificationCamera({
   };
 
   const finalizeVerification = async (photos: string[]) => {
-    // Simulation - en production, comparer avec referencePhotoUri via API
-    setTimeout(() => {
-      onVerificationComplete(true, photos);
-    }, 1500);
+    if (!user) {
+      setStatus('failed');
+      setVerificationMessage('Utilisateur non connecté');
+      return;
+    }
+
+    setStatus('verifying');
+    setVerificationMessage('Analyse en cours...');
+
+    try {
+      // Appeler le service de vérification avec AWS Rekognition
+      const result = await verificationService.verifyFace(
+        user.id,
+        referencePhotoUri,
+        photos
+      );
+
+      if (result.verified) {
+        setVerificationMessage(`Vérifié ! (${result.confidence}% de correspondance)`);
+        // Petit délai pour montrer le message de succès
+        setTimeout(() => {
+          onVerificationComplete(true, photos);
+        }, 1500);
+      } else {
+        setStatus('failed');
+        if (result.error) {
+          setVerificationMessage(result.error);
+        } else {
+          setVerificationMessage(
+            `La vérification a échoué. ${result.matchedPhotos}/${result.totalPhotos} photos correspondent.`
+          );
+        }
+
+        // Proposer de réessayer après un délai
+        setTimeout(() => {
+          Alert.alert(
+            'Vérification échouée',
+            'Le visage sur les photos ne correspond pas à votre photo de profil. Assurez-vous que c\'est bien vous sur la photo de profil.',
+            [
+              {
+                text: 'Réessayer',
+                onPress: () => {
+                  // Reset pour réessayer
+                  setCurrentStepIndex(0);
+                  setCapturedPhotos([]);
+                  capturedPhotosRef.current = [];
+                  setStatus('ready');
+                  setVerificationMessage('');
+                },
+              },
+              {
+                text: 'Annuler',
+                style: 'cancel',
+                onPress: () => onVerificationComplete(false, photos),
+              },
+            ]
+          );
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setStatus('failed');
+      setVerificationMessage('Erreur lors de la vérification');
+
+      setTimeout(() => {
+        Alert.alert(
+          'Erreur',
+          'Une erreur est survenue lors de la vérification. Veuillez réessayer.',
+          [
+            {
+              text: 'Réessayer',
+              onPress: () => {
+                setCurrentStepIndex(0);
+                setCapturedPhotos([]);
+                capturedPhotosRef.current = [];
+                setStatus('ready');
+                setVerificationMessage('');
+              },
+            },
+            {
+              text: 'Annuler',
+              style: 'cancel',
+              onPress: onCancel,
+            },
+          ]
+        );
+      }, 1500);
+    }
   };
 
   const getOvalColor = () => {
@@ -218,17 +323,21 @@ export function FaceVerificationCamera({
       case 'countdown': return colors.warning;
       case 'capturing': return colors.warning;
       case 'success': return colors.success;
+      case 'verifying': return colors.primary;
+      case 'failed': return colors.error;
       default: return colors.primary;
     }
   };
 
   const getStatusText = () => {
     switch (status) {
-      case 'ready': return currentStep.instruction;
-      case 'countdown': return currentStep.instruction;
+      case 'ready': return currentStep?.instruction || 'Préparez-vous';
+      case 'countdown': return currentStep?.instruction || 'Préparez-vous';
       case 'capturing': return 'Capture...';
       case 'success': return 'Parfait !';
-      case 'done': return 'Vérification en cours...';
+      case 'done': return 'Finalisation...';
+      case 'verifying': return verificationMessage || 'Vérification en cours...';
+      case 'failed': return verificationMessage || 'Échec de la vérification';
       default: return '';
     }
   };
@@ -293,49 +402,52 @@ export function FaceVerificationCamera({
 
       {/* Camera */}
       <View style={styles.cameraWrapper}>
-        <CameraView ref={cameraRef} style={styles.camera} facing="front">
-          {/* Overlay avec ovale */}
-          <View style={styles.overlay}>
+        <CameraView ref={cameraRef} style={styles.camera} facing="front" />
+
+        {/* Overlay avec ovale - positionné en absolute au-dessus de la caméra */}
+        <View style={styles.overlay} pointerEvents="none">
+          <View style={styles.overlayDark} />
+          <View style={styles.overlayMiddle}>
             <View style={styles.overlayDark} />
-            <View style={styles.overlayMiddle}>
-              <View style={styles.overlayDark} />
-              <Animated.View style={[
-                styles.ovalFrame,
-                {
-                  borderColor: getOvalColor(),
-                  transform: [{ scale: pulseAnim }],
-                },
-              ]}>
-                {/* Countdown au centre */}
-                {countdown !== null && (
-                  <Text style={styles.countdownText}>{countdown}</Text>
-                )}
-                {status === 'success' && (
-                  <Ionicons name="checkmark-circle" size={60} color={colors.success} />
-                )}
-                {status === 'done' && (
-                  <Ionicons name="hourglass" size={50} color={colors.primary} />
-                )}
-              </Animated.View>
-              <View style={styles.overlayDark} />
-            </View>
+            <Animated.View style={[
+              styles.ovalFrame,
+              {
+                borderColor: getOvalColor(),
+                transform: [{ scale: pulseAnim }],
+              },
+            ]}>
+              {/* Countdown au centre */}
+              {countdown !== null && (
+                <Text style={styles.countdownText}>{countdown}</Text>
+              )}
+              {status === 'success' && (
+                <Ionicons name="checkmark-circle" size={60} color={colors.success} />
+              )}
+              {(status === 'done' || status === 'verifying') && (
+                <Ionicons name="hourglass" size={50} color={colors.primary} />
+              )}
+              {status === 'failed' && (
+                <Ionicons name="close-circle" size={60} color={colors.error} />
+              )}
+            </Animated.View>
             <View style={styles.overlayDark} />
           </View>
+          <View style={styles.overlayDark} />
+        </View>
 
-          {/* Direction indicator */}
-          {currentStep.id !== 'front' && status !== 'success' && status !== 'done' && (
-            <View style={[
-              styles.directionBadge,
-              currentStep.id === 'left' ? styles.directionLeft : styles.directionRight,
-            ]}>
-              <Ionicons
-                name={currentStep.icon as keyof typeof Ionicons.glyphMap}
-                size={32}
-                color={colors.white}
-              />
-            </View>
-          )}
-        </CameraView>
+        {/* Direction indicator */}
+        {currentStep && currentStep.id !== 'front' && status !== 'success' && status !== 'done' && (
+          <View style={[
+            styles.directionBadge,
+            currentStep.id === 'left' ? styles.directionLeft : styles.directionRight,
+          ]} pointerEvents="none">
+            <Ionicons
+              name={currentStep.icon as keyof typeof Ionicons.glyphMap}
+              size={32}
+              color={colors.white}
+            />
+          </View>
+        )}
       </View>
 
       {/* Status */}
