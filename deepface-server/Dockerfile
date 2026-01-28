@@ -19,8 +19,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Pré-télécharger le modèle ArcFace pour éviter le téléchargement au premier appel
-RUN python -c "from deepface import DeepFace; DeepFace.build_model('ArcFace')"
+# Le modèle ArcFace sera téléchargé au premier appel
 
 # Copier le code de l'application
 COPY main.py .
