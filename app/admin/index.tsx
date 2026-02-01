@@ -23,7 +23,7 @@ import { supabase } from '../../src/services/supabase/client';
 export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionEmail, setSubscriptionEmail] = useState('');
@@ -91,6 +91,13 @@ export default function AdminDashboard() {
       icon: 'stats-chart',
       color: colors.superLike,
       route: '/admin/stats',
+    },
+    {
+      title: 'Codes Promo',
+      subtitle: 'Gérer les promotions',
+      icon: 'pricetag',
+      color: '#9C27B0',
+      route: '/admin/promo-codes',
     },
   ];
 

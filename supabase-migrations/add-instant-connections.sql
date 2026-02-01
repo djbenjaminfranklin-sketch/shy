@@ -45,12 +45,12 @@ BEGIN
   SELECT gender INTO v_to_gender FROM profiles WHERE id = p_to_user_id;
 
   -- Vérifier les permissions
-  -- Femme → Homme : OK
-  -- Non-binaire → Non-binaire : OK
+  -- Female → Male : OK
+  -- Non-binary → Non-binary : OK
   -- Autres cas : REFUSÉ
   IF NOT (
-    (v_from_gender = 'femme' AND v_to_gender = 'homme') OR
-    (v_from_gender = 'non-binaire' AND v_to_gender = 'non-binaire')
+    (v_from_gender = 'female' AND v_to_gender = 'male') OR
+    (v_from_gender = 'non_binary' AND v_to_gender = 'non_binary')
   ) THEN
     RAISE EXCEPTION 'Message direct non autorisé entre ces profils';
   END IF;

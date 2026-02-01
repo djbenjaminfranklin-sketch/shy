@@ -3,7 +3,6 @@ import { AvailabilityId } from '../constants/availability';
 import { HairColorId } from '../constants/hairColors';
 import { GenderId } from '../constants/genders';
 import { LanguageId } from '../constants/languages';
-import { SearchRadius } from '../constants';
 
 export interface Profile {
   id: string;
@@ -26,10 +25,23 @@ export interface Profile {
   locationUpdatedAt: string | null;
 
   // Filtres
-  searchRadius: SearchRadius;
+  searchRadius: number;
   minAgeFilter: number;
   maxAgeFilter: number;
   genderFilter: GenderId[];
+
+  // Score d'engagement (interne, non affiché aux utilisateurs)
+  engagementScore?: number;
+  isNewUser?: boolean;
+  lastActiveAt?: string | null;
+
+  // Préférences de notification
+  notificationInvitations?: boolean;
+  notificationMessages?: boolean;
+  notificationSound?: boolean;
+
+  // Push token pour les notifications Expo
+  pushToken?: string | null;
 
   // Métadonnées
   createdAt: string;
@@ -49,7 +61,7 @@ export interface ProfileWithDistance extends Profile {
 }
 
 export interface ProfileFilters {
-  searchRadius: SearchRadius;
+  searchRadius: number;
   minAge: number;
   maxAge: number;
   genders: GenderId[];

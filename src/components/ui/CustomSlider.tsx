@@ -1,12 +1,10 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   PanResponder,
-  Animated,
   LayoutChangeEvent,
   GestureResponderEvent,
-  PanResponderGestureState,
 } from 'react-native';
 
 interface CustomSliderProps {
@@ -23,9 +21,11 @@ interface CustomSliderProps {
   disabled?: boolean;
 }
 
+const THUMB_SIZE = 28;
+const TRACK_HEIGHT = 4;
+
 /**
  * Custom slider component compatible with Expo managed workflow
- * Replaces @react-native-community/slider which has native build issues
  */
 export function CustomSlider({
   style,
@@ -40,83 +40,134 @@ export function CustomSlider({
   step = 1,
   disabled = false,
 }: CustomSliderProps) {
-  const containerWidth = useRef(0);
-  const thumbPosition = useRef(new Animated.Value(0)).current;
-  const currentValue = useRef(value);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [thumbX, setThumbX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const currentValueRef = useRef(value);
+
+  // Store latest values in refs to avoid stale closures in PanResponder
+  const containerWidthRef = useRef(containerWidth);
+  const onValueChangeRef = useRef(onValueChange);
+  const onSlidingCompleteRef = useRef(onSlidingComplete);
+  const disabledRef = useRef(disabled);
+  const minimumValueRef = useRef(minimumValue);
+  const maximumValueRef = useRef(maximumValue);
+  const stepRef = useRef(step);
+
+  // Keep refs updated
+  useEffect(() => {
+    containerWidthRef.current = containerWidth;
+  }, [containerWidth]);
+
+  useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
+
+  useEffect(() => {
+    onSlidingCompleteRef.current = onSlidingComplete;
+  }, [onSlidingComplete]);
+
+  useEffect(() => {
+    disabledRef.current = disabled;
+  }, [disabled]);
+
+  useEffect(() => {
+    minimumValueRef.current = minimumValue;
+    maximumValueRef.current = maximumValue;
+    stepRef.current = step;
+  }, [minimumValue, maximumValue, step]);
 
   // Calculate position from value
   const valueToPosition = useCallback((val: number): number => {
     const range = maximumValue - minimumValue;
-    if (range === 0) return 0;
+    if (range === 0 || containerWidth === 0) return 0;
     const percentage = (val - minimumValue) / range;
-    return percentage * containerWidth.current;
-  }, [minimumValue, maximumValue]);
+    return percentage * (containerWidth - THUMB_SIZE);
+  }, [minimumValue, maximumValue, containerWidth]);
 
-  // Calculate value from position
-  const positionToValue = useCallback((pos: number): number => {
-    const range = maximumValue - minimumValue;
-    const percentage = Math.max(0, Math.min(1, pos / containerWidth.current));
-    let val = minimumValue + percentage * range;
+  // Calculate value from position (uses refs for PanResponder compatibility)
+  const positionToValueFromRefs = useCallback((pos: number): number => {
+    const width = containerWidthRef.current;
+    const min = minimumValueRef.current;
+    const max = maximumValueRef.current;
+    const currentStep = stepRef.current;
+
+    if (width === 0) return min;
+    const trackWidth = width - THUMB_SIZE;
+    const percentage = Math.max(0, Math.min(1, pos / trackWidth));
+    let val = min + percentage * (max - min);
 
     // Apply step
-    if (step > 0) {
-      val = Math.round(val / step) * step;
+    if (currentStep > 0) {
+      val = Math.round(val / currentStep) * currentStep;
     }
 
-    return Math.max(minimumValue, Math.min(maximumValue, val));
-  }, [minimumValue, maximumValue, step]);
+    return Math.max(min, Math.min(max, val));
+  }, []);
 
-  // Update thumb position when value prop changes
-  React.useEffect(() => {
-    if (containerWidth.current > 0) {
-      const pos = valueToPosition(value);
-      thumbPosition.setValue(pos);
-      currentValue.current = value;
+  // Update thumb position when value prop changes (and not dragging)
+  useEffect(() => {
+    if (!isDragging && containerWidth > 0) {
+      setThumbX(valueToPosition(value));
+      currentValueRef.current = value;
     }
-  }, [value, valueToPosition, thumbPosition]);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: () => !disabled,
-      onPanResponderGrant: (evt: GestureResponderEvent) => {
-        // Set position based on touch location
-        const touchX = evt.nativeEvent.locationX;
-        const newValue = positionToValue(touchX);
-        thumbPosition.setValue(valueToPosition(newValue));
-        currentValue.current = newValue;
-        onValueChange?.(newValue);
-      },
-      onPanResponderMove: (evt: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-        const touchX = evt.nativeEvent.locationX;
-        const newValue = positionToValue(touchX);
-        thumbPosition.setValue(valueToPosition(newValue));
-        currentValue.current = newValue;
-        onValueChange?.(newValue);
-      },
-      onPanResponderRelease: () => {
-        onSlidingComplete?.(currentValue.current);
-      },
-      onPanResponderTerminate: () => {
-        onSlidingComplete?.(currentValue.current);
-      },
-    })
-  ).current;
+  }, [value, valueToPosition, containerWidth, isDragging]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
-    containerWidth.current = width - THUMB_SIZE;
-
-    // Update thumb position after layout
-    const pos = valueToPosition(value);
-    thumbPosition.setValue(pos);
+    setContainerWidth(width);
   };
 
-  const trackWidth = thumbPosition.interpolate({
-    inputRange: [0, containerWidth.current || 1],
-    outputRange: ['0%', '100%'],
-    extrapolate: 'clamp',
-  });
+  // Create PanResponder using refs to avoid stale closures
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabledRef.current,
+        onMoveShouldSetPanResponder: () => !disabledRef.current,
+        onPanResponderGrant: (evt: GestureResponderEvent) => {
+          setIsDragging(true);
+          const touchX = evt.nativeEvent.locationX;
+          const width = containerWidthRef.current;
+          const newPos = Math.max(0, Math.min(touchX - THUMB_SIZE / 2, width - THUMB_SIZE));
+          const newValue = positionToValueFromRefs(newPos);
+
+          // Calculate position from value for consistent display
+          const range = maximumValueRef.current - minimumValueRef.current;
+          const percentage = range === 0 ? 0 : (newValue - minimumValueRef.current) / range;
+          const displayPos = percentage * (width - THUMB_SIZE);
+
+          setThumbX(displayPos);
+          currentValueRef.current = newValue;
+          onValueChangeRef.current?.(newValue);
+        },
+        onPanResponderMove: (evt: GestureResponderEvent) => {
+          const touchX = evt.nativeEvent.locationX;
+          const width = containerWidthRef.current;
+          const newPos = Math.max(0, Math.min(touchX - THUMB_SIZE / 2, width - THUMB_SIZE));
+          const newValue = positionToValueFromRefs(newPos);
+
+          // Calculate position from value for consistent display
+          const range = maximumValueRef.current - minimumValueRef.current;
+          const percentage = range === 0 ? 0 : (newValue - minimumValueRef.current) / range;
+          const displayPos = percentage * (width - THUMB_SIZE);
+
+          setThumbX(displayPos);
+          currentValueRef.current = newValue;
+          onValueChangeRef.current?.(newValue);
+        },
+        onPanResponderRelease: () => {
+          setIsDragging(false);
+          onSlidingCompleteRef.current?.(currentValueRef.current);
+        },
+        onPanResponderTerminate: () => {
+          setIsDragging(false);
+          onSlidingCompleteRef.current?.(currentValueRef.current);
+        },
+      }),
+    [positionToValueFromRefs]
+  );
+
+  const filledWidth = thumbX + THUMB_SIZE / 2;
 
   return (
     <View
@@ -128,23 +179,23 @@ export function CustomSlider({
       <View style={[styles.track, { backgroundColor: maximumTrackTintColor }]} />
 
       {/* Filled track */}
-      <Animated.View
+      <View
         style={[
           styles.filledTrack,
           {
             backgroundColor: minimumTrackTintColor,
-            width: Animated.add(thumbPosition, THUMB_SIZE / 2),
+            width: filledWidth,
           },
         ]}
       />
 
       {/* Thumb */}
-      <Animated.View
+      <View
         style={[
           styles.thumb,
           {
             backgroundColor: thumbTintColor,
-            transform: [{ translateX: thumbPosition }],
+            left: thumbX,
             opacity: disabled ? 0.5 : 1,
           },
         ]}
@@ -152,9 +203,6 @@ export function CustomSlider({
     </View>
   );
 }
-
-const THUMB_SIZE = 28;
-const TRACK_HEIGHT = 4;
 
 const styles = StyleSheet.create({
   container: {

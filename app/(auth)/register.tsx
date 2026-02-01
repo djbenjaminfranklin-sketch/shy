@@ -17,10 +17,12 @@ import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { LEGAL_DISCLAIMER } from '../../src/constants';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,22 +32,22 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
-      setError('Veuillez remplir tous les champs');
+      setError(t('auth.fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError(t('auth.passwordMismatch'));
       return;
     }
 
     if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères');
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
     if (!acceptedTerms) {
-      setError('Vous devez accepter les CGU pour continuer');
+      setError(t('auth.acceptTerms'));
       return;
     }
 
@@ -60,10 +62,10 @@ export default function RegisterScreen() {
         return;
       }
 
-      // Continuer vers la vérification d'âge
+      // Continuer vers la verification d'age
       router.push('/(auth)/verify-age');
     } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError(t('auth.errorOccurred'));
     } finally {
       setIsLoading(false);
     }
@@ -82,15 +84,15 @@ export default function RegisterScreen() {
         >
           <View style={styles.header}>
             <Pressable style={styles.backButton} onPress={() => router.back()}>
-              <Text style={styles.backText}>← Retour</Text>
+              <Text style={styles.backText}>← {t('common.back')}</Text>
             </Pressable>
-            <Text style={styles.title}>Créer un compte</Text>
-            <Text style={styles.subtitle}>Rejoignez la communauté SHY</Text>
+            <Text style={styles.title}>{t('auth.registerTitle')}</Text>
+            <Text style={styles.subtitle}>{t('auth.registerSubtitle')}</Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
@@ -104,12 +106,12 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Mot de passe</Text>
+              <Text style={styles.label}>{t('auth.password')}</Text>
               <TextInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Minimum 8 caractères"
+                placeholder={t('auth.min8Chars')}
                 placeholderTextColor={colors.textTertiary}
                 secureTextEntry
                 autoComplete="new-password"
@@ -117,7 +119,7 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Confirmer le mot de passe</Text>
+              <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
               <TextInput
                 style={styles.input}
                 value={confirmPassword}
@@ -137,19 +139,19 @@ export default function RegisterScreen() {
                 {acceptedTerms && <Text style={styles.checkmark}>✓</Text>}
               </View>
               <Text style={styles.checkboxLabel}>
-                J'accepte les{' '}
+                {t('auth.acceptTermsLabel')}{' '}
                 <Text
                   style={styles.link}
                   onPress={() => router.push('/legal/terms')}
                 >
-                  CGU
+                  {t('welcome.terms')}
                 </Text>{' '}
-                et la{' '}
+                {t('auth.and')}{' '}
                 <Text
                   style={styles.link}
                   onPress={() => router.push('/legal/privacy-policy')}
                 >
-                  politique de confidentialité
+                  {t('auth.privacyPolicy')}
                 </Text>
               </Text>
             </Pressable>
@@ -168,15 +170,15 @@ export default function RegisterScreen() {
               {isLoading ? (
                 <ActivityIndicator color={colors.textLight} />
               ) : (
-                <Text style={styles.buttonText}>Continuer</Text>
+                <Text style={styles.buttonText}>{t('common.continue')}</Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Déjà un compte ?</Text>
+            <Text style={styles.footerText}>{t('auth.hasAccount')}</Text>
             <Pressable onPress={() => router.replace('/(auth)/login')}>
-              <Text style={styles.footerLink}>Se connecter</Text>
+              <Text style={styles.footerLink}>{t('welcome.login')}</Text>
             </Pressable>
           </View>
         </ScrollView>

@@ -21,7 +21,10 @@ export type NotificationType =
   | 'invitation'
   | 'match'
   | 'message'
-  | 'nearby';
+  | 'nearby'
+  | 'mode_expiring'
+  | 'mode_expired'
+  | 'mode_new_profiles';
 
 export interface NotificationData {
   type: NotificationType;
@@ -89,6 +92,16 @@ export const notificationService = {
         importance: Notifications.AndroidImportance.DEFAULT,
         vibrationPattern: [0, 250],
         lightColor: '#FFB86F',
+      });
+
+      // Canal pour les modes de disponibilite
+      await Notifications.setNotificationChannelAsync('availability_modes', {
+        name: 'Modes de disponibilite',
+        description: 'Notifications pour les modes de disponibilite',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250],
+        lightColor: '#4CAF50',
+        sound: 'default',
       });
     }
 
@@ -222,6 +235,99 @@ export const notificationService = {
       'Passe a Gold pour voir qui',
       { type: 'new_like' }
     );
+  },
+
+  /**
+   * Notification: Mode expire bientot (30 min)
+   */
+  async notifyModeExpiringSoon(modeName: string, remainingMinutes: number): Promise<void> {
+    await this.sendLocalNotification(
+      'Mode expire bientot',
+      `Votre mode ${modeName} expire dans ${remainingMinutes} minutes`,
+      { type: 'mode_expiring' }
+    );
+  },
+
+  /**
+   * Notification: Mode expire
+   */
+  async notifyModeExpired(modeName: string): Promise<void> {
+    await this.sendLocalNotification(
+      'Mode expire',
+      `Votre mode ${modeName} a expire. Activez-le a nouveau si vous etes toujours disponible.`,
+      { type: 'mode_expired' }
+    );
+  },
+
+  /**
+   * Notification: Nouveaux profils dans votre mode (gratuit)
+   */
+  async notifyNewProfilesInModeFree(): Promise<void> {
+    await this.sendLocalNotification(
+      'Nouveaux profils disponibles',
+      'De nouveaux profils sont disponibles dans votre mode actuel',
+      { type: 'mode_new_profiles' }
+    );
+  },
+
+  /**
+   * Notification: Nouveaux profils dans votre mode (premium - avec count)
+   */
+  async notifyNewProfilesInModePremium(count: number): Promise<void> {
+    await this.sendLocalNotification(
+      'Nouveaux profils disponibles',
+      `${count} nouveaux profils sont disponibles pendant votre mode actif`,
+      { type: 'mode_new_profiles', profileCount: count }
+    );
+  },
+
+  /**
+   * Programmer une notification pour l'expiration du mode
+   */
+  async scheduleModeExpirationNotification(
+    modeName: string,
+    expiresAt: Date,
+    warningMinutes: number = 30
+  ): Promise<string | null> {
+    try {
+      // Calculer le moment de la notification (30 min avant expiration)
+      const notificationTime = new Date(expiresAt.getTime() - warningMinutes * 60 * 1000);
+      const now = new Date();
+
+      // Ne programmer que si c'est dans le futur
+      if (notificationTime <= now) {
+        return null;
+      }
+
+      const identifier = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Mode expire bientot',
+          body: `Votre mode ${modeName} expire dans ${warningMinutes} minutes`,
+          sound: true,
+          data: { type: 'mode_expiring', modeName },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: notificationTime,
+        },
+      });
+
+      return identifier;
+    } catch (err) {
+      console.error('Error scheduling mode expiration notification:', err);
+      return null;
+    }
+  },
+
+  /**
+   * Annuler une notification programmee par son ID
+   */
+  async cancelScheduledNotification(identifier: string): Promise<void> {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(identifier);
+    } catch (err) {
+      console.error('Error canceling scheduled notification:', err);
+    }
   },
 
   /**

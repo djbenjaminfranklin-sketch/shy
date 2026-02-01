@@ -30,7 +30,6 @@ export interface DetailedStats {
 
 export interface AdminUser {
   id: string;
-  email: string;
   displayName: string;
   age: number;
   photos: string[];
@@ -157,7 +156,7 @@ class AdminService {
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_verified', true),
         supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('is_banned', true),
-        supabase.from('matches').select('*', { count: 'exact', head: true }),
+        supabase.from('connections').select('*', { count: 'exact', head: true }),
         supabase.from('messages').select('*', { count: 'exact', head: true }),
       ]);
 
@@ -252,7 +251,6 @@ class AdminService {
         .from('profiles')
         .select(`
           id,
-          email,
           display_name,
           birth_date,
           photos,
@@ -288,7 +286,7 @@ class AdminService {
 
       // Apply search
       if (search && search.length >= 2) {
-        query = query.or(`display_name.ilike.%${search}%,email.ilike.%${search}%`);
+        query = query.ilike('display_name', `%${search}%`);
       }
 
       const { data, error } = await query;
@@ -299,17 +297,16 @@ class AdminService {
       const userIds = data?.map(u => u.id) || [];
       const { data: reportCounts } = await supabase
         .from('reports')
-        .select('reported_user_id')
-        .in('reported_user_id', userIds);
+        .select('reported_id')
+        .in('reported_id', userIds);
 
       const reportCountMap: Record<string, number> = {};
       reportCounts?.forEach(r => {
-        reportCountMap[r.reported_user_id] = (reportCountMap[r.reported_user_id] || 0) + 1;
+        reportCountMap[r.reported_id] = (reportCountMap[r.reported_id] || 0) + 1;
       });
 
       return (data || []).map(user => ({
         id: user.id,
-        email: user.email || '',
         displayName: user.display_name || 'Sans nom',
         age: user.birth_date ? calculateAge(user.birth_date) : 0,
         photos: user.photos || [],
@@ -344,22 +341,21 @@ class AdminService {
         { count: reportedByCount },
         { data: reportsReceived },
       ] = await Promise.all([
-        supabase.from('matches').select('*', { count: 'exact', head: true })
+        supabase.from('connections').select('*', { count: 'exact', head: true })
           .or(`user1_id.eq.${userId},user2_id.eq.${userId}`),
         supabase.from('messages').select('*', { count: 'exact', head: true })
           .eq('sender_id', userId),
         supabase.from('reports').select('*', { count: 'exact', head: true })
-          .eq('reported_user_id', userId),
+          .eq('reported_id', userId),
         supabase.from('reports')
           .select('reason, description, created_at')
-          .eq('reported_user_id', userId)
+          .eq('reported_id', userId)
           .order('created_at', { ascending: false })
           .limit(10),
       ]);
 
       return {
         id: user.id,
-        email: user.email || '',
         displayName: user.display_name || 'Sans nom',
         age: user.birth_date ? calculateAge(user.birth_date) : 0,
         photos: user.photos || [],
@@ -395,13 +391,13 @@ class AdminService {
         .select(`
           id,
           reporter_id,
-          reported_user_id,
+          reported_id,
           reason,
           description,
           status,
           created_at,
           reporter:profiles!reports_reporter_id_fkey(display_name, photos),
-          reported:profiles!reports_reported_user_id_fkey(display_name, photos)
+          reported:profiles!reports_reported_id_fkey(display_name, photos)
         `)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -421,7 +417,7 @@ class AdminService {
         reporterId: report.reporter_id,
         reporterName: report.reporter?.display_name || 'Inconnu',
         reporterPhoto: report.reporter?.photos?.[0] || null,
-        reportedUserId: report.reported_user_id,
+        reportedUserId: report.reported_id,
         reportedUserName: report.reported?.display_name || 'Inconnu',
         reportedUserPhoto: report.reported?.photos?.[0] || null,
         reason: report.reason,
@@ -487,7 +483,6 @@ class AdminService {
       .from('profiles')
       .update({
         subscription_tier: tier,
-        subscription_updated_at: new Date().toISOString()
       })
       .eq('id', userId);
   }

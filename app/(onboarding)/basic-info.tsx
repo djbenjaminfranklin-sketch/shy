@@ -15,10 +15,12 @@ import { spacing, borderRadius } from '../../src/theme/spacing';
 import { GENDER_LIST, GenderId } from '../../src/constants/genders';
 import { HAIR_COLOR_LIST, HairColorId } from '../../src/constants/hairColors';
 import { useOnboarding } from '../../src/contexts/OnboardingContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function BasicInfoScreen() {
   const router = useRouter();
   const { data, updateData } = useOnboarding();
+  const { t } = useLanguage();
 
   const [displayName, setDisplayName] = useState(data.displayName);
   const [birthDateStr, setBirthDateStr] = useState('');
@@ -54,6 +56,26 @@ export default function BasicInfoScreen() {
     return date;
   };
 
+  // Formatage automatique de la date avec "/"
+  const handleBirthDateChange = (text: string) => {
+    // Supprimer tout sauf les chiffres
+    const numbers = text.replace(/[^\d]/g, '');
+
+    // Formater avec des "/"
+    let formatted = '';
+    if (numbers.length > 0) {
+      formatted = numbers.slice(0, 2);
+    }
+    if (numbers.length > 2) {
+      formatted += '/' + numbers.slice(2, 4);
+    }
+    if (numbers.length > 4) {
+      formatted += '/' + numbers.slice(4, 8);
+    }
+
+    setBirthDateStr(formatted);
+  };
+
   const birthDate = parseBirthDate(birthDateStr);
   const isValid = displayName.length >= 2 && birthDate && gender;
 
@@ -84,40 +106,38 @@ export default function BasicInfoScreen() {
           <View style={styles.progressDot} />
         </View>
 
-        <Text style={styles.title}>Parlez-nous de vous</Text>
-        <Text style={styles.subtitle}>
-          Ces informations seront visibles sur votre profil
-        </Text>
+        <Text style={styles.title}>{t('onboarding.tellUsAboutYou')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.infoVisibleOnProfile')}</Text>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Prenom ou pseudo *</Text>
+            <Text style={styles.label}>{t('onboarding.nameLabel')}</Text>
             <TextInput
               style={styles.input}
               value={displayName}
               onChangeText={setDisplayName}
-              placeholder="Comment voulez-vous etre appele(e) ?"
+              placeholder={t('onboarding.namePlaceholder')}
               placeholderTextColor={colors.textTertiary}
               maxLength={30}
             />
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Date de naissance *</Text>
+            <Text style={styles.label}>{t('onboarding.birthDateLabel')}</Text>
             <TextInput
               style={styles.input}
               value={birthDateStr}
-              onChangeText={setBirthDateStr}
-              placeholder="JJ/MM/AAAA"
+              onChangeText={handleBirthDateChange}
+              placeholder={t('onboarding.birthDatePlaceholder')}
               placeholderTextColor={colors.textTertiary}
-              keyboardType="numeric"
+              keyboardType="number-pad"
               maxLength={10}
             />
-            <Text style={styles.hint}>Vous devez avoir 18 ans ou plus</Text>
+            <Text style={styles.hint}>{t('onboarding.must18')}</Text>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Genre *</Text>
+            <Text style={styles.label}>{t('onboarding.genderLabel')}</Text>
             <View style={styles.chipContainer}>
               {GENDER_LIST.map((g) => (
                 <Pressable
@@ -139,7 +159,7 @@ export default function BasicInfoScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Couleur de cheveux</Text>
+            <Text style={styles.label}>{t('onboarding.hairColorLabel')}</Text>
             <View style={styles.chipContainer}>
               {HAIR_COLOR_LIST.map((h) => (
                 <Pressable
@@ -166,14 +186,14 @@ export default function BasicInfoScreen() {
 
         <View style={styles.footer}>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Retour</Text>
+            <Text style={styles.backButtonText}>{t('common.back')}</Text>
           </Pressable>
           <Pressable
             style={[styles.button, !isValid && styles.buttonDisabled]}
             onPress={handleContinue}
             disabled={!isValid}
           >
-            <Text style={styles.buttonText}>Continuer</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           </Pressable>
         </View>
       </ScrollView>

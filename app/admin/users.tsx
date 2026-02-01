@@ -111,7 +111,7 @@ export default function UsersScreen() {
             </View>
           )}
         </View>
-        <Text style={styles.userEmail}>{item.email}</Text>
+        <Text style={styles.userId}>ID: {item.id.slice(0, 8)}...</Text>
         <View style={styles.userMeta}>
           <Text style={styles.metaText}>
             Inscrit le {new Date(item.createdAt).toLocaleDateString()}
@@ -325,10 +325,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.error,
   },
-  userEmail: {
+  userId: {
     ...typography.caption,
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     marginTop: 2,
+    fontFamily: 'monospace',
   },
   userMeta: {
     flexDirection: 'row',

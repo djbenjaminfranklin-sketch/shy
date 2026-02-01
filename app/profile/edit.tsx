@@ -19,6 +19,7 @@ import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { profilesService } from '../../src/services/supabase/profiles';
+import { storageService } from '../../src/services/supabase/storage';
 import { INTENTION_LIST, IntentionId } from '../../src/constants/intentions';
 import { AVAILABILITY_LIST, AvailabilityId } from '../../src/constants/availability';
 import { Button } from '../../src/components/ui/Button';
@@ -59,7 +60,7 @@ export default function EditProfileScreen() {
       console.log('Image picker result:', result);
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        // TODO: Upload to Supabase Storage
+        // Store local URI for now, will be uploaded to Supabase Storage on save
         setPhotos([...photos, result.assets[0].uri]);
       }
     } catch (error) {
@@ -78,19 +79,34 @@ export default function EditProfileScreen() {
     setIsSaving(true);
 
     try {
+      // Upload new photos to Supabase Storage
+      const oldPhotos = profile?.photos || [];
+      const { urls: uploadedUrls, error: uploadError } = await storageService.replaceUserPhotos(
+        user.id,
+        oldPhotos,
+        photos
+      );
+
+      if (uploadError) {
+        Alert.alert('Erreur', uploadError);
+        setIsSaving(false);
+        return;
+      }
+
+      // Save profile with uploaded photo URLs
       const { error } = await profilesService.updateProfile(user.id, {
         displayName,
         bio: bio || null,
         intention,
         availability,
-        photos,
+        photos: uploadedUrls,
       });
 
       if (error) {
         Alert.alert('Erreur', error);
       } else {
         await refreshProfile();
-        router.back();
+        router.replace('/(tabs)/profile');
       }
     } catch (err) {
       Alert.alert('Erreur', 'Une erreur est survenue');
@@ -100,7 +116,7 @@ export default function EditProfileScreen() {
   };
 
   const handleCancel = () => {
-    router.back();
+    router.replace('/(tabs)/profile');
   };
 
   return (
@@ -121,7 +137,13 @@ export default function EditProfileScreen() {
           <View style={styles.photosGrid}>
             {photos.map((photo, index) => (
               <View key={index} style={styles.photoItem}>
-                <Image source={{ uri: photo }} style={styles.photo} />
+                <Image
+                  source={{ uri: photo }}
+                  style={styles.photo}
+                  resizeMode="cover"
+                  onLoad={() => console.log('Photo loaded:', photo.substring(0, 50))}
+                  onError={(e) => console.log('Photo error:', e.nativeEvent.error, photo.substring(0, 50))}
+                />
                 <Pressable
                   style={styles.removeButton}
                   onPress={() => handleRemovePhoto(index)}
@@ -268,6 +290,7 @@ const styles = StyleSheet.create({
   photo: {
     width: '100%',
     height: '100%',
+    backgroundColor: colors.surface,
   },
   removeButton: {
     position: 'absolute',

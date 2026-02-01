@@ -50,67 +50,73 @@ export const matchesService = {
   },
 
   /**
-   * Liker un profil
+   * Liker un profil (envoyer une invitation)
    */
-  async likeProfile(fromUserId: string, toUserId: string): Promise<{ isMatch: boolean; error: string | null }> {
+  async likeProfile(fromUserId: string, toUserId: string, isSuperLike: boolean = false): Promise<{ isMatch: boolean; error: string | null }> {
     try {
-      // Enregistrer le like
-      const { error: likeError } = await supabase
-        .from('likes')
-        .insert({
-          from_user_id: fromUserId,
-          to_user_id: toUserId,
-          is_like: true,
-        });
-
-      if (likeError) {
-        // Si le like existe déjà, ignorer l'erreur
-        if (likeError.code !== '23505') {
-          return { isMatch: false, error: likeError.message };
-        }
-      }
-
-      // Vérifier si c'est un match (l'autre personne a aussi liké)
-      const { data: reciprocalLike } = await supabase
-        .from('likes')
-        .select('id')
+      // Vérifier si une invitation réciproque existe déjà (l'autre nous a liké)
+      const { data: reciprocalInvitation } = await supabase
+        .from('invitations')
+        .select('id, status')
         .eq('from_user_id', toUserId)
         .eq('to_user_id', fromUserId)
-        .eq('is_like', true)
+        .eq('status', 'pending')
         .single();
 
-      if (reciprocalLike) {
-        // C'est un match ! Créer l'entrée match
-        const [user1, user2] = [fromUserId, toUserId].sort();
+      if (reciprocalInvitation) {
+        // C'est un match ! Accepter l'invitation et créer la connexion
+        const { error: updateError } = await supabase
+          .from('invitations')
+          .update({ status: 'accepted' })
+          .eq('id', reciprocalInvitation.id);
 
-        const { error: matchError } = await supabase
-          .from('matches')
+        if (updateError) {
+          return { isMatch: false, error: updateError.message };
+        }
+
+        // Créer la connexion
+        const [user1, user2] = [fromUserId, toUserId].sort();
+        const { data: connection, error: connectionError } = await supabase
+          .from('connections')
           .insert({
             user1_id: user1,
             user2_id: user2,
-          });
-
-        if (matchError && matchError.code !== '23505') {
-          return { isMatch: false, error: matchError.message };
-        }
-
-        // Créer la conversation
-        const { data: match } = await supabase
-          .from('matches')
+            invitation_id: reciprocalInvitation.id,
+          })
           .select('id')
-          .eq('user1_id', user1)
-          .eq('user2_id', user2)
           .single();
 
-        if (match) {
+        if (connectionError && connectionError.code !== '23505') {
+          return { isMatch: false, error: connectionError.message };
+        }
+
+        // Créer la conversation si la connexion a été créée
+        if (connection) {
           await supabase
             .from('conversations')
             .insert({
-              match_id: match.id,
+              connection_id: connection.id,
             });
         }
 
         return { isMatch: true, error: null };
+      }
+
+      // Pas d'invitation réciproque, créer une nouvelle invitation
+      const { error: invitationError } = await supabase
+        .from('invitations')
+        .insert({
+          from_user_id: fromUserId,
+          to_user_id: toUserId,
+          type: isSuperLike ? 'super_like' : 'like',
+          status: 'pending',
+        });
+
+      if (invitationError) {
+        // Si l'invitation existe déjà, ignorer l'erreur
+        if (invitationError.code !== '23505') {
+          return { isMatch: false, error: invitationError.message };
+        }
       }
 
       return { isMatch: false, error: null };
@@ -120,22 +126,15 @@ export const matchesService = {
   },
 
   /**
-   * Passer un profil
+   * Passer un profil (rejeter / skip)
+   * Note: On peut soit ne rien enregistrer (le profil réapparaîtra plus tard),
+   * soit enregistrer un "pass" pour éviter de le revoir
    */
-  async passProfile(fromUserId: string, toUserId: string): Promise<{ error: string | null }> {
+  async passProfile(_fromUserId: string, _toUserId: string): Promise<{ error: string | null }> {
     try {
-      const { error } = await supabase
-        .from('likes')
-        .insert({
-          from_user_id: fromUserId,
-          to_user_id: toUserId,
-          is_like: false,
-        });
-
-      if (error && error.code !== '23505') {
-        return { error: error.message };
-      }
-
+      // Optionnel: Créer une invitation avec status 'rejected' pour éviter de revoir ce profil
+      // Ou on peut utiliser une table séparée 'passes' si elle existe
+      // Pour l'instant, on ne fait rien car passer un profil est temporaire
       return { error: null };
     } catch (err) {
       return { error: 'Une erreur inattendue est survenue' };
@@ -143,13 +142,14 @@ export const matchesService = {
   },
 
   /**
-   * Récupérer tous les matchs d'un utilisateur
+   * Récupérer toutes les connexions d'un utilisateur
+   * (Utilise la table 'connections' qui stocke les invitations acceptées)
    */
   async getMatches(userId: string): Promise<{ matches: MatchWithProfile[]; error: string | null }> {
     try {
-      // Récupérer les matchs de base (sans join pour éviter erreurs de relation)
-      const { data: matches, error } = await supabase
-        .from('matches')
+      // Récupérer les connexions (invitations acceptées)
+      const { data: connections, error } = await supabase
+        .from('connections')
         .select('*')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .order('created_at', { ascending: false });
@@ -158,13 +158,13 @@ export const matchesService = {
         return { matches: [], error: error.message };
       }
 
-      if (!matches || matches.length === 0) {
+      if (!connections || connections.length === 0) {
         return { matches: [], error: null };
       }
 
       // Récupérer les IDs des autres utilisateurs
-      const otherUserIds = matches.map((m) =>
-        m.user1_id === userId ? m.user2_id : m.user1_id
+      const otherUserIds = connections.map((c) =>
+        c.user1_id === userId ? c.user2_id : c.user1_id
       );
 
       // Récupérer les profils séparément
@@ -176,25 +176,25 @@ export const matchesService = {
       const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
 
       // Récupérer les conversations et derniers messages
-      const matchIds = matches.map((m) => m.id);
+      const connectionIds = connections.map((c) => c.id);
       const { data: conversations } = await supabase
         .from('conversations')
-        .select('id, match_id, last_message_at')
-        .in('match_id', matchIds);
+        .select('id, connection_id, last_message_at')
+        .in('connection_id', connectionIds);
 
-      const conversationMap = new Map((conversations || []).map((c) => [c.match_id, c]));
+      const conversationMap = new Map((conversations || []).map((c) => [c.connection_id, c]));
 
       // Construire le résultat
-      const result: MatchWithProfile[] = matches.map((match) => {
-        const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id;
+      const result: MatchWithProfile[] = connections.map((connection) => {
+        const otherUserId = connection.user1_id === userId ? connection.user2_id : connection.user1_id;
         const otherUser = profilesMap.get(otherUserId);
-        const conversation = conversationMap.get(match.id);
+        const conversation = conversationMap.get(connection.id);
 
         return {
-          id: match.id,
-          user1Id: match.user1_id,
-          user2Id: match.user2_id,
-          createdAt: match.created_at,
+          id: conversation?.id || connection.id, // Utiliser l'ID de conversation pour la navigation vers le chat
+          user1Id: connection.user1_id,
+          user2Id: connection.user2_id,
+          createdAt: connection.created_at,
           profile: otherUser ? {
             id: otherUser.id,
             displayName: otherUser.display_name,
@@ -256,15 +256,21 @@ export const matchesService = {
   },
 
   /**
-   * Supprimer un match (unmatch)
+   * Supprimer une connexion (unmatch)
    */
-  async unmatch(matchId: string): Promise<{ error: string | null }> {
+  async unmatch(connectionId: string): Promise<{ error: string | null }> {
     try {
-      // Supprimer le match (les conversations et messages seront supprimés en cascade)
-      const { error } = await supabase
-        .from('matches')
+      // D'abord supprimer la conversation (les messages seront supprimés en cascade)
+      await supabase
+        .from('conversations')
         .delete()
-        .eq('id', matchId);
+        .eq('connection_id', connectionId);
+
+      // Puis supprimer la connexion
+      const { error } = await supabase
+        .from('connections')
+        .delete()
+        .eq('id', connectionId);
 
       if (error) {
         return { error: error.message };
@@ -277,44 +283,28 @@ export const matchesService = {
   },
 
   /**
-   * Récupérer les likes reçus (personnes qui vous ont liké)
+   * Récupérer les invitations reçues (personnes qui vous ont liké)
    */
   async getReceivedLikes(userId: string): Promise<{ likes: any[]; error: string | null }> {
     try {
-      // Récupérer les likes de base (sans join)
-      const { data: likes, error } = await supabase
-        .from('likes')
-        .select('id, from_user_id, created_at')
+      // Récupérer les invitations en attente reçues
+      const { data: invitations, error } = await supabase
+        .from('invitations')
+        .select('id, from_user_id, type, created_at')
         .eq('to_user_id', userId)
-        .eq('is_like', true)
+        .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) {
         return { likes: [], error: error.message };
       }
 
-      if (!likes || likes.length === 0) {
+      if (!invitations || invitations.length === 0) {
         return { likes: [], error: null };
       }
 
-      // Filtrer ceux qui ne sont pas encore matchés
-      const { data: matches } = await supabase
-        .from('matches')
-        .select('user1_id, user2_id')
-        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-
-      const matchedUserIds = new Set(
-        (matches || []).flatMap((m) => [m.user1_id, m.user2_id]).filter((id) => id !== userId)
-      );
-
-      const unmatchedLikes = likes.filter((like) => !matchedUserIds.has(like.from_user_id));
-
-      if (unmatchedLikes.length === 0) {
-        return { likes: [], error: null };
-      }
-
-      // Récupérer les profils séparément
-      const fromUserIds = unmatchedLikes.map((l) => l.from_user_id);
+      // Récupérer les profils des utilisateurs
+      const fromUserIds = invitations.map((inv) => inv.from_user_id);
       const { data: profiles } = await supabase
         .from('profiles')
         .select('*')
@@ -322,13 +312,14 @@ export const matchesService = {
 
       const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
 
-      const result = unmatchedLikes.map((like) => {
-        const profileData = profilesMap.get(like.from_user_id);
+      const result = invitations.map((invitation) => {
+        const profileData = profilesMap.get(invitation.from_user_id);
 
         return {
-          id: like.id,
-          fromUserId: like.from_user_id,
-          createdAt: like.created_at,
+          id: invitation.id,
+          fromUserId: invitation.from_user_id,
+          type: invitation.type,
+          createdAt: invitation.created_at,
           profile: profileData ? {
             id: profileData.id,
             displayName: profileData.display_name,
@@ -363,14 +354,15 @@ export const matchesService = {
   },
 
   /**
-   * Vérifier si deux utilisateurs sont matchés
+   * Vérifier si deux utilisateurs sont connectés (matchés)
+   * Utilise la table 'connections' qui stocke les matches acceptés
    */
   async checkMatch(userId1: string, userId2: string): Promise<{ match: Match | null; error: string | null }> {
     try {
       const [user1, user2] = [userId1, userId2].sort();
 
-      const { data: match, error } = await supabase
-        .from('matches')
+      const { data: connection, error } = await supabase
+        .from('connections')
         .select('*')
         .eq('user1_id', user1)
         .eq('user2_id', user2)
@@ -380,16 +372,16 @@ export const matchesService = {
         return { match: null, error: error.message };
       }
 
-      if (!match) {
+      if (!connection) {
         return { match: null, error: null };
       }
 
       return {
         match: {
-          id: match.id,
-          user1Id: match.user1_id,
-          user2Id: match.user2_id,
-          createdAt: match.created_at,
+          id: connection.id,
+          user1Id: connection.user1_id,
+          user2Id: connection.user2_id,
+          createdAt: connection.created_at,
         },
         error: null,
       };

@@ -20,148 +20,15 @@ import { spacing, borderRadius } from '../../src/theme/spacing';
 import { IntentionBadge } from '../../src/components/profile/IntentionBadge';
 import { ProfileMapView } from '../../src/components/map';
 import { useLocation } from '../../src/contexts/LocationContext';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
+import { profilesService } from '../../src/services/supabase/profiles';
+import type { ProfileWithDistance } from '../../src/types/profile';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - spacing.lg * 2 - spacing.sm * 2) / 3;
 const CARD_HEIGHT = CARD_WIDTH * 1.5;
 
-// Mock nearby profiles data with coordinates (Paris area)
-const MOCK_NEARBY_PROFILES = [
-  {
-    id: '1',
-    displayName: 'Sophie',
-    age: 26,
-    intention: 'dating' as const,
-    distance: 0.5,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300'],
-    latitude: 48.8606,
-    longitude: 2.3376,
-  },
-  {
-    id: '2',
-    displayName: 'Emma',
-    age: 24,
-    intention: 'social' as const,
-    distance: 1.2,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300'],
-    latitude: 48.8530,
-    longitude: 2.3499,
-  },
-  {
-    id: '3',
-    displayName: 'Lucas',
-    age: 28,
-    intention: 'amical' as const,
-    distance: 2.1,
-    isOnline: false,
-    photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300'],
-    latitude: 48.8738,
-    longitude: 2.2950,
-  },
-  {
-    id: '4',
-    displayName: 'Marie',
-    age: 25,
-    intention: 'dating' as const,
-    distance: 2.8,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300'],
-    latitude: 48.8462,
-    longitude: 2.3371,
-  },
-  {
-    id: '5',
-    displayName: 'Thomas',
-    age: 30,
-    intention: 'local' as const,
-    distance: 3.5,
-    isOnline: false,
-    photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300'],
-    latitude: 48.8800,
-    longitude: 2.3200,
-  },
-  {
-    id: '6',
-    displayName: 'Julie',
-    age: 27,
-    intention: 'social' as const,
-    distance: 4.0,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300'],
-    latitude: 48.8450,
-    longitude: 2.3700,
-  },
-  {
-    id: '7',
-    displayName: 'Antoine',
-    age: 29,
-    intention: 'dating' as const,
-    distance: 4.5,
-    isOnline: false,
-    photos: ['https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300'],
-    latitude: 48.8900,
-    longitude: 2.3400,
-  },
-  {
-    id: '8',
-    displayName: 'Camille',
-    age: 23,
-    intention: 'amical' as const,
-    distance: 5.2,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=300'],
-    latitude: 48.8350,
-    longitude: 2.3100,
-  },
-  {
-    id: '9',
-    displayName: 'Hugo',
-    age: 31,
-    intention: 'local' as const,
-    distance: 6.0,
-    isOnline: false,
-    photos: ['https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300'],
-    latitude: 48.8650,
-    longitude: 2.3800,
-  },
-  {
-    id: '10',
-    displayName: 'Lea',
-    age: 22,
-    intention: 'dating' as const,
-    distance: 7.1,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=300'],
-    latitude: 48.8200,
-    longitude: 2.3500,
-  },
-  {
-    id: '11',
-    displayName: 'Maxime',
-    age: 26,
-    intention: 'social' as const,
-    distance: 8.0,
-    isOnline: false,
-    photos: ['https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300'],
-    latitude: 48.8750,
-    longitude: 2.2800,
-  },
-  {
-    id: '12',
-    displayName: 'Chloe',
-    age: 28,
-    intention: 'amical' as const,
-    distance: 9.5,
-    isOnline: true,
-    photos: ['https://images.unsplash.com/photo-1502323777036-f29e3972f1e0?w=300'],
-    latitude: 48.8100,
-    longitude: 2.3900,
-  },
-];
-
-type NearbyProfile = typeof MOCK_NEARBY_PROFILES[0];
 type ViewMode = 'map' | 'grid';
 
 // Skeleton loading card
@@ -196,9 +63,16 @@ const SkeletonCard = () => {
 
 // Profile card component
 interface ProfileCardProps {
-  profile: NearbyProfile;
+  profile: ProfileWithDistance;
   onPress: () => void;
 }
+
+// Check if user was active in the last 5 minutes
+const isUserOnline = (lastActiveAt: string | null | undefined): boolean => {
+  if (!lastActiveAt) return false;
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  return new Date(lastActiveAt) > fiveMinutesAgo;
+};
 
 const ProfileCard = ({ profile, onPress }: ProfileCardProps) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -219,6 +93,7 @@ const ProfileCard = ({ profile, onPress }: ProfileCardProps) => {
   };
 
   const photoUrl = profile.photos?.[0] || 'https://via.placeholder.com/300x400';
+  const isOnline = isUserOnline(profile.lastActiveAt);
 
   return (
     <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
@@ -232,7 +107,7 @@ const ProfileCard = ({ profile, onPress }: ProfileCardProps) => {
         <Image source={{ uri: photoUrl }} style={styles.cardImage} />
 
         {/* Online indicator */}
-        {profile.isOnline && (
+        {isOnline && (
           <View style={styles.onlineIndicator}>
             <View style={styles.onlineDot} />
           </View>
@@ -248,10 +123,12 @@ const ProfileCard = ({ profile, onPress }: ProfileCardProps) => {
               {profile.displayName}
             </Text>
             <Text style={styles.cardAge}>{profile.age} ans</Text>
-            <View style={styles.distanceRow}>
-              <Ionicons name="location" size={10} color={colors.tabBarActive} />
-              <Text style={styles.distanceText}>{profile.distance} km</Text>
-            </View>
+            {profile.distance !== null && (
+              <View style={styles.distanceRow}>
+                <Ionicons name="location" size={10} color={colors.tabBarActive} />
+                <Text style={styles.distanceText}>{profile.distance} km</Text>
+              </View>
+            )}
           </View>
         </LinearGradient>
 
@@ -290,9 +167,10 @@ const SectionHeader = ({ title, icon, color, count }: SectionHeaderProps) => (
 interface ViewToggleProps {
   mode: ViewMode;
   onChange: (mode: ViewMode) => void;
+  t: (key: string) => string;
 }
 
-const ViewToggle = ({ mode, onChange }: ViewToggleProps) => (
+const ViewToggle = ({ mode, onChange, t }: ViewToggleProps) => (
   <View style={styles.toggleContainer}>
     <TouchableOpacity
       style={[styles.toggleButton, mode === 'map' && styles.toggleButtonActive]}
@@ -304,7 +182,7 @@ const ViewToggle = ({ mode, onChange }: ViewToggleProps) => (
         color={mode === 'map' ? colors.white : colors.textSecondary}
       />
       <Text style={[styles.toggleText, mode === 'map' && styles.toggleTextActive]}>
-        Carte
+        {t('explore.map')}
       </Text>
     </TouchableOpacity>
     <TouchableOpacity
@@ -317,7 +195,7 @@ const ViewToggle = ({ mode, onChange }: ViewToggleProps) => (
         color={mode === 'grid' ? colors.white : colors.textSecondary}
       />
       <Text style={[styles.toggleText, mode === 'grid' && styles.toggleTextActive]}>
-        Grille
+        {t('explore.grid')}
       </Text>
     </TouchableOpacity>
   </View>
@@ -325,38 +203,80 @@ const ViewToggle = ({ mode, onChange }: ViewToggleProps) => (
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { t } = useLanguage();
   const { latitude, longitude, searchRadius, isEnabled, city, getLocationDisplayName } = useLocation();
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [profiles, setProfiles] = useState<NearbyProfile[]>([]);
+  const [profiles, setProfiles] = useState<ProfileWithDistance[]>([]);
 
-  // Position utilisateur (mock si pas de localisation)
+  // Position utilisateur (utiliser la vraie position si disponible)
   const userLocation = (latitude && longitude)
     ? { latitude, longitude }
-    : { latitude: 48.8566, longitude: 2.3522 }; // Paris par défaut
+    : null;
 
-  // Simulate loading
+  // Charger les profils depuis Supabase
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setProfiles(MOCK_NEARBY_PROFILES);
+    const loadProfiles = async () => {
+      if (!user) return;
+      setIsLoading(true);
+
+      const { profiles: loadedProfiles } = await profilesService.getDiscoverProfiles(
+        user.id,
+        {
+          minAge: 18,
+          maxAge: 99,
+          genders: [],
+          intentions: [],
+          hairColors: [],
+          languages: [],
+          interests: [],
+          searchRadius: searchRadius || 50,
+        },
+        latitude ?? undefined,
+        longitude ?? undefined
+      );
+
+      if (loadedProfiles) {
+        setProfiles(loadedProfiles);
+      }
       setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    };
+
+    loadProfiles();
+  }, [user, latitude, longitude, searchRadius]);
 
   // Refresh handler
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
+    if (!user) return;
     setIsRefreshing(true);
-    setTimeout(() => {
-      setProfiles(MOCK_NEARBY_PROFILES);
-      setIsRefreshing(false);
-    }, 1000);
-  }, []);
+
+    const { profiles: loadedProfiles } = await profilesService.getDiscoverProfiles(
+      user.id,
+      {
+        minAge: 18,
+        maxAge: 99,
+        genders: [],
+        intentions: [],
+        hairColors: [],
+        languages: [],
+        interests: [],
+        searchRadius: searchRadius || 50,
+      },
+      latitude ?? undefined,
+      longitude ?? undefined
+    );
+
+    if (loadedProfiles) {
+      setProfiles(loadedProfiles);
+    }
+    setIsRefreshing(false);
+  }, [user, latitude, longitude, searchRadius]);
 
   // Profile press handler
   const handleProfilePress = useCallback(
-    (profile: NearbyProfile | { id: string }) => {
+    (profile: ProfileWithDistance | { id: string }) => {
       router.push(`/profile/${profile.id}` as never);
     },
     [router]
@@ -364,7 +284,7 @@ export default function ExploreScreen() {
 
   // Render profile card
   const renderProfile = useCallback(
-    ({ item }: { item: NearbyProfile }) => (
+    ({ item }: { item: ProfileWithDistance }) => (
       <ProfileCard
         profile={item}
         onPress={() => handleProfilePress(item)}
@@ -382,9 +302,9 @@ export default function ExploreScreen() {
     </View>
   );
 
-  // Online profiles
-  const onlineProfiles = profiles.filter((p) => p.isOnline);
-  const nearbyProfiles = profiles.filter((p) => p.distance <= 5);
+  // Online profiles (active in the last 5 minutes)
+  const onlineProfiles = profiles.filter((p) => isUserOnline(p.lastActiveAt));
+  const nearbyProfiles = profiles.filter((p) => p.distance !== null && p.distance <= 5);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -403,13 +323,13 @@ export default function ExploreScreen() {
                 color={isEnabled ? colors.primary : colors.textTertiary}
               />
               <Text style={[styles.subtitle, isEnabled && styles.locationActive]}>
-                {isEnabled ? (city || getLocationDisplayName()) : 'Position désactivée'}
+                {isEnabled ? (city || getLocationDisplayName()) : t('explore.locationDisabled')}
               </Text>
               <Ionicons name="chevron-forward" size={12} color={colors.textTertiary} />
             </TouchableOpacity>
           </View>
         </View>
-        <ViewToggle mode={viewMode} onChange={setViewMode} />
+        <ViewToggle mode={viewMode} onChange={setViewMode} t={t} />
       </View>
 
       {isLoading ? (
@@ -450,7 +370,7 @@ export default function ExploreScreen() {
               {/* Online now section */}
               {onlineProfiles.length > 0 && (
                 <SectionHeader
-                  title="En ligne maintenant"
+                  title={t('explore.onlineNow')}
                   icon="radio-button-on"
                   color={colors.online}
                   count={onlineProfiles.length}
@@ -459,7 +379,7 @@ export default function ExploreScreen() {
 
               {/* Nearby section */}
               <SectionHeader
-                title="À proximité"
+                title={t('explore.nearbySection')}
                 icon="location"
                 color={colors.tabBarActive}
                 count={nearbyProfiles.length}
@@ -469,10 +389,8 @@ export default function ExploreScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="compass-outline" size={64} color={colors.textTertiary} />
-              <Text style={styles.emptyTitle}>Personne à proximité</Text>
-              <Text style={styles.emptyText}>
-                Activez votre localisation pour découvrir des profils autour de vous.
-              </Text>
+              <Text style={styles.emptyTitle}>{t('explore.noOneNearby')}</Text>
+              <Text style={styles.emptyText}>{t('explore.enableLocationHint')}</Text>
             </View>
           }
         />

@@ -15,10 +15,12 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, hasCompletedOnboarding } = useAuth();
+  const { signIn } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +28,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Veuillez remplir tous les champs');
+      setError(t('auth.fillAllFields'));
       return;
     }
 
@@ -34,21 +36,25 @@ export default function LoginScreen() {
     setError(null);
 
     try {
-      const { error: signInError } = await signIn(email, password);
+      console.log('[Login] Attempting signIn...');
+      const { error: signInError, hasCompletedOnboarding } = await signIn(email, password);
+      console.log('[Login] signIn result:', { signInError, hasCompletedOnboarding });
 
       if (signInError) {
         setError(signInError);
         return;
       }
 
-      // Rediriger selon l'état de l'onboarding
+      // Rediriger selon l'etat de l'onboarding
+      console.log('[Login] Redirecting, hasCompletedOnboarding:', hasCompletedOnboarding);
       if (hasCompletedOnboarding) {
         router.replace('/(tabs)/discover');
       } else {
         router.replace('/(onboarding)/profile-photo');
       }
     } catch (err) {
-      setError('Email ou mot de passe incorrect');
+      console.error('[Login] Unexpected error:', err);
+      setError(t('auth.incorrectCredentials'));
     } finally {
       setIsLoading(false);
     }
@@ -63,15 +69,15 @@ export default function LoginScreen() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Pressable style={styles.backButton} onPress={() => router.back()}>
-              <Text style={styles.backText}>← Retour</Text>
+              <Text style={styles.backText}>← {t('common.back')}</Text>
             </Pressable>
-            <Text style={styles.title}>Connexion</Text>
-            <Text style={styles.subtitle}>Heureux de vous revoir !</Text>
+            <Text style={styles.title}>{t('auth.loginTitle')}</Text>
+            <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
@@ -85,7 +91,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Mot de passe</Text>
+              <Text style={styles.label}>{t('auth.password')}</Text>
               <TextInput
                 style={styles.input}
                 value={password}
@@ -98,7 +104,7 @@ export default function LoginScreen() {
             </View>
 
             <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
-              <Text style={styles.forgotPassword}>Mot de passe oublié ?</Text>
+              <Text style={styles.forgotPassword}>{t('auth.forgotPassword')}</Text>
             </Pressable>
 
             {error && <Text style={styles.error}>{error}</Text>}
@@ -111,15 +117,15 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color={colors.textLight} />
               ) : (
-                <Text style={styles.buttonText}>Se connecter</Text>
+                <Text style={styles.buttonText}>{t('auth.loginButton')}</Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Pas encore de compte ?</Text>
+            <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
             <Pressable onPress={() => router.replace('/(auth)/register')}>
-              <Text style={styles.footerLink}>Créer un compte</Text>
+              <Text style={styles.footerLink}>{t('welcome.createAccount')}</Text>
             </Pressable>
           </View>
         </View>

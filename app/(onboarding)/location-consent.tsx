@@ -7,10 +7,14 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useOnboarding } from '../../src/contexts/OnboardingContext';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function LocationConsentScreen() {
   const router = useRouter();
   const { updateData, completeOnboarding, isSubmitting } = useOnboarding();
+  const { refreshProfile } = useAuth();
+  const { t } = useLanguage();
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   const finishOnboarding = async (withLocation: boolean, coords?: { latitude: number; longitude: number }) => {
@@ -25,12 +29,14 @@ export default function LocationConsentScreen() {
     const { success, error } = await completeOnboarding();
 
     if (success) {
+      // Rafraichir le profil dans AuthContext pour que hasCompletedOnboarding soit mis a jour
+      await refreshProfile();
       router.replace('/(tabs)/discover');
     } else {
       Alert.alert(
-        'Erreur',
-        error || 'Une erreur est survenue lors de la creation de votre profil. Veuillez reessayer.',
-        [{ text: 'OK' }]
+        t('alerts.errorTitle'),
+        error || t('onboarding.profileCreationError'),
+        [{ text: t('common.ok') }]
       );
     }
   };
@@ -84,43 +90,31 @@ export default function LocationConsentScreen() {
           <Text style={styles.icon}>📍</Text>
         </View>
 
-        <Text style={styles.title}>Activez la geolocalisation</Text>
-        <Text style={styles.description}>
-          Pour vous montrer des personnes a proximite, SHY a besoin d'acceder a
-          votre position.
-        </Text>
+        <Text style={styles.title}>{t('onboarding.enableLocationTitle')}</Text>
+        <Text style={styles.description}>{t('onboarding.enableLocationDesc')}</Text>
 
         <View style={styles.features}>
           <View style={styles.feature}>
             <Text style={styles.featureIcon}>🔒</Text>
             <View style={styles.featureText}>
-              <Text style={styles.featureTitle}>Position approximative</Text>
-              <Text style={styles.featureDescription}>
-                Seule une distance approximative est partagee, jamais votre
-                adresse exacte.
-              </Text>
+              <Text style={styles.featureTitle}>{t('onboarding.approxLocation')}</Text>
+              <Text style={styles.featureDescription}>{t('onboarding.approxLocationDesc')}</Text>
             </View>
           </View>
 
           <View style={styles.feature}>
             <Text style={styles.featureIcon}>👁️</Text>
             <View style={styles.featureText}>
-              <Text style={styles.featureTitle}>Controle total</Text>
-              <Text style={styles.featureDescription}>
-                Vous pouvez masquer votre position a tout moment depuis les
-                parametres.
-              </Text>
+              <Text style={styles.featureTitle}>{t('onboarding.fullControl')}</Text>
+              <Text style={styles.featureDescription}>{t('onboarding.fullControlDesc')}</Text>
             </View>
           </View>
 
           <View style={styles.feature}>
             <Text style={styles.featureIcon}>🚫</Text>
             <View style={styles.featureText}>
-              <Text style={styles.featureTitle}>Desactivee par defaut</Text>
-              <Text style={styles.featureDescription}>
-                Meme si vous autorisez l'acces, elle reste desactivee jusqu'a ce
-                que vous l'activiez.
-              </Text>
+              <Text style={styles.featureTitle}>{t('onboarding.disabledByDefault')}</Text>
+              <Text style={styles.featureDescription}>{t('onboarding.disabledByDefaultDesc')}</Text>
             </View>
           </View>
         </View>
@@ -135,11 +129,11 @@ export default function LocationConsentScreen() {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator color={colors.textLight} size="small" />
                 <Text style={styles.primaryButtonText}>
-                  {isSubmitting ? 'Creation du profil...' : 'Localisation...'}
+                  {isSubmitting ? t('onboarding.creatingProfile') : t('onboarding.gettingLocation')}
                 </Text>
               </View>
             ) : (
-              <Text style={styles.primaryButtonText}>Autoriser la localisation</Text>
+              <Text style={styles.primaryButtonText}>{t('onboarding.authorizeLocation')}</Text>
             )}
           </Pressable>
 
@@ -149,7 +143,7 @@ export default function LocationConsentScreen() {
             disabled={isLoading}
           >
             <Text style={[styles.secondaryButtonText, isLoading && styles.textDisabled]}>
-              Peut-etre plus tard
+              {t('onboarding.maybeLater')}
             </Text>
           </Pressable>
         </View>

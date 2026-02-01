@@ -1,12 +1,25 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import MapView, { PROVIDER_DEFAULT, Region } from 'react-native-maps';
+import MapView, { PROVIDER_DEFAULT, Region, Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileMarker } from './ProfileMarker';
 import { colors } from '../../theme/colors';
 import { spacing, borderRadius } from '../../theme/spacing';
 
-interface Profile {
+interface ProfileWithLocation {
+  id: string;
+  displayName: string;
+  age: number;
+  photos: string[];
+  intention: string;
+  latitude: number | null;
+  longitude: number | null;
+  distance?: number | null;
+  isOnline?: boolean;
+  lastActiveAt?: string | null;
+}
+
+interface ValidProfile {
   id: string;
   displayName: string;
   age: number;
@@ -16,16 +29,17 @@ interface Profile {
   longitude: number;
   distance?: number | null;
   isOnline?: boolean;
+  lastActiveAt?: string | null;
 }
 
 interface ProfileMapViewProps {
-  profiles: Profile[];
+  profiles: ProfileWithLocation[];
   userLocation: {
     latitude: number;
     longitude: number;
   } | null;
   searchRadius: number;
-  onProfilePress: (profile: Profile) => void;
+  onProfilePress: (profile: ValidProfile) => void;
   isLoading?: boolean;
 }
 
@@ -80,7 +94,7 @@ export function ProfileMapView({
 
   // Filtrer les profils valides avec coordonnées
   const validProfiles = profiles.filter(
-    p => p.latitude && p.longitude && !isNaN(p.latitude) && !isNaN(p.longitude)
+    (p): p is ValidProfile => p.latitude !== null && p.longitude !== null && !isNaN(p.latitude) && !isNaN(p.longitude)
   );
 
   if (isLoading) {
@@ -99,13 +113,25 @@ export function ProfileMapView({
         style={styles.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={initialRegion}
-        showsUserLocation={!!userLocation}
+        showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
         rotateEnabled={false}
         pitchEnabled={false}
         mapType="standard"
       >
+        {/* Marqueur de la position de l'utilisateur */}
+        {userLocation && (
+          <Marker
+            coordinate={userLocation}
+            anchor={{ x: 0.5, y: 0.5 }}
+          >
+            <View style={styles.userMarker}>
+              <View style={styles.userMarkerInner} />
+            </View>
+          </Marker>
+        )}
+
         {/* Marqueurs des profils */}
         {validProfiles.map((profile) => (
           <ProfileMarker
@@ -244,6 +270,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: colors.text,
+  },
+
+  // Marqueur utilisateur (point bleu)
+  userMarker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 122, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userMarkerInner: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#007AFF',
+    borderWidth: 2,
+    borderColor: colors.white,
   },
 });
 

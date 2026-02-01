@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
@@ -97,9 +98,20 @@ export default function AutoReplyScreen() {
     }
   };
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Pressable style={styles.backButton} onPress={() => router.replace('/(tabs)/profile')}>
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
+      </Pressable>
+      <Text style={styles.headerTitle}>Réponse automatique</Text>
+      <View style={styles.headerSpacer} />
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -108,7 +120,8 @@ export default function AutoReplyScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {renderHeader()}
       <ScrollView style={styles.scrollView}>
         {/* Header info */}
         <View style={styles.infoBox}>
@@ -260,6 +273,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  headerSpacer: {
+    width: 32,
   },
   loadingContainer: {
     flex: 1,

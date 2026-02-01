@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Alert, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
@@ -50,7 +51,14 @@ export default function DeleteAccountScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Supprimer le compte</Text>
+        <View style={styles.headerSpacer} />
+      </View>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Text style={styles.icon}>⚠️</Text>
@@ -126,6 +134,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  headerSpacer: {
+    width: 32,
   },
   content: {
     flex: 1,

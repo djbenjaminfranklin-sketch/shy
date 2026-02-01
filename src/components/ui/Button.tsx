@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, borderRadius, typography } from '../../theme';
+import { colors, spacing, borderRadius } from '../../theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
 type ButtonSize = 'small' | 'medium' | 'large';

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
@@ -18,7 +19,14 @@ export default function PrivacyScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={() => router.replace('/(tabs)/profile')}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Confidentialité</Text>
+        <View style={styles.headerSpacer} />
+      </View>
       <ScrollView style={styles.scrollView}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Vos droits (RGPD)</Text>
@@ -118,6 +126,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  headerSpacer: {
+    width: 32,
   },
   scrollView: {
     flex: 1,

@@ -11,14 +11,14 @@ import { useRouter } from 'expo-router';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
-import { SUBSCRIPTION_PLANS, SubscriptionPlanId } from '../../constants/subscriptions';
+import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../../constants/subscriptions';
 import { Button } from '../ui/Button';
 
 interface PaywallModalProps {
   visible: boolean;
   onClose: () => void;
   onUpgrade?: () => void;
-  feature: 'likes' | 'messages' | 'whoLikedYou' | 'filters' | 'boost' | 'autoReply';
+  feature: 'likes' | 'messages' | 'whoLikedYou' | 'filters' | 'boost' | 'autoReply' | 'availabilityMode';
   remainingCount?: number;
   currentUsage?: number;
   limit?: number;
@@ -29,50 +29,57 @@ const FEATURE_INFO = {
     icon: '❤️',
     title: 'Plus de likes disponibles',
     description: 'Vous avez utilisé tous vos likes pour aujourd\'hui.',
-    benefit: 'Passez à Premium pour plus de likes et trouver l\'amour plus vite !',
-    minPlan: 'silver' as SubscriptionPlanId,
+    benefit: 'Passez à SHY+ pour plus de likes et trouver l\'amour plus vite !',
+    minPlan: 'plus' as PlanType,
   },
   messages: {
     icon: '💬',
     title: 'Plus de messages disponibles',
     description: 'Vous avez utilisé tous vos messages pour aujourd\'hui.',
-    benefit: 'Passez à Premium pour discuter sans limites avec vos matchs !',
-    minPlan: 'silver' as SubscriptionPlanId,
+    benefit: 'Passez à SHY+ pour discuter sans limites avec vos matchs !',
+    minPlan: 'plus' as PlanType,
   },
   whoLikedYou: {
     icon: '👀',
     title: 'Qui vous a liké ?',
     description: 'Découvrez qui craque pour vous avant de décider.',
-    benefit: 'Avec Gold, voyez tous ceux qui vous ont liké !',
-    minPlan: 'gold' as SubscriptionPlanId,
+    benefit: 'Avec SHY+, voyez tous ceux qui vous ont liké !',
+    minPlan: 'plus' as PlanType,
   },
   filters: {
     icon: '🎯',
     title: 'Filtres avancés',
     description: 'Affinez votre recherche avec des filtres précis.',
-    benefit: 'Trouvez exactement ce que vous cherchez avec Silver !',
-    minPlan: 'silver' as SubscriptionPlanId,
+    benefit: 'Trouvez exactement ce que vous cherchez avec SHY+ !',
+    minPlan: 'plus' as PlanType,
   },
   boost: {
     icon: '🚀',
     title: 'Boostez votre profil',
     description: 'Soyez vu en premier par plus de personnes.',
-    benefit: 'Multipliez vos chances avec le boost Gold !',
-    minPlan: 'gold' as SubscriptionPlanId,
+    benefit: 'Multipliez vos chances avec le boost Premium !',
+    minPlan: 'premium' as PlanType,
   },
   autoReply: {
     icon: '💬',
     title: 'Réponses automatiques',
     description: 'Envoyez automatiquement un message de bienvenue.',
     benefit: 'Impressionnez vos matchs dès le premier message !',
-    minPlan: 'silver' as SubscriptionPlanId,
+    minPlan: 'plus' as PlanType,
+  },
+  availabilityMode: {
+    icon: '⚡',
+    title: 'Modes de disponibilité',
+    description: 'Limite hebdomadaire atteinte pour les modes de disponibilité.',
+    benefit: 'Passez à SHY+ pour activer des modes illimités et la durée 72h !',
+    minPlan: 'plus' as PlanType,
   },
 };
 
 export function PaywallModal({ visible, onClose, onUpgrade, feature, remainingCount, currentUsage, limit }: PaywallModalProps) {
   const router = useRouter();
   const info = FEATURE_INFO[feature];
-  const recommendedPlan = SUBSCRIPTION_PLANS[info.minPlan];
+  const recommendedPlan = SUBSCRIPTION_PLANS_BY_ID[info.minPlan];
 
   const handleUpgrade = () => {
     if (onUpgrade) {

@@ -6,6 +6,7 @@ import type { GenderId } from '../../constants/genders';
 import type { HairColorId } from '../../constants/hairColors';
 import type { LanguageId } from '../../constants/languages';
 import { DEFAULT_SEARCH_RADIUS } from '../../constants';
+import type { AvailabilityModeType } from '../../types/availabilityMode';
 
 export interface CreateProfileData {
   displayName: string;
@@ -219,12 +220,14 @@ export const profilesService = {
   /**
    * Récupérer les profils à découvrir
    * Triés par score composite (engagement + proximité)
+   * Si activeMode est fourni, ne retourne que les profils avec le même mode actif
    */
   async getDiscoverProfiles(
     userId: string,
     filters: ProfileFilters,
     userLat?: number,
-    userLng?: number
+    userLng?: number,
+    activeMode?: AvailabilityModeType | null
   ): Promise<{ profiles: ProfileWithDistance[]; error: string | null }> {
     try {
       // Récupérer le score d'engagement de l'utilisateur courant
@@ -271,6 +274,26 @@ export const profilesService = {
       if (invitations && invitations.length > 0) {
         const invitedIds = invitations.map((i) => i.receiver_id);
         query = query.not('id', 'in', `(${invitedIds.join(',')})`);
+      }
+
+      // Filtrer par mode de disponibilité actif
+      // Si l'utilisateur a un mode actif, ne montrer que les profils avec le même mode
+      let modeFilteredIds: string[] | null = null;
+      if (activeMode) {
+        const { data: sameModeProfiles } = await supabase
+          .from('availability_modes')
+          .select('user_id')
+          .eq('mode_type', activeMode)
+          .eq('is_active', true)
+          .gt('expires_at', new Date().toISOString());
+
+        if (sameModeProfiles && sameModeProfiles.length > 0) {
+          modeFilteredIds = sameModeProfiles.map((p) => p.user_id);
+          query = query.in('id', modeFilteredIds);
+        } else {
+          // Aucun profil avec ce mode actif -> retourner vide
+          return { profiles: [], error: null };
+        }
       }
 
       // Trier par score d'engagement (les profils "populaires" en premier)

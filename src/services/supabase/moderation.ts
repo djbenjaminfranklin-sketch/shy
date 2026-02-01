@@ -19,13 +19,36 @@ export const moderationService = {
         return { error: error.message };
       }
 
-      // Supprimer le match s'il existe
+      // Supprimer la connexion s'il en existe une
       const [user1, user2] = [blockerId, blockedId].sort();
-      await supabase
-        .from('matches')
-        .delete()
+
+      // Récupérer la connexion pour avoir son ID
+      const { data: connection } = await supabase
+        .from('connections')
+        .select('id')
         .eq('user1_id', user1)
-        .eq('user2_id', user2);
+        .eq('user2_id', user2)
+        .single();
+
+      if (connection) {
+        // Supprimer la conversation associée (les messages sont supprimés en cascade)
+        await supabase
+          .from('conversations')
+          .delete()
+          .eq('connection_id', connection.id);
+
+        // Supprimer la connexion
+        await supabase
+          .from('connections')
+          .delete()
+          .eq('id', connection.id);
+      }
+
+      // Supprimer les invitations entre les deux utilisateurs
+      await supabase
+        .from('invitations')
+        .delete()
+        .or(`and(sender_id.eq.${blockerId},receiver_id.eq.${blockedId}),and(sender_id.eq.${blockedId},receiver_id.eq.${blockerId})`);
 
       return { error: null };
     } catch (err) {

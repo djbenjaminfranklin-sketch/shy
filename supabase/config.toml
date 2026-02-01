@@ -49,7 +49,7 @@ enabled = false
 [auth.external.google]
 enabled = false
 
-[functions]
+[functions.verify-face]
 verify_jwt = false
 
 [analytics]

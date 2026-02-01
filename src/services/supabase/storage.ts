@@ -1,6 +1,6 @@
 import { supabase } from './client';
 import * as ImageManipulator from 'expo-image-manipulator';
-import * as FileSystem from 'expo-file-system';
+// FileSystem import removed - not currently used
 import { decode } from 'base64-arraybuffer';
 
 const BUCKET_NAME = 'profile-photos';
@@ -110,7 +110,7 @@ export const storageService = {
       if (uploadError) {
         console.error('[Storage] Verification photo upload error:', uploadError);
         // Fallback: essayer avec le bucket principal si le bucket de vérification n'existe pas
-        const { data: fallbackData, error: fallbackError } = await supabase.storage
+        const { error: fallbackError } = await supabase.storage
           .from(BUCKET_NAME)
           .upload(`verification/${fileName}`, arrayBuffer, {
             contentType: 'image/jpeg',

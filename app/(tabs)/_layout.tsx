@@ -1,10 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { colors } from '../../src/theme';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
+import { supabase } from '../../src/services/supabase/client';
+import { invitationsService } from '../../src/services/supabase/invitations';
 
 // Badge component pour notifications
 const TabBadge = ({ count }: { count: number }) => {
@@ -31,8 +34,11 @@ const TabBarBackground = () => {
 };
 
 export default function TabLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
+  const [likesCount, setLikesCount] = useState(0);
+  const [messagesCount, setMessagesCount] = useState(0);
 
   // Rediriger vers login si non authentifié
   useEffect(() => {
@@ -40,6 +46,57 @@ export default function TabLayout() {
       router.replace('/(auth)/welcome');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // Charger les compteurs de likes et messages non lus
+  useEffect(() => {
+    const loadCounts = async () => {
+      if (!user) return;
+
+      // Compter les invitations reçues NON VUES (pas juste pending)
+      const { count: likes } = await invitationsService.getUnseenInvitationsCount(user.id);
+
+      // Compter les messages non lus
+      // 1. Récupérer toutes les conversations de l'utilisateur
+      const { data: connections } = await supabase
+        .from('connections')
+        .select('id')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+      let unreadCount = 0;
+      if (connections && connections.length > 0) {
+        const connectionIds = connections.map(c => c.id);
+
+        // 2. Récupérer les conversations
+        const { data: conversations } = await supabase
+          .from('conversations')
+          .select('id')
+          .in('connection_id', connectionIds);
+
+        if (conversations && conversations.length > 0) {
+          const conversationIds = conversations.map(c => c.id);
+
+          // 3. Compter les messages non lus (où je ne suis pas l'expéditeur)
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .in('conversation_id', conversationIds)
+            .neq('sender_id', user.id)
+            .eq('is_read', false);
+
+          unreadCount = count || 0;
+        }
+      }
+
+      setLikesCount(likes || 0);
+      setMessagesCount(unreadCount);
+    };
+
+    loadCounts();
+
+    // Rafraîchir toutes les 30 secondes
+    const interval = setInterval(loadCounts, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   // Afficher un loader pendant la vérification
   if (isLoading) {
@@ -54,10 +111,6 @@ export default function TabLayout() {
   if (!isAuthenticated) {
     return null;
   }
-
-  // TODO: Get these from context/state
-  const likesCount = 25;
-  const messagesCount = 3;
 
   return (
     <Tabs
@@ -92,7 +145,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="discover"
         options={{
-          title: 'Accueil',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'flame' : 'flame-outline'}
@@ -106,7 +159,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Explore',
+          title: t('tabs.explore'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'compass' : 'compass-outline'}
@@ -120,7 +173,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="likes"
         options={{
-          title: 'Likes',
+          title: t('tabs.likes'),
           tabBarIcon: ({ color, focused }) => (
             <View>
               <Ionicons
@@ -137,7 +190,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="matches"
         options={{
-          title: 'Messages',
+          title: t('tabs.messages'),
           tabBarIcon: ({ color, focused }) => (
             <View>
               <Ionicons
@@ -154,7 +207,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'person' : 'person-outline'}

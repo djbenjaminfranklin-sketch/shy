@@ -1,6 +1,6 @@
 import { supabase } from './client';
 import { UserSubscription, UserLimits, AutoReplySettings, SubscriptionFeatureCheck } from '../../types/subscription';
-import { SUBSCRIPTION_PLANS } from '../../constants/subscriptions';
+import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../../constants/subscriptions';
 
 export const subscriptionsService = {
   /**
@@ -81,7 +81,7 @@ export const subscriptionsService = {
           .insert({
             user_id: userId,
             date: today,
-            likes_used: 0,
+            invitations_sent: 0,
             messages_used: 0,
           })
           .select()
@@ -96,7 +96,7 @@ export const subscriptionsService = {
             id: newData.id,
             userId: newData.user_id,
             date: newData.date,
-            likesUsed: newData.likes_used,
+            likesUsed: newData.invitations_sent, // invitations_sent = likesUsed pour compatibilité
             messagesUsed: newData.messages_used,
             lastResetAt: newData.created_at,
           },
@@ -109,7 +109,7 @@ export const subscriptionsService = {
           id: data.id,
           userId: data.user_id,
           date: data.date,
-          likesUsed: data.likes_used,
+          likesUsed: data.invitations_sent, // invitations_sent = likesUsed pour compatibilité
           messagesUsed: data.messages_used,
           lastResetAt: data.last_reset_at || data.created_at,
         },
@@ -133,13 +133,21 @@ export const subscriptionsService = {
       });
 
       if (error) {
-        // Fallback: mise à jour directe
+        // Fallback: mise à jour directe avec upsert
+        // Note: On doit d'abord récupérer la valeur actuelle pour l'incrémenter
+        const { data: current } = await supabase
+          .from('user_daily_limits')
+          .select('invitations_sent')
+          .eq('user_id', userId)
+          .eq('date', today)
+          .single();
+
         await supabase
           .from('user_daily_limits')
           .upsert({
             user_id: userId,
             date: today,
-            likes_used: 1,
+            invitations_sent: (current?.invitations_sent || 0) + 1,
           }, {
             onConflict: 'user_id,date',
           });
@@ -191,17 +199,22 @@ export const subscriptionsService = {
   ): Promise<SubscriptionFeatureCheck> {
     try {
       const { subscription } = await this.getUserSubscription(userId);
-      const planId = subscription?.planId || 'free';
-      const plan = SUBSCRIPTION_PLANS[planId];
-      const features = plan.features;
+      const planId = (subscription?.planId || 'free') as PlanType;
+      const plan = SUBSCRIPTION_PLANS_BY_ID[planId];
+      const features = plan?.features;
+
+      if (!features) {
+        return { allowed: false, reason: 'Plan non trouvé' };
+      }
 
       switch (feature) {
         case 'like': {
-          if (features.dailyLikes === -1) {
+          const dailyLikes = features.dailyLikes ?? features.invitationsPerDay;
+          if (dailyLikes === -1) {
             return { allowed: true };
           }
           const { limits } = await this.getUserLimits(userId);
-          const remaining = features.dailyLikes - (limits?.likesUsed || 0);
+          const remaining = dailyLikes - (limits?.likesUsed || 0);
           return {
             allowed: remaining > 0,
             remainingCount: Math.max(0, remaining),
@@ -211,11 +224,12 @@ export const subscriptionsService = {
         }
 
         case 'message': {
-          if (features.dailyMessages === -1) {
+          const dailyMessages = features.dailyMessages ?? -1; // Messages illimités après connexion
+          if (dailyMessages === -1) {
             return { allowed: true };
           }
           const { limits } = await this.getUserLimits(userId);
-          const remaining = features.dailyMessages - (limits?.messagesUsed || 0);
+          const remaining = dailyMessages - (limits?.messagesUsed || 0);
           return {
             allowed: remaining > 0,
             remainingCount: Math.max(0, remaining),
@@ -226,36 +240,36 @@ export const subscriptionsService = {
 
         case 'seeWhoLikedYou':
           return {
-            allowed: features.canSeeWhoLikedYou,
-            reason: !features.canSeeWhoLikedYou ? 'Fonctionnalité réservée aux abonnés Gold+' : undefined,
-            upgradeRequired: !features.canSeeWhoLikedYou,
+            allowed: features.canSeeWhoLikedYou ?? features.seeWhoLikedYou ?? false,
+            reason: !(features.canSeeWhoLikedYou ?? features.seeWhoLikedYou) ? 'Fonctionnalité réservée aux abonnés SHY+' : undefined,
+            upgradeRequired: !(features.canSeeWhoLikedYou ?? features.seeWhoLikedYou),
           };
 
         case 'boost':
           return {
-            allowed: features.canBoostProfile,
-            reason: !features.canBoostProfile ? 'Fonctionnalité réservée aux abonnés Gold+' : undefined,
-            upgradeRequired: !features.canBoostProfile,
+            allowed: features.canBoostProfile ?? features.boostsPerWeek > 0,
+            reason: !(features.canBoostProfile ?? features.boostsPerWeek > 0) ? 'Fonctionnalité réservée aux abonnés Premium' : undefined,
+            upgradeRequired: !(features.canBoostProfile ?? features.boostsPerWeek > 0),
           };
 
         case 'filters':
           return {
-            allowed: features.canUseFilters,
-            reason: !features.canUseFilters ? 'Fonctionnalité réservée aux abonnés Silver+' : undefined,
-            upgradeRequired: !features.canUseFilters,
+            allowed: features.canUseFilters ?? features.allFilters ?? false,
+            reason: !(features.canUseFilters ?? features.allFilters) ? 'Fonctionnalité réservée aux abonnés SHY+' : undefined,
+            upgradeRequired: !(features.canUseFilters ?? features.allFilters),
           };
 
         case 'autoReply':
           return {
-            allowed: features.canSetAutoReply,
-            reason: !features.canSetAutoReply ? 'Fonctionnalité réservée aux abonnés Silver+' : undefined,
+            allowed: features.canSetAutoReply ?? false,
+            reason: !features.canSetAutoReply ? 'Fonctionnalité réservée aux abonnés SHY+' : undefined,
             upgradeRequired: !features.canSetAutoReply,
           };
 
         case 'readReceipts':
           return {
-            allowed: features.canSeeReadReceipts,
-            reason: !features.canSeeReadReceipts ? 'Fonctionnalité réservée aux abonnés Silver+' : undefined,
+            allowed: features.canSeeReadReceipts ?? false,
+            reason: !features.canSeeReadReceipts ? 'Fonctionnalité réservée aux abonnés SHY+' : undefined,
             upgradeRequired: !features.canSeeReadReceipts,
           };
 

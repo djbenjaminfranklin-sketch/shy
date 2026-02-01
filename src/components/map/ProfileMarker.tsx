@@ -13,7 +13,7 @@ const INTENTION_COLORS: Record<string, string> = {
   local: '#FF9500',
 };
 
-interface Profile {
+export interface MarkerProfile {
   id: string;
   displayName: string;
   age: number;
@@ -26,8 +26,8 @@ interface Profile {
 }
 
 interface ProfileMarkerProps {
-  profile: Profile;
-  onPress: (profile: Profile) => void;
+  profile: MarkerProfile;
+  onPress: (profile: MarkerProfile) => void;
 }
 
 export function ProfileMarker({ profile, onPress }: ProfileMarkerProps) {

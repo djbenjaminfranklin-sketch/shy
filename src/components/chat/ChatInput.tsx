@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
@@ -50,8 +50,6 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     </KeyboardAvoidingView>
   );
 }
-
-const Text = require('react-native').Text;
 
 const styles = StyleSheet.create({
   container: {

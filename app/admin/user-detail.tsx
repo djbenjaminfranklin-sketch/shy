@@ -173,7 +173,7 @@ export default function UserDetailScreen() {
       {/* Basic Info */}
       <View style={styles.section}>
         <Text style={styles.name}>{user.displayName}, {user.age}</Text>
-        <Text style={styles.email}>{user.email}</Text>
+        <Text style={styles.userId}>ID: {user.id}</Text>
         {user.bio && <Text style={styles.bio}>{user.bio}</Text>}
       </View>
 
@@ -362,10 +362,11 @@ const styles = StyleSheet.create({
     ...typography.h2,
     color: colors.text,
   },
-  email: {
-    ...typography.body,
-    color: colors.textSecondary,
+  userId: {
+    ...typography.caption,
+    color: colors.textTertiary,
     marginTop: 4,
+    fontFamily: 'monospace',
   },
   bio: {
     ...typography.body,

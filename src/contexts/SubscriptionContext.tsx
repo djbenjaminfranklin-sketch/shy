@@ -1,9 +1,23 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { Alert } from 'react-native';
-import { PurchasesPackage, PurchasesOffering } from 'react-native-purchases';
-import { revenueCatService } from '../services/revenuecat';
+import { PurchasesPackage, PurchasesOffering, CustomerInfo } from 'react-native-purchases';
+import Constants from 'expo-constants';
+import { revenueCatService, ENTITLEMENTS } from '../services/revenuecat';
 import { useAuth } from './AuthContext';
 import { PlanType, PLAN_FEATURES, PlanFeatures } from '../constants/subscriptions';
+import { supabase } from '../services/supabase';
+
+// Détection d'Expo Go pour l'import conditionnel de Purchases
+const isExpoGo = Constants.appOwnership === 'expo';
+let Purchases: typeof import('react-native-purchases').default | null = null;
+
+if (!isExpoGo) {
+  try {
+    Purchases = require('react-native-purchases').default;
+  } catch {
+    console.warn('RevenueCat module not available');
+  }
+}
 
 interface Offerings {
   plus: PurchasesOffering | null;
@@ -37,15 +51,155 @@ interface SubscriptionProviderProps {
 
 export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const customerInfoListenerRef = useRef<((info: CustomerInfo) => void) | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState<PlanType>('free');
   const [expirationDate, setExpirationDate] = useState<Date | null>(null);
   const [offerings, setOfferings] = useState<Offerings>({ plus: null, premium: null });
 
+  /**
+   * Synchronise l'état de l'abonnement RevenueCat avec Supabase
+   */
+  const syncSubscriptionToSupabase = useCallback(async (customerInfo: CustomerInfo, planId?: string) => {
+    if (!user?.id) {
+      console.log('Cannot sync subscription: no user logged in');
+      return;
+    }
+
+    try {
+      // Déterminer le plan actif
+      let activePlanId: PlanType = 'free';
+      let activeEntitlement = null;
+
+      if (customerInfo.entitlements.active[ENTITLEMENTS.PREMIUM]) {
+        activePlanId = 'premium';
+        activeEntitlement = customerInfo.entitlements.active[ENTITLEMENTS.PREMIUM];
+      } else if (customerInfo.entitlements.active[ENTITLEMENTS.PLUS]) {
+        activePlanId = 'plus';
+        activeEntitlement = customerInfo.entitlements.active[ENTITLEMENTS.PLUS];
+      }
+
+      // Si un planId spécifique est fourni (après achat), l'utiliser
+      const finalPlanId = planId || activePlanId;
+
+      // Si pas d'abonnement actif, mettre à jour le statut comme expiré
+      if (activePlanId === 'free') {
+        // Vérifier s'il y a un abonnement existant à marquer comme expiré
+        const { data: existingSubscription } = await supabase
+          .from('user_subscriptions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .single();
+
+        if (existingSubscription) {
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              status: 'expired',
+              auto_renew: false,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingSubscription.id);
+
+          console.log('Subscription marked as expired in Supabase');
+        }
+        return;
+      }
+
+      // Déterminer la date d'expiration
+      const expirationDateStr = activeEntitlement?.expirationDate || null;
+
+      // Déterminer si le renouvellement automatique est actif
+      // Note: willRenew indique si l'abonnement se renouvellera automatiquement
+      const willRenew = activeEntitlement?.willRenew ?? true;
+
+      // Upsert la subscription dans Supabase
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .upsert({
+          user_id: user.id,
+          plan_id: finalPlanId,
+          status: 'active',
+          start_date: activeEntitlement?.originalPurchaseDate || new Date().toISOString(),
+          end_date: expirationDateStr,
+          auto_renew: willRenew,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id',
+        });
+
+      if (error) {
+        console.error('Error syncing subscription to Supabase:', error);
+      } else {
+        console.log(`Subscription synced to Supabase: ${finalPlanId}`);
+      }
+    } catch (err) {
+      console.error('Failed to sync subscription to Supabase:', err);
+    }
+  }, [user?.id]);
+
+  /**
+   * Configure le listener pour les mises à jour d'abonnement RevenueCat
+   */
+  const setupCustomerInfoListener = useCallback(() => {
+    if (!Purchases || !revenueCatService.available) {
+      return;
+    }
+
+    // Supprimer le listener existant si présent
+    if (customerInfoListenerRef.current) {
+      Purchases.removeCustomerInfoUpdateListener(customerInfoListenerRef.current);
+      customerInfoListenerRef.current = null;
+    }
+
+    // Créer le listener
+    const listener = (info: CustomerInfo) => {
+      console.log('RevenueCat customer info updated');
+
+      // Mettre à jour l'état local
+      let newPlan: PlanType = 'free';
+      if (info.entitlements.active[ENTITLEMENTS.PREMIUM]) {
+        newPlan = 'premium';
+      } else if (info.entitlements.active[ENTITLEMENTS.PLUS]) {
+        newPlan = 'plus';
+      }
+      setCurrentPlan(newPlan);
+
+      // Mettre à jour la date d'expiration
+      const activeEntitlements = Object.values(info.entitlements.active);
+      if (activeEntitlements.length > 0) {
+        const expDate = activeEntitlements[0].expirationDate;
+        setExpirationDate(expDate ? new Date(expDate) : null);
+      } else {
+        setExpirationDate(null);
+      }
+
+      // Synchroniser avec Supabase (appel asynchrone sans await pour ne pas bloquer le listener)
+      syncSubscriptionToSupabase(info).catch((err) => {
+        console.error('Failed to sync subscription from listener:', err);
+      });
+    };
+
+    // Sauvegarder la référence du listener pour pouvoir le supprimer plus tard
+    customerInfoListenerRef.current = listener;
+
+    // Ajouter le listener
+    Purchases.addCustomerInfoUpdateListener(listener);
+  }, [syncSubscriptionToSupabase]);
+
   // Initialisation
   useEffect(() => {
     initializeRevenueCat();
+
+    // Cleanup du listener au démontage
+    return () => {
+      if (Purchases && customerInfoListenerRef.current) {
+        Purchases.removeCustomerInfoUpdateListener(customerInfoListenerRef.current);
+        customerInfoListenerRef.current = null;
+      }
+    };
   }, []);
 
   // Login/Logout avec l'utilisateur
@@ -62,6 +216,8 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
       await revenueCatService.initialize();
       if (revenueCatService.available) {
         await loadOfferings();
+        // Configurer le listener après l'initialisation
+        setupCustomerInfoListener();
       }
     } catch (error) {
       console.error('Failed to initialize RevenueCat:', error);
@@ -124,6 +280,12 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
 
       const expDate = await revenueCatService.getExpirationDate();
       setExpirationDate(expDate);
+
+      // Synchroniser avec Supabase
+      const customerInfo = await revenueCatService.getCustomerInfo();
+      if (customerInfo) {
+        await syncSubscriptionToSupabase(customerInfo);
+      }
     } catch (error) {
       console.error('Failed to refresh subscription:', error);
     }
@@ -139,11 +301,30 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     }
     setIsLoading(true);
     try {
-      await revenueCatService.purchasePackage(pkg);
+      const customerInfo = await revenueCatService.purchasePackage(pkg);
+
+      // Synchroniser immédiatement avec Supabase après l'achat réussi
+      if (customerInfo && user?.id) {
+        // Extraire le planId de l'identifiant du package
+        // Les identifiants sont comme 'shy_plus_month', 'shy_premium_week', etc.
+        const packageId = pkg.identifier.toLowerCase();
+        let planId: PlanType = 'free';
+
+        if (packageId.includes('premium')) {
+          planId = 'premium';
+        } else if (packageId.includes('plus')) {
+          planId = 'plus';
+        }
+
+        // Synchroniser avec Supabase avec le planId spécifique
+        await syncSubscriptionToSupabase(customerInfo, planId);
+      }
+
       await refreshSubscription();
       return true;
-    } catch (error: any) {
-      if (!error.userCancelled) {
+    } catch (error: unknown) {
+      const purchaseError = error as { userCancelled?: boolean };
+      if (!purchaseError.userCancelled) {
         Alert.alert(
           'Erreur',
           'Une erreur est survenue lors de l\'achat. Veuillez réessayer.'
@@ -165,7 +346,13 @@ export const SubscriptionProvider: React.FC<SubscriptionProviderProps> = ({ chil
     }
     setIsLoading(true);
     try {
-      await revenueCatService.restorePurchases();
+      const customerInfo = await revenueCatService.restorePurchases();
+
+      // Synchroniser avec Supabase après la restauration
+      if (customerInfo && user?.id) {
+        await syncSubscriptionToSupabase(customerInfo);
+      }
+
       await refreshSubscription();
 
       const hasActive = await revenueCatService.hasActiveSubscription();

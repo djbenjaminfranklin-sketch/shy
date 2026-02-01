@@ -18,14 +18,29 @@ const DAILY_INVITATION_LIMITS = {
 const INVITATION_EXPIRY_DAYS = 7;
 
 /**
+ * Calculer l'âge à partir de la date de naissance
+ */
+function calculateAge(birthDate: string): number {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
  * Transforme les donnees brutes du profil Supabase en format Profile
  */
 function mapProfileData(profileData: Record<string, unknown>) {
+  const birthDate = profileData.birth_date as string;
   return {
     id: profileData.id as string,
     displayName: profileData.display_name as string,
-    birthDate: profileData.birth_date as string,
-    age: profileData.age as number,
+    birthDate: birthDate,
+    age: calculateAge(birthDate),
     gender: profileData.gender as string,
     hairColor: profileData.hair_color as string | null,
     bio: profileData.bio as string | null,
@@ -116,6 +131,42 @@ export const invitationsService = {
           invitation: null,
           error: `Erreur lors de l'envoi de l'invitation: ${insertError.message}`,
         };
+      }
+
+      // Envoyer une notification push si le destinataire a les notifications activées
+      try {
+        // Récupérer le profil du destinataire pour vérifier ses préférences
+        const { data: receiverProfile } = await supabase
+          .from('profiles')
+          .select('notification_invitations, push_token')
+          .eq('id', receiverId)
+          .single();
+
+        if (receiverProfile?.notification_invitations && receiverProfile?.push_token) {
+          // Récupérer le nom de l'expéditeur
+          const { data: senderProfile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', senderId)
+            .single();
+
+          // Envoyer la notification via Expo
+          await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              to: receiverProfile.push_token,
+              title: 'Nouvelle invitation',
+              body: `${senderProfile?.display_name || 'Quelqu\'un'} souhaite vous rencontrer`,
+              data: { type: 'invitation', invitationId: newInvitation.id },
+            }),
+          });
+        }
+      } catch (notifError) {
+        console.log('Push notification error:', notifError);
+        // Ne pas bloquer l'envoi de l'invitation si la notification échoue
       }
 
       return {
@@ -247,6 +298,7 @@ export const invitationsService = {
     userId: string
   ): Promise<{
     connection: Connection | null;
+    conversationId: string | null;
     error: string | null;
   }> {
     try {
@@ -260,7 +312,7 @@ export const invitationsService = {
         .single();
 
       if (fetchError || !invitation) {
-        return { connection: null, error: 'Invitation non trouvee ou deja traitee' };
+        return { connection: null, conversationId: null, error: 'Invitation non trouvee ou deja traitee' };
       }
 
       // Verifier si l'invitation n'est pas expiree
@@ -268,7 +320,7 @@ export const invitationsService = {
         // Marquer comme expiree
         await supabase.from('invitations').update({ status: 'expired' }).eq('id', invitationId);
 
-        return { connection: null, error: 'Cette invitation a expire' };
+        return { connection: null, conversationId: null, error: 'Cette invitation a expire' };
       }
 
       // Mettre a jour le statut de l'invitation
@@ -281,7 +333,7 @@ export const invitationsService = {
         .eq('id', invitationId);
 
       if (updateError) {
-        return { connection: null, error: `Erreur lors de l'acceptation: ${updateError.message}` };
+        return { connection: null, conversationId: null, error: `Erreur lors de l'acceptation: ${updateError.message}` };
       }
 
       // Creer la connection d'abord (car conversations.connection_id est NOT NULL)
@@ -300,20 +352,24 @@ export const invitationsService = {
       if (connError) {
         return {
           connection: null,
+          conversationId: null,
           error: `Erreur lors de la creation de la connection: ${connError.message}`,
         };
       }
 
       // Creer la conversation avec le connection_id
-      const { error: convError } = await supabase
+      const { data: conversation, error: convError } = await supabase
         .from('conversations')
         .insert({
           connection_id: connection.id,
-        });
+        })
+        .select()
+        .single();
 
       if (convError) {
         return {
           connection: null,
+          conversationId: null,
           error: `Erreur lors de la creation de la conversation: ${convError.message}`,
         };
       }
@@ -326,10 +382,11 @@ export const invitationsService = {
           invitationId: connection.invitation_id,
           createdAt: connection.created_at,
         },
+        conversationId: conversation.id,
         error: null,
       };
     } catch (err) {
-      return { connection: null, error: 'Une erreur inattendue est survenue' };
+      return { connection: null, conversationId: null, error: 'Une erreur inattendue est survenue' };
     }
   },
 
@@ -500,6 +557,60 @@ export const invitationsService = {
       return { error: null };
     } catch (err) {
       return { error: 'Une erreur inattendue est survenue' };
+    }
+  },
+
+  /**
+   * Marquer toutes les invitations en attente comme vues
+   * Cela permet de réinitialiser le badge sans avoir à accepter/refuser
+   */
+  async markInvitationsAsSeen(userId: string): Promise<{
+    error: string | null;
+  }> {
+    try {
+      const { error } = await supabase
+        .from('invitations')
+        .update({ seen_at: new Date().toISOString() })
+        .eq('receiver_id', userId)
+        .eq('status', 'pending')
+        .is('seen_at', null);
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: 'Une erreur inattendue est survenue' };
+    }
+  },
+
+  /**
+   * Compter les invitations non vues (pour le badge)
+   */
+  async getUnseenInvitationsCount(userId: string): Promise<{
+    count: number;
+    error: string | null;
+  }> {
+    try {
+      // Filtrer aussi les invitations expirées
+      const now = new Date().toISOString();
+
+      const { count, error } = await supabase
+        .from('invitations')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', userId)
+        .eq('status', 'pending')
+        .is('seen_at', null)
+        .gt('expires_at', now);
+
+      if (error) {
+        return { count: 0, error: error.message };
+      }
+
+      return { count: count || 0, error: null };
+    } catch (err) {
+      return { count: 0, error: 'Une erreur inattendue est survenue' };
     }
   },
 

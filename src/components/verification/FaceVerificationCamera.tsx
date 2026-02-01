@@ -64,7 +64,7 @@ export function FaceVerificationCamera({
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [status, setStatus] = useState<'ready' | 'countdown' | 'capturing' | 'success' | 'done' | 'verifying' | 'failed'>('ready');
-  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [_capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [verificationMessage, setVerificationMessage] = useState<string>('');
 
   const cameraRef = useRef<CameraView>(null);
@@ -76,7 +76,6 @@ export function FaceVerificationCamera({
   const currentStepIndexRef = useRef(currentStepIndex); // Ref pour avoir la valeur à jour dans les callbacks
 
   const currentStep = STEPS[currentStepIndex] || STEPS[STEPS.length - 1];
-  const isLastStep = currentStepIndex >= STEPS.length - 1;
 
   // Garder la ref à jour
   useEffect(() => {
@@ -114,35 +113,6 @@ export function FaceVerificationCamera({
     }
   }, [status, pulseAnim]);
 
-  // Démarrer automatiquement le countdown après un délai
-  useEffect(() => {
-    // Ne pas démarrer si on a déjà terminé toutes les étapes
-    if (status === 'ready' && permission?.granted && !isCapturingRef.current && currentStepIndex < STEPS.length) {
-      // Clear any existing timer
-      if (autoStartTimerRef.current) {
-        clearTimeout(autoStartTimerRef.current);
-        autoStartTimerRef.current = null;
-      }
-
-      // Délai plus long pour la première capture, plus court pour les suivantes
-      const delay = currentStepIndex === 0 ? 2000 : 1500;
-
-      autoStartTimerRef.current = setTimeout(() => {
-        // Vérifier à nouveau les conditions avec les refs à jour
-        if (!isCapturingRef.current && currentStepIndexRef.current < STEPS.length) {
-          startCountdown();
-        }
-      }, delay);
-
-      return () => {
-        if (autoStartTimerRef.current) {
-          clearTimeout(autoStartTimerRef.current);
-          autoStartTimerRef.current = null;
-        }
-      };
-    }
-  }, [status, currentStepIndex, permission?.granted, startCountdown]);
-
   const startCountdown = useCallback(() => {
     // Ne pas démarrer si on a déjà terminé
     if (currentStepIndexRef.current >= STEPS.length) {
@@ -173,6 +143,35 @@ export function FaceVerificationCamera({
       }
     }, 1000);
   }, []);
+
+  // Démarrer automatiquement le countdown après un délai
+  useEffect(() => {
+    // Ne pas démarrer si on a déjà terminé toutes les étapes
+    if (status === 'ready' && permission?.granted && !isCapturingRef.current && currentStepIndex < STEPS.length) {
+      // Clear any existing timer
+      if (autoStartTimerRef.current) {
+        clearTimeout(autoStartTimerRef.current);
+        autoStartTimerRef.current = null;
+      }
+
+      // Délai plus long pour la première capture, plus court pour les suivantes
+      const delay = currentStepIndex === 0 ? 2000 : 1500;
+
+      autoStartTimerRef.current = setTimeout(() => {
+        // Vérifier à nouveau les conditions avec les refs à jour
+        if (!isCapturingRef.current && currentStepIndexRef.current < STEPS.length) {
+          startCountdown();
+        }
+      }, delay);
+
+      return () => {
+        if (autoStartTimerRef.current) {
+          clearTimeout(autoStartTimerRef.current);
+          autoStartTimerRef.current = null;
+        }
+      };
+    }
+  }, [status, currentStepIndex, permission?.granted, startCountdown]);
 
   const capturePhoto = async () => {
     // Éviter les captures multiples simultanées

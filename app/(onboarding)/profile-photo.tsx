@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, Pressable, Image, Alert } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Image, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,21 +8,22 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useOnboarding } from '../../src/contexts/OnboardingContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function ProfilePhotoScreen() {
   const router = useRouter();
   const { data, updateData } = useOnboarding();
+  const { t } = useLanguage();
   const photo = data.photoUri;
+  const [_isLoading, _setIsLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const pickImage = async () => {
     try {
       // Demander la permission pour la galerie
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
-          'Permission requise',
-          'Veuillez autoriser l\'accès à vos photos dans les paramètres.'
-        );
+        Alert.alert(t('onboarding.photoPermission'), t('onboarding.photoPermissionMessage'));
         return;
       }
 
@@ -36,11 +38,12 @@ export default function ProfilePhotoScreen() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         console.log('Photo selected:', result.assets[0].uri);
+        setImageLoaded(false);
         updateData({ photoUri: result.assets[0].uri });
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Erreur', 'Impossible de sélectionner la photo. Veuillez réessayer.');
+      Alert.alert(t('alerts.errorTitle'), t('onboarding.photoError'));
     }
   };
 
@@ -48,10 +51,7 @@ export default function ProfilePhotoScreen() {
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
-          'Permission requise',
-          'Veuillez autoriser l\'accès à la caméra dans les paramètres.'
-        );
+        Alert.alert(t('onboarding.photoPermission'), t('onboarding.cameraPermission'));
         return;
       }
 
@@ -65,11 +65,12 @@ export default function ProfilePhotoScreen() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         console.log('Photo taken:', result.assets[0].uri);
+        setImageLoaded(false);
         updateData({ photoUri: result.assets[0].uri });
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert('Erreur', 'Impossible de prendre la photo. Veuillez réessayer.');
+      Alert.alert(t('alerts.errorTitle'), t('onboarding.cameraError'));
     }
   };
 
@@ -84,18 +85,35 @@ export default function ProfilePhotoScreen() {
           <View style={styles.progressDot} />
         </View>
 
-        <Text style={styles.title}>Ajoutez une photo</Text>
-        <Text style={styles.subtitle}>
-          Une photo de profil aide les autres à vous reconnaître
-        </Text>
+        <Text style={styles.title}>{t('onboarding.addPhoto')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.photoHelps')}</Text>
 
         <Pressable style={styles.photoContainer} onPress={pickImage}>
           {photo ? (
-            <Image source={{ uri: photo }} style={styles.photo} />
+            <View style={styles.photoWrapper}>
+              {!imageLoaded && (
+                <View style={styles.photoLoading}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+              )}
+              <Image
+                source={{ uri: photo }}
+                style={[styles.photo, !imageLoaded && { opacity: 0 }]}
+                resizeMode="cover"
+                onLoad={() => {
+                  console.log('Image loaded successfully:', photo);
+                  setImageLoaded(true);
+                }}
+                onError={(e) => {
+                  console.log('Image load error:', e.nativeEvent.error, 'URI:', photo);
+                  setImageLoaded(false);
+                }}
+              />
+            </View>
           ) : (
             <View style={styles.photoPlaceholder}>
               <Ionicons name="camera-outline" size={48} color={colors.textTertiary} />
-              <Text style={styles.photoText}>Ajouter une photo</Text>
+              <Text style={styles.photoText}>{t('onboarding.addPhotoButton')}</Text>
             </View>
           )}
         </Pressable>
@@ -105,13 +123,13 @@ export default function ProfilePhotoScreen() {
             <View style={styles.optionIconContainer}>
               <Ionicons name="images" size={28} color={colors.primary} />
             </View>
-            <Text style={styles.optionText}>Galerie</Text>
+            <Text style={styles.optionText}>{t('onboarding.gallery')}</Text>
           </Pressable>
           <Pressable style={styles.optionButton} onPress={takePhoto}>
             <View style={styles.optionIconContainer}>
               <Ionicons name="camera" size={28} color={colors.primary} />
             </View>
-            <Text style={styles.optionText}>Caméra</Text>
+            <Text style={styles.optionText}>{t('onboarding.camera')}</Text>
           </Pressable>
         </View>
 
@@ -121,7 +139,7 @@ export default function ProfilePhotoScreen() {
             onPress={() => router.push('/(onboarding)/face-verification' as never)}
             disabled={!photo}
           >
-            <Text style={styles.buttonText}>Continuer</Text>
+            <Text style={styles.buttonText}>{t('common.continue')}</Text>
           </Pressable>
         </View>
       </View>
@@ -169,10 +187,22 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: spacing.xl,
   },
+  photoWrapper: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  photoLoading: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
   photo: {
     width: 200,
     height: 200,
-    borderRadius: borderRadius.full,
   },
   photoPlaceholder: {
     width: 200,

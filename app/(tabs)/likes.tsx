@@ -10,7 +10,6 @@ import {
   Dimensions,
   Alert,
   Animated,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,25 +18,18 @@ import { router } from 'expo-router';
 import { colors, spacing, typography, borderRadius } from '../../src/theme';
 import { IntentionBadge } from '../../src/components/profile';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { Profile } from '../../src/types/profile';
-// import { invitationsService } from '../../src/services/supabase';
+import { useLanguage } from '../../src/contexts/LanguageContext';
+import { invitationsService } from '../../src/services/supabase/invitations';
+import { useFocusEffect } from 'expo-router';
+import type { InvitationWithProfile } from '../../src/types/match';
 
 const { width } = Dimensions.get('window');
 
-// Types
-interface Invitation {
-  id: string;
-  senderId: string;
-  receiverId: string;
-  message: string | null;
-  status: 'pending' | 'accepted' | 'declined' | 'expired';
-  sentAt: string;
-  expiresAt: string;
-  senderProfile: Profile;
-}
+// Type alias for clarity
+type Invitation = InvitationWithProfile;
 
-// Helper function pour calculer le temps écoulé
-const getTimeAgo = (dateString: string): string => {
+// Helper function pour calculer le temps ecoule
+const getTimeAgo = (dateString: string, t: (key: string) => string): string => {
   const now = new Date();
   const date = new Date(dateString);
   const diffMs = now.getTime() - date.getTime();
@@ -45,12 +37,12 @@ const getTimeAgo = (dateString: string): string => {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMins < 1) return "A l'instant";
-  if (diffMins < 60) return `Il y a ${diffMins} min`;
-  if (diffHours < 24) return `Il y a ${diffHours}h`;
-  if (diffDays === 1) return 'Hier';
-  if (diffDays < 7) return `Il y a ${diffDays} jours`;
-  return `Il y a ${Math.floor(diffDays / 7)} sem.`;
+  if (diffMins < 1) return t('invitations.justNow');
+  if (diffMins < 60) return t('invitations.minutesAgo').replace('{0}', String(diffMins));
+  if (diffHours < 24) return t('invitations.hoursAgo').replace('{0}', String(diffHours));
+  if (diffDays === 1) return t('invitations.yesterday');
+  if (diffDays < 7) return t('invitations.daysAgo').replace('{0}', String(diffDays));
+  return t('invitations.weeksAgo').replace('{0}', String(Math.floor(diffDays / 7)));
 };
 
 // Skeleton loader component
@@ -77,11 +69,17 @@ interface InvitationCardProps {
   onAccept: (id: string) => void;
   onRefuse: (id: string) => void;
   onRemove: () => void;
+  t: (key: string) => string;
 }
 
-const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove }: InvitationCardProps) => {
+const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove, t }: InvitationCardProps) => {
   const profile = invitation.senderProfile;
-  const timeAgo = getTimeAgo(invitation.sentAt);
+  const timeAgo = getTimeAgo(invitation.sentAt, t);
+
+  // Guard against missing profile
+  if (!profile) {
+    return null;
+  }
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -109,12 +107,12 @@ const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove }: Invitation
 
   const handleRefuse = () => {
     Alert.alert(
-      'Refuser cette invitation ?',
-      `Voulez-vous vraiment refuser l'invitation de ${profile.displayName} ?`,
+      t('invitations.refuseTitle'),
+      t('invitations.refuseMessage').replace('{0}', profile.displayName),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Refuser',
+          text: t('invitations.decline'),
           style: 'destructive',
           onPress: () => animateOut('left', () => onRefuse(invitation.id)),
         },
@@ -152,11 +150,6 @@ const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove }: Invitation
           </Text>
           <IntentionBadge intention={profile.intention} size="small" />
           <Text style={styles.timeAgo}>{timeAgo}</Text>
-          {invitation.message && (
-            <Text style={styles.message} numberOfLines={2}>
-              "{invitation.message}"
-            </Text>
-          )}
         </View>
         <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
       </TouchableOpacity>
@@ -164,7 +157,7 @@ const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove }: Invitation
       <View style={styles.actions}>
         <TouchableOpacity style={styles.refuseButton} onPress={handleRefuse} activeOpacity={0.7}>
           <Ionicons name="close" size={24} color={colors.textSecondary} />
-          <Text style={styles.refuseText}>Refuser</Text>
+          <Text style={styles.refuseText}>{t('invitations.decline')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.acceptButton} onPress={handleAccept} activeOpacity={0.8}>
@@ -175,7 +168,7 @@ const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove }: Invitation
             style={styles.acceptGradient}
           >
             <Ionicons name="checkmark" size={24} color={colors.white} />
-            <Text style={styles.acceptText}>Accepter</Text>
+            <Text style={styles.acceptText}>{t('invitations.accept')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -184,15 +177,13 @@ const InvitationCard = ({ invitation, onAccept, onRefuse, onRemove }: Invitation
 };
 
 // Empty state component
-const EmptyState = () => (
+const EmptyState = ({ t }: { t: (key: string) => string }) => (
   <View style={styles.emptyContainer}>
     <View style={styles.emptyIconContainer}>
       <Text style={styles.emptyIcon}>💌</Text>
     </View>
-    <Text style={styles.emptyTitle}>Pas encore d'invitations</Text>
-    <Text style={styles.emptySubtitle}>
-      Les personnes interessees par votre profil apparaitront ici. Continuez a explorer !
-    </Text>
+    <Text style={styles.emptyTitle}>{t('invitations.noInvitations')}</Text>
+    <Text style={styles.emptySubtitle}>{t('invitations.noInvitationsHint')}</Text>
     <TouchableOpacity
       style={styles.exploreButton}
       onPress={() => router.push('/(tabs)/discover')}
@@ -204,7 +195,7 @@ const EmptyState = () => (
         end={{ x: 1, y: 0 }}
         style={styles.exploreGradient}
       >
-        <Text style={styles.exploreText}>Explorer les profils</Text>
+        <Text style={styles.exploreText}>{t('invitations.exploreProfiles')}</Text>
       </LinearGradient>
     </TouchableOpacity>
   </View>
@@ -213,128 +204,30 @@ const EmptyState = () => (
 // Main screen component
 export default function InvitationsScreen() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
-  // Mock data pour le developpement
-  const mockInvitations: Invitation[] = [
-    {
-      id: '1',
-      senderId: 'user1',
-      receiverId: user?.id || '',
-      message: 'Salut ! Ton profil a attiré mon attention 😊',
-      status: 'pending',
-      sentAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 min ago
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      senderProfile: {
-        id: 'user1',
-        displayName: 'Lucas',
-        birthDate: '1995-05-15',
-        age: 28,
-        gender: 'male',
-        hairColor: 'brown',
-        bio: 'Passionné de voyage et de photographie',
-        intention: 'dating',
-        availability: 'today',
-        languages: ['french'],
-        interests: ['travel', 'photography'],
-        photos: ['https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'],
-        locationEnabled: false,
-        latitude: null,
-        longitude: null,
-        locationUpdatedAt: null,
-        searchRadius: 25,
-        minAgeFilter: 18,
-        maxAgeFilter: 35,
-        genderFilter: ['female'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    },
-    {
-      id: '2',
-      senderId: 'user2',
-      receiverId: user?.id || '',
-      message: null,
-      status: 'pending',
-      sentAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3h ago
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      senderProfile: {
-        id: 'user2',
-        displayName: 'Thomas',
-        birthDate: '1992-08-22',
-        age: 31,
-        gender: 'male',
-        hairColor: 'black',
-        bio: 'Amateur de musique et de concerts',
-        intention: 'social',
-        availability: 'evening',
-        languages: ['french', 'english'],
-        interests: ['music', 'concerts'],
-        photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400'],
-        locationEnabled: false,
-        latitude: null,
-        longitude: null,
-        locationUpdatedAt: null,
-        searchRadius: 50,
-        minAgeFilter: 18,
-        maxAgeFilter: 40,
-        genderFilter: ['female'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    },
-    {
-      id: '3',
-      senderId: 'user3',
-      receiverId: user?.id || '',
-      message: 'Hey ! On a les memes centres d\'interet, ca te dit qu\'on discute ?',
-      status: 'pending',
-      sentAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-      senderProfile: {
-        id: 'user3',
-        displayName: 'Mathieu',
-        birthDate: '1998-02-10',
-        age: 25,
-        gender: 'male',
-        hairColor: 'blonde',
-        bio: 'Sportif et foodie',
-        intention: 'amical',
-        availability: 'weekend',
-        languages: ['french'],
-        interests: ['sport', 'food'],
-        photos: ['https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400'],
-        locationEnabled: false,
-        latitude: null,
-        longitude: null,
-        locationUpdatedAt: null,
-        searchRadius: 25,
-        minAgeFilter: 20,
-        maxAgeFilter: 30,
-        genderFilter: ['female', 'male'],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    },
-  ];
-
   const loadInvitations = useCallback(async () => {
-    try {
-      // TODO: Remplacer par l'appel API reel
-      // const data = await invitationsService.getReceivedInvitations(user?.id);
-      // setInvitations(data);
+    if (!user?.id) return;
 
-      // Simulation du chargement
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setInvitations(mockInvitations);
+    try {
+      const { invitations: data, error } = await invitationsService.getReceivedInvitations(user.id);
+
+      if (error) {
+        console.error('Error loading invitations:', error);
+        Alert.alert(t('alerts.errorTitle'), t('errors.unableToLoadInvitations'));
+        return;
+      }
+
+      setInvitations(data);
     } catch (error) {
       console.error('Error loading invitations:', error);
-      Alert.alert('Erreur', 'Impossible de charger les invitations');
+      Alert.alert(t('alerts.errorTitle'), t('errors.unableToLoadInvitations'));
     }
-  }, [user?.id]);
+  }, [user?.id, t]);
 
   useEffect(() => {
     const load = async () => {
@@ -345,6 +238,19 @@ export default function InvitationsScreen() {
     load();
   }, [loadInvitations]);
 
+  // Marquer les invitations comme vues quand l'écran devient visible
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        // Marquer comme vues après un petit délai pour s'assurer que la liste est affichée
+        const timer = setTimeout(() => {
+          invitationsService.markInvitationsAsSeen(user.id);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }, [user?.id])
+  );
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     setRemovedIds(new Set());
@@ -354,34 +260,48 @@ export default function InvitationsScreen() {
 
   const handleAccept = useCallback(
     async (invitationId: string) => {
-      try {
-        // TODO: Remplacer par l'appel API reel
-        // await invitationsService.acceptInvitation(invitationId);
+      if (!user?.id) return;
 
-        // Trouver l'invitation pour avoir les infos du sender
-        const invitation = invitations.find((inv) => inv.id === invitationId);
-        if (invitation) {
-          // Rediriger vers la conversation
-          router.push(`/chat/${invitation.senderId}` as never);
+      try {
+        const { conversationId, error } = await invitationsService.acceptInvitation(invitationId, user.id);
+
+        if (error) {
+          Alert.alert(t('alerts.errorTitle'), error);
+          return;
+        }
+
+        if (conversationId) {
+          // Retirer de la liste locale
+          setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+          // Naviguer vers le chat
+          router.push(`/chat/${conversationId}` as never);
         }
       } catch (error) {
         console.error('Error accepting invitation:', error);
-        Alert.alert('Erreur', "Impossible d'accepter l'invitation");
+        Alert.alert(t('alerts.errorTitle'), t('errors.unableToAccept'));
       }
     },
-    [invitations]
+    [user?.id, t]
   );
 
   const handleRefuse = useCallback(async (invitationId: string) => {
+    if (!user?.id) return;
+
     try {
-      // TODO: Remplacer par l'appel API reel
-      // await invitationsService.declineInvitation(invitationId);
-      console.log('Invitation refused:', invitationId);
+      const { error } = await invitationsService.refuseInvitation(invitationId, user.id);
+
+      if (error) {
+        Alert.alert(t('alerts.errorTitle'), error);
+        return;
+      }
+
+      // Retirer l'invitation de la liste locale
+      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
     } catch (error) {
       console.error('Error refusing invitation:', error);
-      Alert.alert('Erreur', "Impossible de refuser l'invitation");
+      Alert.alert(t('alerts.errorTitle'), t('errors.unableToRefuse'));
     }
-  }, []);
+  }, [user?.id, t]);
 
   const handleRemove = useCallback((invitationId: string) => {
     setRemovedIds((prev) => new Set([...prev, invitationId]));
@@ -397,9 +317,10 @@ export default function InvitationsScreen() {
         onAccept={handleAccept}
         onRefuse={handleRefuse}
         onRemove={() => handleRemove(item.id)}
+        t={t}
       />
     ),
-    [handleAccept, handleRefuse, handleRemove]
+    [handleAccept, handleRefuse, handleRemove, t]
   );
 
   const renderSkeleton = () => (
@@ -414,7 +335,7 @@ export default function InvitationsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Invitations</Text>
+        <Text style={styles.title}>{t('invitations.title')}</Text>
         {visibleInvitations.length > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{visibleInvitations.length}</Text>
@@ -426,7 +347,7 @@ export default function InvitationsScreen() {
       {isLoading ? (
         renderSkeleton()
       ) : visibleInvitations.length === 0 ? (
-        <EmptyState />
+        <EmptyState t={t} />
       ) : (
         <FlatList
           data={visibleInvitations}
@@ -540,12 +461,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textTertiary,
     marginTop: spacing.xs,
-  },
-  message: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-    fontStyle: 'italic',
   },
 
   // Actions

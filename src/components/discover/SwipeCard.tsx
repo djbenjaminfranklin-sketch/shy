@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { ProfileWithDistance } from '../../types/profile';
 import { ProfileCard } from '../profile/ProfileCard';
 import { colors } from '../../theme/colors';
-import { spacing, borderRadius } from '../../theme/spacing';
+import { spacing } from '../../theme/spacing';
 
 interface SwipeCardProps {
   profile: ProfileWithDistance;

@@ -15,11 +15,19 @@ import { router } from 'expo-router';
 import { colors, spacing, borderRadius } from '../../src/theme';
 import { IntentionBadge, AvailabilityBadge } from '../../src/components/profile';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { adminService } from '../../src/services/supabase/admin';
+import { supabase } from '../../src/services/supabase/client';
 
 export default function ProfileScreen() {
   const { user, profile, signOut } = useAuth();
+  const { t } = useLanguage();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [stats, setStats] = useState({
+    invitationsSent: 0,
+    invitationsReceived: 0,
+    connections: 0,
+  });
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -31,59 +39,83 @@ export default function ProfileScreen() {
     checkAdmin();
   }, [user]);
 
-  // Stats (TODO: récupérer depuis l'API)
-  const stats = {
-    invitationsSent: 0,
-    invitationsReceived: 0,
-    connections: 0,
-  };
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!user) return;
+
+      // Compter les invitations envoyées
+      const { count: sentCount } = await supabase
+        .from('invitations')
+        .select('*', { count: 'exact', head: true })
+        .eq('sender_id', user.id);
+
+      // Compter les invitations reçues
+      const { count: receivedCount } = await supabase
+        .from('invitations')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id)
+        .eq('status', 'pending');
+
+      // Compter les connexions
+      const { count: connectionsCount } = await supabase
+        .from('connections')
+        .select('*', { count: 'exact', head: true })
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+
+      setStats({
+        invitationsSent: sentCount || 0,
+        invitationsReceived: receivedCount || 0,
+        connections: connectionsCount || 0,
+      });
+    };
+
+    loadStats();
+  }, [user]);
 
   const menuItems = [
-    { icon: 'create-outline' as const, label: 'Modifier mon profil', route: '/profile/edit' },
-    { icon: 'shield-checkmark-outline' as const, label: 'Verification', route: '/profile/verification' },
-    { icon: 'card-outline' as const, label: 'Abonnement', route: '/profile/subscription' },
-    { icon: 'settings-outline' as const, label: 'Parametres', route: '/profile/settings' },
-    { icon: 'lock-closed-outline' as const, label: 'Confidentialite', route: '/profile/privacy' },
-    { icon: 'help-circle-outline' as const, label: 'Aide', route: '/profile/help' },
+    { icon: 'create-outline' as const, label: t('profile.editProfile'), route: '/profile/edit' },
+    { icon: 'card-outline' as const, label: t('profile.subscription'), route: '/profile/subscription' },
+    { icon: 'settings-outline' as const, label: t('profile.settings'), route: '/profile/settings' },
+    { icon: 'lock-closed-outline' as const, label: t('profile.privacy'), route: '/profile/privacy' },
   ];
 
   const handleSignOut = () => {
     Alert.alert(
-      'Déconnexion',
-      'Voulez-vous vraiment vous déconnecter ?',
+      t('profile.logoutConfirm.title'),
+      t('profile.logoutConfirm.message'),
       [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Déconnexion', style: 'destructive', onPress: signOut },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('profile.logout'), style: 'destructive', onPress: signOut },
       ]
     );
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Supprimer mon compte',
-      'Cette action est irréversible. Toutes vos données, photos, conversations et connexions seront définitivement supprimées.',
+      t('profile.deleteConfirm.title'),
+      t('profile.deleteConfirm.message'),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
-            // Deuxième confirmation pour Apple
+            // Deuxieme confirmation pour Apple
             Alert.alert(
-              'Confirmation finale',
-              'Êtes-vous vraiment sûr(e) ? Votre compte sera supprimé dans les 30 jours.',
+              t('profile.deleteConfirm.finalTitle'),
+              t('profile.deleteConfirm.finalMessage'),
               [
-                { text: 'Non, garder mon compte', style: 'cancel' },
+                { text: t('profile.deleteConfirm.keepAccount'), style: 'cancel' },
                 {
-                  text: 'Oui, supprimer définitivement',
+                  text: t('profile.deleteConfirm.confirmDelete'),
                   style: 'destructive',
                   onPress: async () => {
                     // TODO: Appeler le service de suppression
                     // await deleteAccount();
                     Alert.alert(
-                      'Compte supprimé',
-                      'Votre demande de suppression a été enregistrée. Votre compte sera supprimé sous 30 jours.',
-                      [{ text: 'OK', onPress: signOut }]
+                      t('profile.deleteConfirm.successTitle'),
+                      t('profile.deleteConfirm.successMessage'),
+                      [{ text: t('common.ok'), onPress: signOut }]
                     );
                   },
                 },
@@ -99,6 +131,10 @@ export default function ProfileScreen() {
   const defaultAvatar = 'https://via.placeholder.com/120x120/FF6B6B/FFFFFF?text=' +
     (profile?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?');
 
+  // Debug: log photo URL
+  console.log('Profile photos:', profile?.photos);
+  console.log('Avatar URL used:', profile?.photos?.[0] || defaultAvatar);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -107,10 +143,14 @@ export default function ProfileScreen() {
           {profile ? (
             <>
               <View style={styles.avatarContainer}>
-                <Image
-                  source={{ uri: profile.photos?.[0] || defaultAvatar }}
-                  style={styles.avatar}
-                />
+                <View style={styles.avatarWrapper}>
+                  <Image
+                    source={{ uri: profile.photos?.[0] || defaultAvatar }}
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                    onError={(e) => console.log('Profile avatar error:', e.nativeEvent.error)}
+                  />
+                </View>
               </View>
 
               <Text style={styles.name}>
@@ -137,7 +177,7 @@ export default function ProfileScreen() {
               </View>
 
               <Text style={styles.name}>
-                {user?.email?.split('@')[0] || 'Utilisateur'}
+                {user?.email?.split('@')[0] || t('profile.user')}
               </Text>
 
               <TouchableOpacity
@@ -145,7 +185,7 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/(onboarding)/profile-photo')}
               >
                 <Text style={styles.completeProfileText}>
-                  Compléter mon profil
+                  {t('profile.completeProfile')}
                 </Text>
                 <Ionicons name="arrow-forward" size={20} color={colors.primary} />
               </TouchableOpacity>
@@ -157,17 +197,17 @@ export default function ProfileScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.stat}>
             <Text style={styles.statNumber}>{stats.invitationsSent}</Text>
-            <Text style={styles.statLabel}>Envoyees</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.sent')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statNumber}>{stats.invitationsReceived}</Text>
-            <Text style={styles.statLabel}>Recues</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.received')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statNumber}>{stats.connections}</Text>
-            <Text style={styles.statLabel}>Connexions</Text>
+            <Text style={styles.statLabel}>{t('profile.stats.connections')}</Text>
           </View>
         </View>
 
@@ -181,7 +221,7 @@ export default function ProfileScreen() {
             style={styles.editGradient}
           >
             <Ionicons name="create" size={24} color={colors.white} />
-            <Text style={styles.editText}>Modifier mon profil</Text>
+            <Text style={styles.editText}>{t('profile.editProfile')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -213,7 +253,7 @@ export default function ProfileScreen() {
               style={styles.adminGradient}
             >
               <Ionicons name="shield" size={24} color="#00d4ff" />
-              <Text style={styles.adminText}>Admin Panel</Text>
+              <Text style={styles.adminText}>{t('profile.adminPanel')}</Text>
               <Ionicons name="chevron-forward" size={20} color="#00d4ff" />
             </LinearGradient>
           </TouchableOpacity>
@@ -221,13 +261,13 @@ export default function ProfileScreen() {
 
         {/* Actions du compte */}
         <View style={styles.accountActions}>
-          {/* Déconnexion */}
+          {/* Deconnexion */}
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleSignOut}
           >
             <Ionicons name="log-out-outline" size={24} color={colors.text} />
-            <Text style={styles.logoutText}>Se déconnecter</Text>
+            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
           </TouchableOpacity>
 
           {/* Supprimer le compte - OBLIGATOIRE APPLE */}
@@ -236,12 +276,12 @@ export default function ProfileScreen() {
             onPress={handleDeleteAccount}
           >
             <Ionicons name="trash-outline" size={24} color={colors.error} />
-            <Text style={styles.deleteText}>Supprimer mon compte</Text>
+            <Text style={styles.deleteText}>{t('profile.deleteAccount')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Version */}
-        <Text style={styles.version}>SHY v1.0.0</Text>
+        <Text style={styles.version}>SHY v1.0.1</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -262,6 +302,19 @@ const styles = StyleSheet.create({
   avatarContainer: {
     position: 'relative',
     marginBottom: spacing.md,
+  },
+  avatarWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: colors.primary,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatar: {
     width: 120,

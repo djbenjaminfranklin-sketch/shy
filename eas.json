@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 10.0.0"
+    "version": ">= 10.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -8,12 +9,20 @@
       "distribution": "internal",
       "ios": {
         "simulator": true
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://naxbbnsmvrvrwcbrdsls.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heGJibnNtdnJ2cndjYnJkc2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjkzODgsImV4cCI6MjA4NTAwNTM4OH0.VOu_P3FvFGOQMp6H4EXm-BZvjZEVuAkyATZOJmrykAU"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://naxbbnsmvrvrwcbrdsls.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heGJibnNtdnJ2cndjYnJkc2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjkzODgsImV4cCI6MjA4NTAwNTM4OH0.VOu_P3FvFGOQMp6H4EXm-BZvjZEVuAkyATZOJmrykAU"
       }
     },
     "production": {
@@ -22,6 +31,23 @@
       },
       "android": {
         "autoIncrement": true
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://naxbbnsmvrvrwcbrdsls.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heGJibnNtdnJ2cndjYnJkc2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjkzODgsImV4cCI6MjA4NTAwNTM4OH0.VOu_P3FvFGOQMp6H4EXm-BZvjZEVuAkyATZOJmrykAU"
+      }
+    },
+    "production-test": {
+      "distribution": "internal",
+      "ios": {
+        "autoIncrement": true
+      },
+      "android": {
+        "autoIncrement": true
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://naxbbnsmvrvrwcbrdsls.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heGJibnNtdnJ2cndjYnJkc2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjkzODgsImV4cCI6MjA4NTAwNTM4OH0.VOu_P3FvFGOQMp6H4EXm-BZvjZEVuAkyATZOJmrykAU"
       }
     }
   },

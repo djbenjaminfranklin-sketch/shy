@@ -5,7 +5,8 @@ import { profilesService } from '../services/supabase/profiles';
 import { matchesService } from '../services/supabase/matches';
 import { subscriptionsService } from '../services/supabase/subscriptions';
 import { ProfileWithDistance, ProfileFilters } from '../types/profile';
-import { MIN_AGE, MAX_AGE, SUBSCRIPTION_PLANS } from '../constants';
+import { MIN_AGE, MAX_AGE } from '../constants';
+import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../constants/subscriptions';
 
 const DEFAULT_FILTERS: ProfileFilters = {
   searchRadius: 25,
@@ -40,9 +41,9 @@ export function useDiscover() {
 
     try {
       const { subscription } = await subscriptionsService.getUserSubscription(user.id);
-      const planId = subscription?.planId || 'free';
-      const plan = SUBSCRIPTION_PLANS[planId];
-      setLikesTotal(plan.features.dailyLikes);
+      const planId = (subscription?.planId || 'free') as PlanType;
+      const plan = SUBSCRIPTION_PLANS_BY_ID[planId];
+      setLikesTotal(plan?.features.dailyLikes ?? 10);
 
       const { limits } = await subscriptionsService.getUserLimits(user.id);
       setLikesUsed(limits?.likesUsed || 0);

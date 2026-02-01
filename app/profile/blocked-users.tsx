@@ -6,8 +6,11 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing } from '../../src/theme/spacing';
@@ -24,6 +27,7 @@ interface BlockedUser extends Block {
 }
 
 export default function BlockedUsersScreen() {
+  const router = useRouter();
   const { user } = useAuth();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,9 +105,20 @@ export default function BlockedUsersScreen() {
     </View>
   );
 
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <Pressable style={styles.backButton} onPress={() => router.replace('/(tabs)/profile')}>
+        <Ionicons name="arrow-back" size={24} color={colors.text} />
+      </Pressable>
+      <Text style={styles.headerTitle}>Utilisateurs bloqués</Text>
+      <View style={styles.headerSpacer} />
+    </View>
+  );
+
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        {renderHeader()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -112,7 +127,8 @@ export default function BlockedUsersScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {renderHeader()}
       {blockedUsers.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyIcon}>🚫</Text>
@@ -138,6 +154,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  headerSpacer: {
+    width: 32,
   },
   loadingContainer: {
     flex: 1,

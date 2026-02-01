@@ -20,9 +20,11 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { profilesService } from '../../src/services/supabase/profiles';
 import { moderationService } from '../../src/services/supabase/moderation';
 import { matchesService } from '../../src/services/supabase/matches';
+import { invitationsService } from '../../src/services/supabase/invitations';
 import { Profile } from '../../src/types/profile';
 import { IntentionBadge } from '../../src/components/profile/IntentionBadge';
 import { AvailabilityBadge } from '../../src/components/profile/AvailabilityBadge';
+import { EngagementBadge } from '../../src/components/engagement';
 import { InterestChips } from '../../src/components/profile/InterestChips';
 import { Button } from '../../src/components/ui/Button';
 import { canSendDirectMessage } from '../../src/utils/messagingPermissions';
@@ -41,6 +43,7 @@ export default function ProfileViewScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isSendingInvitation, setIsSendingInvitation] = useState(false);
 
   useEffect(() => {
     if (!userId || !user) return;
@@ -112,11 +115,34 @@ export default function ProfileViewScreen() {
 
   // Envoyer une invitation (système classique)
   const handleSendInvitation = async () => {
-    // TODO: Implémenter l'envoi d'invitation
-    Alert.alert(
-      language === 'fr' ? 'Invitation' : 'Invitation',
-      language === 'fr' ? 'Fonctionnalité à venir' : 'Coming soon'
-    );
+    if (!user || !profile) return;
+
+    setIsSendingInvitation(true);
+    try {
+      const { error } = await invitationsService.sendInvitation(user.id, profile.id);
+
+      if (error) {
+        Alert.alert(
+          language === 'fr' ? 'Erreur' : 'Error',
+          error
+        );
+      } else {
+        Alert.alert(
+          language === 'fr' ? 'Invitation envoyée' : 'Invitation sent',
+          language === 'fr'
+            ? `Votre invitation a été envoyée à ${profile.displayName}. Vous serez notifié(e) si elle est acceptée.`
+            : `Your invitation has been sent to ${profile.displayName}. You will be notified if it is accepted.`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (err) {
+      Alert.alert(
+        language === 'fr' ? 'Erreur' : 'Error',
+        language === 'fr' ? 'Une erreur est survenue' : 'An error occurred'
+      );
+    } finally {
+      setIsSendingInvitation(false);
+    }
   };
 
   if (isLoading) {
@@ -209,6 +235,10 @@ export default function ProfileViewScreen() {
           <View style={styles.badges}>
             <IntentionBadge intention={profile.intention} />
             <AvailabilityBadge availability={profile.availability} />
+            <EngagementBadge
+              userId={profile.id}
+              size="medium"
+            />
           </View>
         </View>
 
@@ -240,6 +270,8 @@ export default function ProfileViewScreen() {
               title={language === 'fr' ? '💌 Envoyer une invitation' : '💌 Send an invitation'}
               onPress={handleSendInvitation}
               variant="primary"
+              loading={isSendingInvitation}
+              disabled={isSendingInvitation}
             />
           )}
 

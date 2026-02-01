@@ -16,6 +16,7 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { matchesService } from '../../src/services/supabase/matches';
 import type { MatchWithProfile } from '../../src/types/match';
 
@@ -26,7 +27,7 @@ import type { MatchWithProfile } from '../../src/types/match';
 /**
  * Convertit une date ISO en temps relatif lisible
  */
-function getTimeAgo(dateString: string | undefined): string {
+function getTimeAgo(dateString: string | undefined, t: (key: string) => string): string {
   if (!dateString) return '';
 
   const date = new Date(dateString);
@@ -34,138 +35,32 @@ function getTimeAgo(dateString: string | undefined): string {
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (diffInSeconds < 60) {
-    return "A l'instant";
+    return t('time.justNow');
   }
 
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   if (diffInMinutes < 60) {
-    return `${diffInMinutes} min`;
+    return t('time.minutesAgo').replace('{0}', String(diffInMinutes));
   }
 
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) {
-    return `${diffInHours}h`;
+    return t('time.hoursAgo').replace('{0}', String(diffInHours));
   }
 
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) {
-    return `${diffInDays}j`;
+    return t('time.daysAgo').replace('{0}', String(diffInDays));
   }
 
   const diffInWeeks = Math.floor(diffInDays / 7);
   if (diffInWeeks < 4) {
-    return `${diffInWeeks}sem`;
+    return t('time.weeksAgo').replace('{0}', String(diffInWeeks));
   }
 
   // Format date for older messages
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
-
-// =============================================================================
-// Mock Data (pour demo sans backend)
-// =============================================================================
-
-const mockConnections: MatchWithProfile[] = [
-  {
-    id: '1',
-    user1Id: 'current-user',
-    user2Id: 'u1',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    profile: {
-      id: 'u1',
-      displayName: 'Sophie',
-      birthDate: '1999-03-15',
-      age: 25,
-      gender: 'femme',
-      hairColor: 'brun',
-      bio: 'J\'adore les voyages et la photographie',
-      intention: 'dating',
-      availability: 'aujourdhui',
-      languages: ['fr', 'en'],
-      interests: ['voyage', 'photographie', 'musique'],
-      photos: ['https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400'],
-      locationEnabled: true,
-      latitude: null,
-      longitude: null,
-      locationUpdatedAt: null,
-      searchRadius: 25,
-      minAgeFilter: 23,
-      maxAgeFilter: 35,
-      genderFilter: ['homme'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    lastMessage: 'Salut ! Comment tu vas ?',
-    lastMessageAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    unreadCount: 2,
-  },
-  {
-    id: '2',
-    user1Id: 'current-user',
-    user2Id: 'u2',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    profile: {
-      id: 'u2',
-      displayName: 'Emma',
-      birthDate: '1997-07-22',
-      age: 27,
-      gender: 'femme',
-      hairColor: 'blond',
-      bio: 'Passionnee de cuisine et de randonnee',
-      intention: 'social',
-      availability: 'weekend',
-      languages: ['fr'],
-      interests: ['cuisine', 'randonnee', 'lecture'],
-      photos: ['https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400'],
-      locationEnabled: true,
-      latitude: null,
-      longitude: null,
-      locationUpdatedAt: null,
-      searchRadius: 50,
-      minAgeFilter: 25,
-      maxAgeFilter: 40,
-      genderFilter: ['homme'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    lastMessage: 'On se voit ce weekend ?',
-    lastMessageAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    unreadCount: 0,
-  },
-  {
-    id: '3',
-    user1Id: 'current-user',
-    user2Id: 'u3',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-    profile: {
-      id: 'u3',
-      displayName: 'Julie',
-      birthDate: '2000-01-10',
-      age: 24,
-      gender: 'femme',
-      hairColor: 'roux',
-      bio: 'Artiste et reveuse',
-      intention: 'amical',
-      availability: 'ce-soir',
-      languages: ['fr', 'es'],
-      interests: ['art', 'musique', 'cinema'],
-      photos: ['https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400'],
-      locationEnabled: false,
-      latitude: null,
-      longitude: null,
-      locationUpdatedAt: null,
-      searchRadius: 25,
-      minAgeFilter: 22,
-      maxAgeFilter: 32,
-      genderFilter: ['homme', 'femme'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    lastMessage: undefined,
-    lastMessageAt: undefined,
-    unreadCount: 0,
-  },
-];
 
 // =============================================================================
 // Components
@@ -174,14 +69,15 @@ const mockConnections: MatchWithProfile[] = [
 interface ConnectionCardProps {
   connection: MatchWithProfile;
   onPress: () => void;
+  t: (key: string) => string;
 }
 
 /**
  * Carte de connexion - Grande et lisible
  */
-function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
+function ConnectionCard({ connection, onPress, t }: ConnectionCardProps) {
   const { profile, lastMessage, lastMessageAt, unreadCount } = connection;
-  const timeAgo = getTimeAgo(lastMessageAt);
+  const timeAgo = getTimeAgo(lastMessageAt, t);
   const hasPhoto = profile.photos && profile.photos.length > 0;
 
   return (
@@ -228,7 +124,7 @@ function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
           ]}
           numberOfLines={1}
         >
-          {lastMessage || 'Commencez a discuter !'}
+          {lastMessage || t('connections.startChatting')}
         </Text>
       </View>
 
@@ -241,23 +137,21 @@ function ConnectionCard({ connection, onPress }: ConnectionCardProps) {
 /**
  * Etat vide - Pas de connexions
  */
-function EmptyState() {
+function EmptyState({ t }: { t: (key: string) => string }) {
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>
         <Ionicons name="heart-outline" size={64} color={colors.primaryLight} />
       </View>
-      <Text style={styles.emptyTitle}>Pas encore de connexions</Text>
-      <Text style={styles.emptySubtitle}>
-        Quand quelqu'un acceptera votre invitation,{'\n'}vous pourrez discuter ici !
-      </Text>
+      <Text style={styles.emptyTitle}>{t('connections.noConnections')}</Text>
+      <Text style={styles.emptySubtitle}>{t('connections.noConnectionsHint')}</Text>
       <TouchableOpacity
         style={styles.emptyButton}
         onPress={() => router.push('/(tabs)/discover')}
         activeOpacity={0.8}
       >
         <Ionicons name="compass-outline" size={20} color={colors.white} />
-        <Text style={styles.emptyButtonText}>Decouvrir des profils</Text>
+        <Text style={styles.emptyButtonText}>{t('connections.discoverProfiles')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -266,11 +160,11 @@ function EmptyState() {
 /**
  * Etat de chargement
  */
-function LoadingState() {
+function LoadingState({ t }: { t: (key: string) => string }) {
   return (
     <View style={styles.loadingContainer}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.loadingText}>Chargement...</Text>
+      <Text style={styles.loadingText}>{t('common.loading')}</Text>
     </View>
   );
 }
@@ -281,6 +175,7 @@ function LoadingState() {
 
 export default function ConnectionsScreen() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [connections, setConnections] = useState<MatchWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -292,11 +187,12 @@ export default function ConnectionsScreen() {
    */
   const loadConnections = useCallback(async () => {
     if (!user) {
-      // Mode demo sans utilisateur connecte
-      setConnections(mockConnections);
+      setConnections([]);
+      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     try {
       setError(null);
       const { matches, error: fetchError } = await matchesService.getMatches(user.id);
@@ -304,8 +200,7 @@ export default function ConnectionsScreen() {
       if (fetchError) {
         console.error('Error loading connections:', fetchError);
         setError(fetchError);
-        // Fallback sur mock data en cas d'erreur
-        setConnections(mockConnections);
+        setConnections([]);
       } else {
         // Trier par dernier message (plus recent en premier)
         const sorted = [...matches].sort((a, b) => {
@@ -318,7 +213,9 @@ export default function ConnectionsScreen() {
     } catch (err) {
       console.error('Error loading connections:', err);
       setError('Une erreur est survenue');
-      setConnections(mockConnections);
+      setConnections([]);
+    } finally {
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -326,13 +223,7 @@ export default function ConnectionsScreen() {
    * Chargement initial
    */
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      await loadConnections();
-      setIsLoading(false);
-    };
-
-    load();
+    loadConnections();
   }, [loadConnections]);
 
   /**
@@ -362,9 +253,9 @@ export default function ConnectionsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>Mes Connexions</Text>
+          <Text style={styles.title}>{t('connections.title')}</Text>
         </View>
-        <LoadingState />
+        <LoadingState t={t} />
       </SafeAreaView>
     );
   }
@@ -373,7 +264,7 @@ export default function ConnectionsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Mes Connexions</Text>
+        <Text style={styles.title}>{t('connections.title')}</Text>
         {connections.length > 0 && (
           <View style={styles.countBadge}>
             <Text style={styles.countText}>{connections.length}</Text>
@@ -395,6 +286,7 @@ export default function ConnectionsScreen() {
           <ConnectionCard
             connection={item}
             onPress={() => handleConnectionPress(item)}
+            t={t}
           />
         )}
         contentContainerStyle={[
@@ -409,7 +301,7 @@ export default function ConnectionsScreen() {
             colors={[colors.primary]}
           />
         }
-        ListEmptyComponent={<EmptyState />}
+        ListEmptyComponent={<EmptyState t={t} />}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />

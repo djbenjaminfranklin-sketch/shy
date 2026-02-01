@@ -12,9 +12,9 @@ export default function LegalLayout() {
         headerBackTitle: 'Retour',
       }}
     >
-      <Stack.Screen name="terms" options={{ title: 'CGU' }} />
-      <Stack.Screen name="privacy-policy" options={{ title: 'Confidentialité' }} />
-      <Stack.Screen name="disclaimer" options={{ title: 'Mentions légales' }} />
+      <Stack.Screen name="terms" options={{ headerShown: false }} />
+      <Stack.Screen name="privacy-policy" options={{ headerShown: false }} />
+      <Stack.Screen name="disclaimer" options={{ headerShown: false }} />
     </Stack>
   );
 }

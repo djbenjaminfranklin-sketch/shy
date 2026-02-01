@@ -8,16 +8,21 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  Pressable,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { PurchasesPackage } from 'react-native-purchases';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useSubscription } from '../../src/contexts/SubscriptionContext';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { promoCodesService } from '../../src/services/supabase/promoCodes';
 import {
   SUBSCRIPTION_PLANS,
   DURATION_LABELS,
@@ -29,7 +34,8 @@ import {
 } from '../../src/constants/subscriptions';
 
 export default function SubscriptionScreen() {
-  const { language } = useLanguage();
+  const router = useRouter();
+  const { language, t } = useLanguage();
   const {
     isLoading,
     currentPlan,
@@ -42,6 +48,13 @@ export default function SubscriptionScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('premium');
   const [selectedDuration, setSelectedDuration] = useState<PlanDuration>('month');
   const [isPurchasing, setIsPurchasing] = useState(false);
+
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('');
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const plusPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'plus')!;
   const premiumPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'premium')!;
@@ -62,17 +75,58 @@ export default function SubscriptionScreen() {
     );
   };
 
+  // Valider un code promo
+  const handleValidatePromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError('Veuillez entrer un code promo');
+      return;
+    }
+
+    if (!user?.id) {
+      setPromoError('Vous devez être connecté');
+      return;
+    }
+
+    setIsValidatingPromo(true);
+    setPromoError(null);
+
+    const result = await promoCodesService.validateCode(
+      promoCode.trim(),
+      user.id,
+      selectedPlan,
+      selectedDuration
+    );
+
+    if (result.isValid) {
+      setAppliedDiscount(result.discountPercent);
+      setPromoError(null);
+    } else {
+      setAppliedDiscount(null);
+      setPromoError(result.errorMessage || 'Code invalide');
+    }
+
+    setIsValidatingPromo(false);
+  };
+
+  // Supprimer le code promo
+  const handleRemovePromo = () => {
+    setPromoCode('');
+    setAppliedDiscount(null);
+    setPromoError(null);
+  };
+
+  // Calculer le prix avec réduction
+  const calculateDiscountedPrice = (originalPrice: number): number => {
+    if (!appliedDiscount) return originalPrice;
+    return originalPrice * (1 - appliedDiscount / 100);
+  };
+
   const handleSubscribe = async () => {
     const pkg = findPackage();
 
     if (!pkg) {
-      // Fallback si RevenueCat pas configuré
-      Alert.alert(
-        language === 'fr' ? 'Bientôt disponible' : 'Coming soon',
-        language === 'fr'
-          ? 'Les abonnements seront disponibles très prochainement !'
-          : 'Subscriptions will be available very soon!'
-      );
+      // Fallback si RevenueCat pas configure
+      Alert.alert(t('subscription.comingSoon'), t('subscription.comingSoonMessage'));
       return;
     }
 
@@ -80,12 +134,7 @@ export default function SubscriptionScreen() {
     try {
       const success = await purchasePackage(pkg);
       if (success) {
-        Alert.alert(
-          '🎉',
-          language === 'fr'
-            ? 'Bienvenue dans SHY Premium !'
-            : 'Welcome to SHY Premium!'
-        );
+        Alert.alert('🎉', t('subscription.welcomePremium'));
       }
     } finally {
       setIsPurchasing(false);
@@ -117,13 +166,6 @@ export default function SubscriptionScreen() {
     const isSelected = selectedDuration === priceOption.duration;
     const durationLabel = DURATION_LABELS[priceOption.duration][language];
 
-    // Chercher le prix réel depuis RevenueCat si disponible
-    const currentOffering = selectedPlan === 'plus' ? offerings.plus : offerings.premium;
-    const pkg = currentOffering?.availablePackages?.find(
-      p => p.product.identifier === priceOption.productId
-    );
-    const realPrice = pkg?.product.priceString;
-
     return (
       <TouchableOpacity
         key={priceOption.duration}
@@ -133,16 +175,12 @@ export default function SubscriptionScreen() {
       >
         {priceOption.bestValue && (
           <View style={styles.bestValueBadge}>
-            <Text style={styles.bestValueText}>
-              {language === 'fr' ? '🔥 MEILLEUR' : '🔥 BEST'}
-            </Text>
+            <Text style={styles.bestValueText}>🔥 {t('subscription.best')}</Text>
           </View>
         )}
         {priceOption.popular && !priceOption.bestValue && (
           <View style={styles.popularBadge}>
-            <Text style={styles.popularText}>
-              {language === 'fr' ? '⭐ POPULAIRE' : '⭐ POPULAR'}
-            </Text>
+            <Text style={styles.popularText}>⭐ {t('subscription.popular')}</Text>
           </View>
         )}
 
@@ -152,11 +190,11 @@ export default function SubscriptionScreen() {
           </Text>
           <View style={styles.priceRow}>
             <Text style={[styles.priceAmount, isSelected && styles.priceAmountSelected]}>
-              {realPrice || formatPrice(priceOption.price)}
+              {formatPrice(priceOption.price)}
             </Text>
             {priceOption.pricePerMonth && (
               <Text style={styles.pricePerMonth}>
-                ({formatPrice(priceOption.pricePerMonth)}/{language === 'fr' ? 'mois' : 'mo'})
+                ({formatPrice(priceOption.pricePerMonth)}/{t('subscription.month')})
               </Text>
             )}
           </View>
@@ -174,10 +212,17 @@ export default function SubscriptionScreen() {
     );
   };
 
-  // Affichage si déjà abonné
+  // Affichage si deja abonne
   if (currentPlan !== 'free') {
     return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <Pressable style={styles.backButton} onPress={() => router.replace('/(tabs)/profile')}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
+          </Pressable>
+          <Text style={styles.headerTitle}>{t('subscription.mySubscription')}</Text>
+          <View style={styles.headerSpacer} />
+        </View>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.subscribedContent}>
           <View style={styles.subscribedCard}>
             <Text style={styles.subscribedIcon}>
@@ -186,21 +231,16 @@ export default function SubscriptionScreen() {
             <Text style={styles.subscribedTitle}>
               {currentPlan === 'premium' ? 'SHY Premium' : 'SHY+'}
             </Text>
-            <Text style={styles.subscribedSubtitle}>
-              {language === 'fr' ? 'Abonnement actif' : 'Active subscription'}
-            </Text>
+            <Text style={styles.subscribedSubtitle}>{t('subscription.activeSubscription')}</Text>
             {expirationDate && (
               <Text style={styles.expirationText}>
-                {language === 'fr' ? 'Expire le' : 'Expires on'}{' '}
-                {expirationDate.toLocaleDateString()}
+                {t('subscription.expiresOn')} {expirationDate.toLocaleDateString()}
               </Text>
             )}
           </View>
 
           <View style={styles.featuresSection}>
-            <Text style={styles.sectionTitle}>
-              {language === 'fr' ? 'Vos avantages' : 'Your benefits'}
-            </Text>
+            <Text style={styles.sectionTitle}>{t('subscription.yourBenefits')}</Text>
             {(currentPlan === 'premium' ? premiumPlan : plusPlan).featuresList.map((feature, index) => (
               <View key={index} style={styles.featureItem}>
                 <Ionicons name="checkmark-circle" size={20} color={colors.success} />
@@ -210,23 +250,24 @@ export default function SubscriptionScreen() {
           </View>
 
           <TouchableOpacity style={styles.manageButton} onPress={handleRestore}>
-            <Text style={styles.manageButtonText}>
-              {language === 'fr' ? 'Restaurer les achats' : 'Restore purchases'}
-            </Text>
+            <Text style={styles.manageButtonText}>{t('subscription.restorePurchases')}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.manageHint}>
-            {language === 'fr'
-              ? 'Gérez votre abonnement dans les paramètres de l\'App Store ou Google Play'
-              : 'Manage your subscription in App Store or Google Play settings'}
-          </Text>
+          <Text style={styles.manageHint}>{t('subscription.manageHint')}</Text>
         </ScrollView>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable style={styles.backButton} onPress={() => router.replace('/(tabs)/profile')}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>{t('subscription.title')}</Text>
+        <View style={styles.headerSpacer} />
+      </View>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Free Trial Banner */}
         {FREE_TRIAL.enabled && (
@@ -236,9 +277,7 @@ export default function SubscriptionScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.trialBanner}
           >
-            <Text style={styles.trialText}>
-              🎉 {language === 'fr' ? '1er MOIS GRATUIT' : 'FIRST MONTH FREE'} 🎉
-            </Text>
+            <Text style={styles.trialText}>🎉 {t('subscription.firstMonthFree')} 🎉</Text>
           </LinearGradient>
         )}
 
@@ -266,9 +305,7 @@ export default function SubscriptionScreen() {
 
         {/* Features */}
         <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>
-            {language === 'fr' ? 'Fonctionnalités incluses' : 'Included features'}
-          </Text>
+          <Text style={styles.sectionTitle}>{t('subscription.includedFeatures')}</Text>
           {currentSelectedPlan.featuresList.map((feature, index) => (
             <View key={index} style={styles.featureItem}>
               <Ionicons name="checkmark-circle" size={20} color={colors.success} />
@@ -279,69 +316,79 @@ export default function SubscriptionScreen() {
 
         {/* Duration Selection */}
         <View style={styles.pricesSection}>
-          <Text style={styles.sectionTitle}>
-            {language === 'fr' ? 'Choisissez votre durée' : 'Choose your duration'}
-          </Text>
+          <Text style={styles.sectionTitle}>{t('subscription.chooseDuration')}</Text>
           <View style={styles.pricesList}>
             {currentPrices.map(renderPriceOption)}
           </View>
         </View>
 
-        {/* Comparison */}
-        <View style={styles.comparisonSection}>
-          <Text style={styles.comparisonTitle}>
-            {language === 'fr' ? '30% moins cher que la concurrence !' : '30% cheaper than competitors!'}
-          </Text>
-          <View style={styles.comparisonRow}>
-            <Text style={styles.comparisonApp}>Tinder Premium</Text>
-            <Text style={styles.comparisonPrice}>39,99 €</Text>
+        {/* Promo Code */}
+        <View style={styles.promoSection}>
+          <Text style={styles.sectionTitle}>Code promo</Text>
+          <View style={styles.promoInputContainer}>
+            <TextInput
+              style={[styles.promoInput, appliedDiscount !== null && styles.promoInputSuccess]}
+              placeholder="Entrez votre code"
+              placeholderTextColor={colors.textTertiary}
+              value={promoCode}
+              onChangeText={(text) => {
+                setPromoCode(text.toUpperCase());
+                setPromoError(null);
+              }}
+              autoCapitalize="characters"
+              editable={!appliedDiscount}
+            />
+            {appliedDiscount ? (
+              <TouchableOpacity style={styles.promoRemoveButton} onPress={handleRemovePromo}>
+                <Ionicons name="close-circle" size={24} color={colors.error} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.promoValidateButton, isValidatingPromo && styles.promoButtonDisabled]}
+                onPress={handleValidatePromo}
+                disabled={isValidatingPromo}
+              >
+                {isValidatingPromo ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <Text style={styles.promoValidateText}>Valider</Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-          <View style={styles.comparisonRow}>
-            <Text style={styles.comparisonApp}>Bumble Premium</Text>
-            <Text style={styles.comparisonPrice}>39,99 €</Text>
-          </View>
-          <View style={styles.comparisonRow}>
-            <Text style={styles.comparisonApp}>Hinge Preferred</Text>
-            <Text style={styles.comparisonPrice}>34,99 €</Text>
-          </View>
-          <View style={[styles.comparisonRow, styles.comparisonRowShy]}>
-            <Text style={styles.comparisonAppShy}>SHY Premium</Text>
-            <Text style={styles.comparisonPriceShy}>19,99 €</Text>
-          </View>
+          {promoError && (
+            <Text style={styles.promoError}>{promoError}</Text>
+          )}
+          {appliedDiscount && (
+            <View style={styles.promoSuccess}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+              <Text style={styles.promoSuccessText}>
+                -{appliedDiscount}% de réduction appliqué !
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Restore */}
         <TouchableOpacity style={styles.restoreButton} onPress={handleRestore}>
-          <Text style={styles.restoreText}>
-            {language === 'fr' ? 'Restaurer mes achats' : 'Restore my purchases'}
-          </Text>
+          <Text style={styles.restoreText}>{t('subscription.restorePurchases')}</Text>
         </TouchableOpacity>
 
         {/* Apple-Compliant Terms */}
         <View style={styles.termsSection}>
-          <Text style={styles.terms}>
-            {language === 'fr'
-              ? "Le paiement sera effectué sur votre compte iTunes lors de la confirmation de l'achat. L'abonnement se renouvelle automatiquement sauf s'il est annulé au moins 24 heures avant la fin de la période en cours. Votre compte sera facturé pour le renouvellement dans les 24 heures précédant la fin de la période en cours. Vous pouvez gérer et annuler vos abonnements dans les réglages de votre compte App Store après l'achat."
-              : 'Payment will be charged to your iTunes Account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your App Store account settings after purchase.'}
-          </Text>
+          <Text style={styles.terms}>{t('subscription.termsApple')}</Text>
 
           <View style={styles.legalLinks}>
             <TouchableOpacity onPress={openTermsOfService}>
-              <Text style={styles.legalLink}>
-                {language === 'fr' ? "Conditions d'utilisation" : 'Terms of Service'}
-              </Text>
+              <Text style={styles.legalLink}>{t('subscription.termsOfService')}</Text>
             </TouchableOpacity>
             <Text style={styles.legalSeparator}>|</Text>
             <TouchableOpacity onPress={openPrivacyPolicy}>
-              <Text style={styles.legalLink}>
-                {language === 'fr' ? 'Politique de confidentialité' : 'Privacy Policy'}
-              </Text>
+              <Text style={styles.legalLink}>{t('subscription.privacyPolicyLink')}</Text>
             </TouchableOpacity>
             <Text style={styles.legalSeparator}>|</Text>
             <TouchableOpacity onPress={openAppleSubscriptionTerms}>
-              <Text style={styles.legalLink}>
-                {language === 'fr' ? 'EULA Apple' : 'Apple EULA'}
-              </Text>
+              <Text style={styles.legalLink}>{t('subscription.appleEULA')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -349,6 +396,20 @@ export default function SubscriptionScreen() {
 
       {/* Subscribe Button */}
       <View style={styles.footer}>
+        {appliedDiscount && selectedPrice && (
+          <View style={styles.discountPreview}>
+            <Text style={styles.originalPrice}>
+              {formatPrice(selectedPrice.price)}
+            </Text>
+            <Ionicons name="arrow-forward" size={16} color={colors.success} />
+            <Text style={styles.discountedPrice}>
+              {formatPrice(calculateDiscountedPrice(selectedPrice.price))}
+            </Text>
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountBadgeText}>-{appliedDiscount}%</Text>
+            </View>
+          </View>
+        )}
         <TouchableOpacity
           onPress={handleSubscribe}
           activeOpacity={0.8}
@@ -365,12 +426,13 @@ export default function SubscriptionScreen() {
             ) : (
               <>
                 <Text style={styles.subscribeButtonText}>
-                  {FREE_TRIAL.enabled
-                    ? (language === 'fr' ? 'Essayer GRATUITEMENT' : 'Try for FREE')
-                    : (language === 'fr' ? 'S\'abonner' : 'Subscribe')}
+                  {FREE_TRIAL.enabled ? t('subscription.tryFree') : t('subscription.subscribe')}
                 </Text>
                 <Text style={styles.subscribeButtonPrice}>
-                  {selectedPrice ? formatPrice(selectedPrice.price) : ''} / {DURATION_LABELS[selectedDuration].short[language]}
+                  {appliedDiscount && selectedPrice
+                    ? formatPrice(calculateDiscountedPrice(selectedPrice.price))
+                    : (selectedPrice ? formatPrice(selectedPrice.price) : '')
+                  } / {DURATION_LABELS[selectedDuration].short[language]}
                 </Text>
               </>
             )}
@@ -385,6 +447,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: spacing.xs,
+  },
+  headerTitle: {
+    ...typography.h4,
+    color: colors.text,
+  },
+  headerSpacer: {
+    width: 32,
   },
   scrollView: {
     flex: 1,
@@ -602,49 +683,69 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
 
-  // Comparison
-  comparisonSection: {
-    margin: spacing.lg,
-    padding: spacing.lg,
+  // Promo code
+  promoSection: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  promoInputContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  promoInput: {
+    flex: 1,
     backgroundColor: colors.card,
     borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: colors.text,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  comparisonTitle: {
-    ...typography.h4,
-    color: colors.success,
-    textAlign: 'center',
-    marginBottom: spacing.md,
+  promoInputSuccess: {
+    borderColor: colors.success,
+    backgroundColor: colors.success + '10',
   },
-  comparisonRow: {
+  promoValidateButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  promoButtonDisabled: {
+    opacity: 0.7,
+  },
+  promoValidateText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  promoRemoveButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  promoError: {
+    color: colors.error,
+    fontSize: 12,
+    marginTop: spacing.xs,
+  },
+  promoSuccess: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  comparisonRowShy: {
-    borderBottomWidth: 0,
-    backgroundColor: colors.primary + '20',
-    marginHorizontal: -spacing.md,
-    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    gap: spacing.xs,
     marginTop: spacing.sm,
+    backgroundColor: colors.success + '15',
+    padding: spacing.sm,
     borderRadius: borderRadius.md,
   },
-  comparisonApp: {
-    color: colors.textSecondary,
-    textDecorationLine: 'line-through',
-  },
-  comparisonPrice: {
-    color: colors.textSecondary,
-    textDecorationLine: 'line-through',
-  },
-  comparisonAppShy: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
-  comparisonPriceShy: {
-    color: colors.primary,
-    fontWeight: '700',
+  promoSuccessText: {
+    color: colors.success,
+    fontWeight: '600',
+    fontSize: 14,
   },
 
   // Restore
@@ -692,6 +793,37 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  discountPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    backgroundColor: colors.success + '15',
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  originalPrice: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+  discountedPrice: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.success,
+  },
+  discountBadge: {
+    backgroundColor: colors.success,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  discountBadgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '700',
   },
   subscribeButton: {
     borderRadius: borderRadius.lg,
