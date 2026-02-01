@@ -25,13 +25,14 @@ export default function InterestsScreen() {
 
   const handleContinue = () => {
     updateData({ interests: selectedInterests });
-    router.push('/(onboarding)/location-consent');
+    router.push('/(onboarding)/lifestyle');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.progress}>
+          <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />

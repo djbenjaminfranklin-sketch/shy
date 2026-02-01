@@ -487,6 +487,41 @@ class AdminService {
       .eq('id', userId);
   }
 
+  // Give boosts to user
+  async giveBoosts(userId: string, quantity: number): Promise<{ success: boolean; error: string | null }> {
+    try {
+      // Get current boost count
+      const { data: existingData } = await supabase
+        .from('user_boosts')
+        .select('boosts_available')
+        .eq('user_id', userId)
+        .single();
+
+      const currentBoosts = existingData?.boosts_available || 0;
+
+      // Upsert the boost balance
+      const { error } = await supabase
+        .from('user_boosts')
+        .upsert({
+          user_id: userId,
+          boosts_available: currentBoosts + quantity,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id',
+        });
+
+      if (error) {
+        console.error('Error giving boosts:', error);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, error: null };
+    } catch (err) {
+      console.error('Error giving boosts:', err);
+      return { success: false, error: 'Une erreur inattendue est survenue' };
+    }
+  }
+
   // Update any profile field (full admin power)
   async updateProfile(userId: string, updates: Record<string, any>): Promise<void> {
     await supabase

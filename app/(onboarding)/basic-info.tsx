@@ -100,6 +100,7 @@ export default function BasicInfoScreen() {
       >
         <View style={styles.progress}>
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
           <View style={[styles.progressDot, styles.progressActive]} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />

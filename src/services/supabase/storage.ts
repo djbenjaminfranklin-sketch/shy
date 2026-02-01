@@ -1,10 +1,11 @@
 import { supabase } from './client';
 import * as ImageManipulator from 'expo-image-manipulator';
-// FileSystem import removed - not currently used
+import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 
 const BUCKET_NAME = 'profile-photos';
 const VERIFICATION_BUCKET = 'verification-photos';
+const VIDEO_BUCKET = 'profile-videos';
 const MAX_WIDTH = 1080;
 const MAX_HEIGHT = 1080;
 const QUALITY = 0.8;
@@ -67,6 +68,76 @@ export const storageService = {
       return { url: urlData.publicUrl, error: null };
     } catch (err) {
       console.error('[Storage] Error uploading photo:', err);
+      return { url: null, error: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` };
+    }
+  },
+
+  /**
+   * Upload une vidéo de profil
+   */
+  async uploadProfileVideo(
+    userId: string,
+    uri: string
+  ): Promise<{ url: string | null; error: string | null }> {
+    try {
+      console.log('[Storage] Starting video upload for:', uri);
+
+      // Lire le fichier vidéo en base64
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      console.log('[Storage] Video base64 length:', base64.length);
+
+      // Générer un nom de fichier unique
+      const fileName = `${userId}/${Date.now()}_profile.mp4`;
+
+      // Convertir base64 en ArrayBuffer
+      const arrayBuffer = decode(base64);
+
+      console.log('[Storage] Video ArrayBuffer created, size:', arrayBuffer.byteLength);
+
+      // Upload vers Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from(VIDEO_BUCKET)
+        .upload(fileName, arrayBuffer, {
+          contentType: 'video/mp4',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error('[Storage] Video upload error:', uploadError);
+        // Fallback: essayer avec le bucket principal si le bucket vidéo n'existe pas
+        const { error: fallbackError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .upload(`videos/${fileName}`, arrayBuffer, {
+            contentType: 'video/mp4',
+            upsert: true,
+          });
+
+        if (fallbackError) {
+          return { url: null, error: fallbackError.message };
+        }
+
+        const { data: urlData } = supabase.storage
+          .from(BUCKET_NAME)
+          .getPublicUrl(`videos/${fileName}`);
+
+        return { url: urlData.publicUrl, error: null };
+      }
+
+      console.log('[Storage] Video upload success:', data);
+
+      // Récupérer l'URL publique
+      const { data: urlData } = supabase.storage
+        .from(VIDEO_BUCKET)
+        .getPublicUrl(fileName);
+
+      console.log('[Storage] Video public URL:', urlData.publicUrl);
+
+      return { url: urlData.publicUrl, error: null };
+    } catch (err) {
+      console.error('[Storage] Error uploading video:', err);
       return { url: null, error: `Erreur: ${err instanceof Error ? err.message : 'Inconnue'}` };
     }
   },

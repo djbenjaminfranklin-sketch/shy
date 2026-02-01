@@ -3,6 +3,7 @@ import { AvailabilityId } from '../constants/availability';
 import { HairColorId } from '../constants/hairColors';
 import { GenderId } from '../constants/genders';
 import { LanguageId } from '../constants/languages';
+import { DrinkingId, SmokingId, ChildrenId, ProfilePromptAnswer } from '../constants/lifestyle';
 
 export interface Profile {
   id: string;
@@ -17,6 +18,14 @@ export interface Profile {
   languages: LanguageId[];
   interests: string[];
   photos: string[];
+  videoUrl: string | null;
+
+  // Lifestyle
+  height: number | null;
+  drinking: DrinkingId | null;
+  smoking: SmokingId | null;
+  children: ChildrenId | null;
+  prompts: ProfilePromptAnswer[];
 
   // Géolocalisation
   locationEnabled: boolean;

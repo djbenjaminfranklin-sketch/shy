@@ -5,6 +5,7 @@ import type { AvailabilityId } from '../../constants/availability';
 import type { GenderId } from '../../constants/genders';
 import type { HairColorId } from '../../constants/hairColors';
 import type { LanguageId } from '../../constants/languages';
+import type { DrinkingId, SmokingId, ChildrenId, ProfilePromptAnswer } from '../../constants/lifestyle';
 import { DEFAULT_SEARCH_RADIUS } from '../../constants';
 import type { AvailabilityModeType } from '../../types/availabilityMode';
 
@@ -18,6 +19,12 @@ export interface CreateProfileData {
   languages?: LanguageId[];
   interests?: string[];
   photos?: string[];
+  videoUrl?: string | null;
+  height?: number | null;
+  drinking?: DrinkingId | null;
+  smoking?: SmokingId | null;
+  children?: ChildrenId | null;
+  prompts?: ProfilePromptAnswer[];
   locationEnabled?: boolean;
   latitude?: number | null;
   longitude?: number | null;
@@ -33,6 +40,7 @@ export interface UpdateProfileData {
   languages?: LanguageId[];
   interests?: string[];
   photos?: string[];
+  videoUrl?: string | null;
   locationEnabled?: boolean;
   latitude?: number | null;
   longitude?: number | null;
@@ -77,6 +85,12 @@ export const profilesService = {
           languages: data.languages || [],
           interests: data.interests || [],
           photos: data.photos || [],
+          video_url: data.videoUrl || null,
+          height: data.height || null,
+          drinking: data.drinking || null,
+          smoking: data.smoking || null,
+          children: data.children || null,
+          prompts: data.prompts || [],
           location_enabled: data.locationEnabled || false,
           latitude: data.latitude || null,
           longitude: data.longitude || null,
@@ -139,6 +153,7 @@ export const profilesService = {
       if (data.languages !== undefined) updateData.languages = data.languages;
       if (data.interests !== undefined) updateData.interests = data.interests;
       if (data.photos !== undefined) updateData.photos = data.photos;
+      if (data.videoUrl !== undefined) updateData.video_url = data.videoUrl;
       if (data.locationEnabled !== undefined) updateData.location_enabled = data.locationEnabled;
       if (data.latitude !== undefined) updateData.latitude = data.latitude;
       if (data.longitude !== undefined) updateData.longitude = data.longitude;
@@ -405,6 +420,12 @@ function mapProfileFromDb(data: Record<string, unknown>): Profile {
     languages: (data.languages as LanguageId[]) || [],
     interests: (data.interests as string[]) || [],
     photos: (data.photos as string[]) || [],
+    videoUrl: (data.video_url as string) || null,
+    height: (data.height as number) || null,
+    drinking: (data.drinking as DrinkingId) || null,
+    smoking: (data.smoking as SmokingId) || null,
+    children: (data.children as ChildrenId) || null,
+    prompts: (data.prompts as ProfilePromptAnswer[]) || [],
     locationEnabled: data.location_enabled as boolean,
     latitude: data.latitude as number | null,
     longitude: data.longitude as number | null,

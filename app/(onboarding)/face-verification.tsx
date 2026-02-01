@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../src/theme/colors';
@@ -43,24 +43,6 @@ export default function FaceVerificationScreen() {
 
   const handleContinue = () => {
     router.push('/(onboarding)/basic-info');
-  };
-
-  const handleSkip = () => {
-    Alert.alert(
-      'Ignorer la verification ?',
-      'Votre profil ne sera pas verifie et pourrait avoir moins de visibilite.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Ignorer',
-          style: 'destructive',
-          onPress: () => {
-            updateData({ isVerified: false });
-            router.push('/(onboarding)/basic-info');
-          },
-        },
-      ]
-    );
   };
 
   // Ecran de verification camera
@@ -140,6 +122,7 @@ export default function FaceVerificationScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
         </View>
 
         <View style={styles.iconContainer}>
@@ -202,9 +185,6 @@ export default function FaceVerificationScreen() {
 
         <View style={styles.footer}>
           <Button title="Commencer la verification" onPress={handleStartVerification} />
-          <Pressable style={styles.skipButton} onPress={handleSkip}>
-            <Text style={styles.skipButtonText}>Plus tard</Text>
-          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -322,14 +302,6 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     marginBottom: spacing.lg,
     gap: spacing.sm,
-  },
-  skipButton: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  skipButtonText: {
-    ...typography.button,
-    color: colors.textSecondary,
   },
   // Success screen
   successIcon: {

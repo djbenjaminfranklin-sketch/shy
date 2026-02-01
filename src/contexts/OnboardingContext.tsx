@@ -4,10 +4,14 @@ import { profilesService } from '../services/supabase/profiles';
 import { useAuth } from './AuthContext';
 import type { GenderId } from '../constants/genders';
 import type { IntentionId } from '../constants/intentions';
+import type { DrinkingId, SmokingId, ChildrenId, ProfilePromptAnswer } from '../constants/lifestyle';
 
 interface OnboardingData {
   // Photo
   photoUri: string | null;
+
+  // Video (optional)
+  videoUri: string | null;
 
   // Face verification (for women)
   isVerified: boolean;
@@ -23,6 +27,13 @@ interface OnboardingData {
 
   // Interests
   interests: string[];
+
+  // Lifestyle
+  height: number | null;
+  drinking: DrinkingId | null;
+  smoking: SmokingId | null;
+  children: ChildrenId | null;
+  prompts: ProfilePromptAnswer[];
 
   // Location
   locationEnabled: boolean;
@@ -40,6 +51,7 @@ interface OnboardingContextType {
 
 const initialData: OnboardingData = {
   photoUri: null,
+  videoUri: null,
   isVerified: false,
   verificationPhotos: [],
   displayName: '',
@@ -47,6 +59,11 @@ const initialData: OnboardingData = {
   gender: '',
   intention: '',
   interests: [],
+  height: null,
+  drinking: null,
+  smoking: null,
+  children: null,
+  prompts: [],
   locationEnabled: false,
   latitude: null,
   longitude: null,
@@ -90,7 +107,21 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 2. Créer le profil
+      // 2. Upload la vidéo de profil si présente
+      let videoUrl: string | null = null;
+      if (data.videoUri) {
+        const { url, error: uploadError } = await storageService.uploadProfileVideo(
+          user.id,
+          data.videoUri
+        );
+        if (uploadError) {
+          console.error('Error uploading video:', uploadError);
+        } else {
+          videoUrl = url;
+        }
+      }
+
+      // 3. Créer le profil
       const { error: profileError } = await profilesService.createProfile(user.id, {
         displayName: data.displayName,
         birthDate: data.birthDate?.toISOString().split('T')[0] || '',
@@ -98,6 +129,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         intention: data.intention as IntentionId,
         interests: data.interests,
         photos: photoUrl ? [photoUrl] : [],
+        videoUrl: videoUrl,
+        height: data.height,
+        drinking: data.drinking,
+        smoking: data.smoking,
+        children: data.children,
+        prompts: data.prompts,
         locationEnabled: data.locationEnabled,
         latitude: data.latitude,
         longitude: data.longitude,
@@ -108,7 +145,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         return { success: false, error: profileError };
       }
 
-      // 3. Reset les données
+      // 4. Reset les données
       resetData();
 
       return { success: true, error: null };

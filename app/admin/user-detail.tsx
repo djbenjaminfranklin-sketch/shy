@@ -115,6 +115,49 @@ export default function UserDetailScreen() {
     );
   };
 
+  const handleGiveBoosts = () => {
+    Alert.alert(
+      `Offrir des boosts à ${user?.displayName}`,
+      'Combien de boosts voulez-vous offrir ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: '1 boost',
+          onPress: async () => {
+            const result = await adminService.giveBoosts(userId!, 1);
+            if (result.success) {
+              Alert.alert('Succès', `1 boost offert à ${user?.displayName} !`);
+            } else {
+              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+            }
+          },
+        },
+        {
+          text: '5 boosts',
+          onPress: async () => {
+            const result = await adminService.giveBoosts(userId!, 5);
+            if (result.success) {
+              Alert.alert('Succès', `5 boosts offerts à ${user?.displayName} !`);
+            } else {
+              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+            }
+          },
+        },
+        {
+          text: '10 boosts',
+          onPress: async () => {
+            const result = await adminService.giveBoosts(userId!, 10);
+            if (result.success) {
+              Alert.alert('Succès', `10 boosts offerts à ${user?.displayName} !`);
+            } else {
+              Alert.alert('Erreur', result.error || 'Une erreur est survenue');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loading}>
@@ -250,6 +293,14 @@ export default function UserDetailScreen() {
           <Ionicons name="gift" size={20} color={colors.premium} />
           <Text style={[styles.actionText, { color: colors.premium }]}>
             Attribuer un abonnement gratuit
+          </Text>
+        </TouchableOpacity>
+
+        {/* Give Boosts */}
+        <TouchableOpacity style={styles.actionBtn} onPress={handleGiveBoosts}>
+          <Ionicons name="rocket" size={20} color={colors.secondary} />
+          <Text style={[styles.actionText, { color: colors.secondary }]}>
+            Offrir des boosts
           </Text>
         </TouchableOpacity>
 
