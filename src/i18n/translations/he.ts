@@ -1,0 +1,627 @@
+import { TranslationKeys } from './fr';
+
+export const he: TranslationKeys = {
+  // Common
+  common: {
+    cancel: 'ביטול',
+    confirm: 'אישור',
+    save: 'שמירה',
+    delete: 'מחיקה',
+    edit: 'עריכה',
+    next: 'הבא',
+    back: 'חזרה',
+    skip: 'דלג',
+    done: 'סיום',
+    loading: 'טוען...',
+    error: 'שגיאה',
+    success: 'הצלחה',
+    yes: 'כן',
+    no: 'לא',
+    ok: 'אישור',
+    continue: 'המשך',
+    later: 'מאוחר יותר',
+    close: 'סגור',
+    search: 'חיפוש',
+    refresh: 'רענון',
+    retry: 'נסה שוב',
+    send: 'שלח',
+    years: 'שנים',
+    km: 'ק"מ',
+  },
+
+  // Tabs
+  tabs: {
+    home: 'בית',
+    explore: 'גלה',
+    likes: 'לייקים',
+    messages: 'הודעות',
+    profile: 'פרופיל',
+  },
+
+  // Welcome screen
+  welcome: {
+    tagline: 'היכרויות, בפשטות.',
+    createAccount: 'צור חשבון',
+    login: 'התחבר',
+    footerText: 'בהמשך, אתה מסכים לתנאים שלנו.',
+    terms: 'תנאים',
+    privacy: 'פרטיות',
+    features: {
+      verified: 'פרופילים מאומתים',
+      nearby: 'קרוב אליך',
+      connections: 'חיבורים אמיתיים',
+    },
+  },
+
+  // Auth
+  auth: {
+    email: 'אימייל',
+    password: 'סיסמה',
+    confirmPassword: 'אשר סיסמה',
+    forgotPassword: 'שכחת סיסמה?',
+    loginButton: 'התחבר',
+    registerButton: 'הירשם',
+    noAccount: 'אין לך חשבון?',
+    hasAccount: 'כבר יש לך חשבון?',
+    ageVerification: 'אני מאשר שאני בן 18 ומעלה',
+    invalidEmail: 'אימייל לא תקין',
+    passwordTooShort: 'הסיסמה חייבת להכיל לפחות 8 תווים',
+    passwordMismatch: 'הסיסמאות לא תואמות',
+    loginTitle: 'התחברות',
+    loginSubtitle: 'ברוך שובך!',
+    registerTitle: 'צור חשבון',
+    registerSubtitle: 'הצטרף לקהילת SHY',
+    fillAllFields: 'אנא מלא את כל השדות',
+    incorrectCredentials: 'אימייל או סיסמה שגויים',
+    acceptTerms: 'עליך לקבל את התנאים כדי להמשיך',
+    acceptTermsLabel: 'אני מסכים ל',
+    and: 'ול',
+    privacyPolicy: 'מדיניות הפרטיות',
+    errorOccurred: 'אירעה שגיאה. אנא נסה שוב.',
+    min8Chars: 'מינימום 8 תווים',
+  },
+
+  // Profile
+  profile: {
+    title: 'הפרופיל שלי',
+    editProfile: 'ערוך את הפרופיל שלי',
+    verification: 'אימות',
+    subscription: 'מנוי',
+    settings: 'הגדרות',
+    privacy: 'פרטיות',
+    help: 'עזרה',
+    logout: 'התנתק',
+    deleteAccount: 'מחק את החשבון שלי',
+    completeProfile: 'השלם את הפרופיל שלי',
+    user: 'משתמש',
+    stats: {
+      sent: 'נשלחו',
+      received: 'התקבלו',
+      connections: 'חיבורים',
+    },
+    logoutConfirm: {
+      title: 'התנתקות',
+      message: 'האם אתה בטוח שברצונך להתנתק?',
+    },
+    deleteConfirm: {
+      title: 'מחק את החשבון שלי',
+      message: 'פעולה זו בלתי הפיכה. כל הנתונים, התמונות, השיחות והחיבורים שלך יימחקו לצמיתות.',
+      finalTitle: 'אישור סופי',
+      finalMessage: 'האם אתה בטוח לחלוטין? החשבון שלך יימחק תוך 30 יום.',
+      keepAccount: 'לא, שמור את החשבון שלי',
+      confirmDelete: 'כן, מחק לצמיתות',
+      successTitle: 'החשבון נמחק',
+      successMessage: 'בקשת המחיקה שלך נרשמה. החשבון שלך יימחק תוך 30 יום.',
+    },
+    adminPanel: 'פאנל מנהל',
+  },
+
+  // Edit profile
+  editProfile: {
+    title: 'עריכת פרופיל',
+    photos: 'תמונות',
+    nameLabel: 'שם פרטי או כינוי',
+    namePlaceholder: 'איך תרצה שיקראו לך?',
+    aboutLabel: 'על עצמך',
+    aboutPlaceholder: 'ספר לנו על עצמך...',
+    intentionLabel: 'הכוונה שלך',
+    availabilityLabel: 'זמינות',
+    notSpecified: 'לא צוין',
+    permissionRequired: 'נדרשת הרשאה',
+    photoPermissionMessage: 'אנא אפשר גישה לתמונות שלך בהגדרות.',
+    errorSelectPhoto: 'לא ניתן לבחור את התמונה. אנא נסה שוב.',
+  },
+
+  // Settings
+  settings: {
+    title: 'הגדרות',
+    languageSection: 'שפה / Language',
+    locationSection: 'מיקום',
+    enableLocation: 'הפעל מיקום',
+    locationDescription: 'מאפשר לך לראות ולהיראות על ידי אנשים בקרבת מקום',
+    locationHint: 'רק מרחק משוער משותף, לעולם לא הכתובת המדויקת שלך.',
+    searchPreferences: 'העדפות חיפוש',
+    maxDistance: 'מרחק מקסימלי',
+    ageRange: 'טווח גילאים',
+    minAge: 'גיל מינימלי',
+    maxAge: 'גיל מקסימלי',
+    lookingFor: 'אני מחפש',
+    lookingForHint: 'השאר ריק כדי לראות את כולם',
+    savePreferences: 'שמור העדפות',
+    saving: 'שומר...',
+    preferencesSaved: 'ההעדפות שלך נשמרו',
+    notifications: 'התראות',
+    newInvitations: 'הזמנות חדשות',
+    newInvitationsDesc: 'קבל התראה כשתקבל הזמנה חדשה',
+    messagesNotif: 'הודעות',
+    messagesNotifDesc: 'קבל התראה על הודעות חדשות',
+    soundVibration: 'צליל ורטט',
+    soundVibrationDesc: 'הפעל צליל ורטט להתראות',
+    accountSection: 'חשבון',
+    accountHint: 'לשינוי האימייל או הסיסמה, השתמש בפונקציה "שכחתי סיסמה" במסך ההתחברות.',
+  },
+
+  // Subscription
+  subscription: {
+    title: 'מנוי',
+    mySubscription: 'המנוי שלי',
+    activeSubscription: 'מנוי פעיל',
+    expiresOn: 'פג תוקף ב',
+    yourBenefits: 'ההטבות שלך',
+    restorePurchases: 'שחזר רכישות',
+    manageHint: 'נהל את המנוי שלך בהגדרות App Store או Google Play',
+    firstMonthFree: 'חודש ראשון חינם',
+    includedFeatures: 'תכונות כלולות',
+    chooseDuration: 'בחר את משך המנוי',
+    comingSoon: 'בקרוב',
+    comingSoonMessage: 'מנויים יהיו זמינים בקרוב מאוד!',
+    welcomePremium: 'ברוכים הבאים ל-SHY Premium!',
+    welcomePlus: '!SHY+-ברוך הבא ל',
+    tryFree: 'נסה בחינם',
+    promoCode: 'קוד קופון',
+    promoCodePlaceholder: 'הזן קוד',
+    promoCodeApply: 'החל',
+    promoCodeInvalid: 'קוד לא תקין',
+    promoCodeSuccess: 'הקוד הוחל!',
+    subscribe: 'הירשם למנוי',
+    termsApple: 'התשלום יחויב בחשבון iTunes שלך עם אישור הרכישה. המנוי מתחדש אוטומטית אלא אם ההתחדשות האוטומטית מבוטלת לפחות 24 שעות לפני סוף התקופה הנוכחית. החשבון שלך יחויב בחידוש בתוך 24 שעות לפני סוף התקופה הנוכחית. תוכל לנהל ולבטל את המנויים שלך בהגדרות חשבון App Store לאחר הרכישה.',
+    termsOfService: 'תנאי שירות',
+    privacyPolicyLink: 'מדיניות פרטיות',
+    appleEULA: 'EULA של Apple',
+    best: 'הטוב ביותר',
+    popular: 'פופולרי',
+    month: 'חודש',
+  },
+
+  // Duration labels
+  duration: {
+    week: 'שבוע',
+    month: 'חודש',
+    threeMonths: '3 חודשים',
+    sixMonths: '6 חודשים',
+    year: 'שנה',
+  },
+
+  // Discover
+  discover: {
+    title: 'גלה',
+    favorites: 'מועדפים',
+    nearby: 'קרוב אלי',
+    noMoreProfiles: 'אין עוד פרופילים',
+    comeBackLater: 'חזור מאוחר יותר לגלות אנשים חדשים',
+    km: 'ק"מ',
+    at: 'ב',
+    active: 'פעיל/ה',
+    agoMinutes: 'לפני {0} דקות',
+    agoHours: 'לפני {0} שעות',
+    boostTitle: 'בוסט',
+    boostDescription: 'בוסט הופך את הפרופיל שלך לנראה יותר למשך 30 דקות. אתה מופיע ראשון בחיפושים.',
+    activateBoost: 'הפעל בוסט',
+    invitationRequired: 'נדרשת הזמנה',
+    invitationRequiredMessage: 'שלח הזמנה קודם על ידי החלקה ימינה',
+    locationDisabled: 'המיקום מושבת',
+    // Availability modes
+    activateMode: 'מצב',
+    modeActivated: 'המצב הופעל',
+    modeActivatedMessage: 'תראה רק פרופילים באותו מצב.',
+    deactivateMode: 'כבה מצב',
+    deactivateModeConfirm: 'האם אתה בטוח שברצונך לכבות את המצב?',
+    noProfilesInMode: 'אין פרופילים במצב זה',
+    noProfilesInModeHint: 'אף אחד עדיין לא הפעיל את המצב הזה. חזור מאוחר יותר!',
+  },
+
+  // Availability Modes
+  availabilityModes: {
+    activateTitle: 'הפעל מצב',
+    description: 'הפעל מצב כדי לראות רק פרופילים עם אותו מצב רוח.',
+    activationsThisWeek: 'הפעלות השבוע',
+    unlimited: 'ללא הגבלה',
+    chooseMode: 'בחר מצב',
+    duration: 'משך',
+    activateButton: 'הפעל מצב',
+    limitReached: 'הגעת למגבלה',
+    limitReachedMessage: 'שדרג לפרימיום להפעלות ללא הגבלה',
+    seeOffers: 'ראה הצעות',
+    premium: 'פרימיום',
+    modeActive: 'מצב פעיל',
+    // Mode names
+    relaxed: 'רגוע',
+    spontaneous: 'ספונטני',
+    explorer: 'חוקר',
+    // Mode badges
+    relaxedBadge: 'זמין היום',
+    spontaneousBadge: 'זמין עכשיו',
+    explorerBadge: 'פתוח השבוע',
+    // Mode descriptions
+    relaxedDescription: 'קח את הזמן לשוחח בנחת',
+    spontaneousDescription: 'מוכן להכיר אנשים במהירות',
+    explorerDescription: 'סקרן לגלות אנשים חדשים',
+    // Durations
+    duration24h: '24 שעות',
+    duration72h: '72 שעות',
+  },
+
+  // Explore
+  explore: {
+    title: 'גלה',
+    map: 'מפה',
+    grid: 'רשת',
+    onlineNow: 'מחובר עכשיו',
+    nearbySection: 'בקרבת מקום',
+    noOneNearby: 'אף אחד בקרבת מקום',
+    enableLocationHint: 'הפעל את המיקום שלך כדי לגלות פרופילים סביבך.',
+    locationDisabled: 'המיקום מושבת',
+  },
+
+  // Invitations
+  invitations: {
+    title: 'הזמנות',
+    received: 'התקבלו',
+    sent: 'נשלחו',
+    pending: 'ממתין',
+    accepted: 'התקבלה',
+    expired: 'פג תוקף',
+    noInvitations: 'עדיין אין הזמנות',
+    noInvitationsHint: 'אנשים המתעניינים בפרופיל שלך יופיעו כאן. המשך לחקור!',
+    accept: 'קבל',
+    decline: 'דחה',
+    expiresIn: 'פג תוקף בעוד',
+    days: 'ימים',
+    refuseTitle: 'לדחות הזמנה זו?',
+    refuseMessage: 'האם אתה בטוח שברצונך לדחות את ההזמנה מ-{0}?',
+    exploreProfiles: 'גלה פרופילים',
+    justNow: 'הרגע',
+    minutesAgo: 'לפני {0} דקות',
+    hoursAgo: 'לפני {0} שעות',
+    yesterday: 'אתמול',
+    daysAgo: 'לפני {0} ימים',
+    weeksAgo: 'לפני {0} שבועות',
+  },
+
+  // Connections / Matches
+  connections: {
+    title: 'החיבורים שלי',
+    noConnections: 'עדיין אין חיבורים',
+    noConnectionsHint: 'כשמישהו יקבל את ההזמנה שלך, תוכל לשוחח כאן!',
+    discoverProfiles: 'גלה פרופילים',
+    startChatting: 'התחל לשוחח!',
+  },
+
+  // Messages
+  messages: {
+    title: 'הודעות',
+    noMessages: 'אין הודעות',
+    startConversation: 'התחל לשוחח עם החיבורים שלך',
+    typeMessage: 'כתוב הודעה...',
+    send: 'שלח',
+    conversationNotFound: 'השיחה לא נמצאה',
+    startConversationHint: 'התחל את השיחה',
+    sendFirstMessage: 'שלח הודעה ראשונה כדי להכיר',
+  },
+
+  // Chat
+  chat: {
+    seeOriginal: 'ראה מקור',
+    seeTranslation: 'ראה תרגום',
+    translated: 'מתורגם',
+  },
+
+  // Direct Messaging
+  directMessage: {
+    sendMessage: 'שלח הודעה',
+    startConversation: 'התחל שיחה',
+    privilegeWomen: 'את יכולה לשלוח הודעה ישירות לגברים שמעניינים אותך.',
+    privilegeNonBinary: 'אתה יכול לשלוח הודעה ישירות לאנשים לא-בינאריים.',
+    needInvitation: 'שלח הזמנה כדי להתחיל שיחה.',
+    messageSent: 'ההודעה נשלחה!',
+    connectionCreated: 'השיחה התחילה',
+  },
+
+  // Intentions
+  intentions: {
+    social: 'חברתי / לשוחח',
+    dating: 'דייטינג',
+    amical: 'חברות',
+    local: 'לגלות מקומית',
+  },
+
+  // Availability
+  availability: {
+    today: 'זמין היום',
+    afternoon: 'אחר הצהריים',
+    tonight: 'הערב',
+    weekend: 'סוף השבוע',
+  },
+
+  // Onboarding
+  onboarding: {
+    // Profile photo
+    addPhoto: 'הוסף תמונה',
+    photoHelps: 'תמונת פרופיל עוזרת לאחרים לזהות אותך',
+    addPhotoButton: 'הוסף תמונה',
+    gallery: 'גלריה',
+    camera: 'מצלמה',
+    photoPermission: 'נדרשת הרשאה',
+    photoPermissionMessage: 'אנא אפשר גישה לתמונות שלך בהגדרות.',
+    cameraPermission: 'אנא אפשר גישה למצלמה בהגדרות.',
+    photoError: 'לא ניתן לבחור את התמונה. אנא נסה שוב.',
+    cameraError: 'לא ניתן לצלם. אנא נסה שוב.',
+
+    // Face verification
+    verifyIdentity: 'אמת את הזהות שלך',
+    protectYourself: 'הגן על עצמך ועל אחרים מפרופילים מזויפים',
+    yourProfilePhoto: 'תמונת הפרופיל שלך',
+    howItWorks: 'איך זה עובד?',
+    step1Title: 'הסתכל למצלמה',
+    step1Desc: 'מקם את הפנים שלך במסגרת',
+    step2Title: 'עקוב אחר ההוראות',
+    step2Desc: 'סובב את הראש שמאלה, ואז ימינה',
+    step3Title: 'אימות אוטומטי',
+    step3Desc: 'אנחנו מוודאים שזה אתה בתמונה',
+    startVerification: 'התחל אימות',
+    photoRequired: 'נדרשת תמונה',
+    photoRequiredMessage: 'עליך להוסיף תמונת פרופיל קודם.',
+    verificationFailed: 'האימות נכשל',
+    verificationFailedMessage: 'הפנים שזוהו לא תואמים לתמונת הפרופיל שלך. אנא נסה שוב.',
+    retry: 'נסה שוב',
+    skipVerification: 'לדלג על האימות?',
+    skipVerificationMessage: 'הפרופיל שלך לא יהיה מאומת וייתכן שתהיה לו פחות חשיפה.',
+    ignore: 'דלג',
+    profileVerified: 'הפרופיל אומת!',
+    verificationConfirmed: 'הזהות שלך אושרה. תקבל תג אימות בפרופיל שלך.',
+    verificationBadge: 'תג אימות',
+    benefit1: 'משתמשים אחרים ידעו שאתה אמיתי',
+    benefit2: 'יותר סיכויים להתאמות',
+    benefit3: 'עדיפות בתוצאות החיפוש',
+
+    // Basic info
+    tellUsAboutYou: 'ספר לנו על עצמך',
+    infoVisibleOnProfile: 'המידע הזה יהיה גלוי בפרופיל שלך',
+    nameLabel: 'שם פרטי או כינוי *',
+    namePlaceholder: 'איך תרצה שיקראו לך?',
+    birthDateLabel: 'תאריך לידה *',
+    birthDatePlaceholder: 'יום/חודש/שנה',
+    must18: 'עליך להיות בן 18 ומעלה',
+    genderLabel: 'מגדר *',
+    hairColorLabel: 'צבע שיער',
+
+    // Intention
+    intentionTitle: 'מה הכוונה שלך?',
+    intentionSubtitle: 'זה עוזר לאחרים להבין מה אתה מחפש',
+
+    // Interests
+    interestsTitle: 'התחומי עניין שלך',
+    interestsSubtitle: 'בחר עד 10 תחומי עניין ({0}/10)',
+
+    // Location
+    enableLocationTitle: 'הפעל מיקום',
+    enableLocationDesc: 'כדי להציג לך אנשים בקרבת מקום, SHY צריך גישה למיקום שלך.',
+    approxLocation: 'מיקום משוער',
+    approxLocationDesc: 'רק מרחק משוער משותף, לעולם לא הכתובת המדויקת שלך.',
+    fullControl: 'שליטה מלאה',
+    fullControlDesc: 'תוכל להסתיר את המיקום שלך בכל עת מההגדרות.',
+    disabledByDefault: 'מושבת כברירת מחדל',
+    disabledByDefaultDesc: 'גם אם תאשר גישה, המיקום יישאר מושבת עד שתפעיל אותו.',
+    authorizeLocation: 'אשר מיקום',
+    maybeLater: 'אולי מאוחר יותר',
+    gettingLocation: 'מקבל מיקום...',
+    creatingProfile: 'יוצר פרופיל...',
+    profileCreationError: 'אירעה שגיאה ביצירת הפרופיל שלך. אנא נסה שוב.',
+  },
+
+  // Errors
+  errors: {
+    networkError: 'שגיאת חיבור',
+    serverError: 'שגיאת שרת',
+    tryAgain: 'נסה שוב',
+    somethingWrong: 'משהו השתבש',
+    unableToLoad: 'לא ניתן לטעון',
+    unableToLoadInvitations: 'לא ניתן לטעון הזמנות',
+    unableToAccept: 'לא ניתן לקבל את ההזמנה',
+    unableToRefuse: 'לא ניתן לדחות את ההזמנה',
+  },
+
+  // Notifications
+  notifications: {
+    newInvitation: 'הזמנה חדשה',
+    invitationAccepted: 'ההזמנה התקבלה',
+    newMessage: 'הודעה חדשה',
+    nearbyUser: 'מישהו קרוב אליך',
+  },
+
+  // Alerts
+  alerts: {
+    errorTitle: 'שגיאה',
+    successTitle: 'הצלחה',
+    confirmTitle: 'אישור',
+  },
+
+  // Legal
+  legal: {
+    disclaimer: 'אפליקציה זו היא פלטפורמה חברתית לחיבור מבוגרים בהסכמה. היא אינה מציעה או מקלה על שירותי מין בתשלום.',
+  },
+
+  // Moderation
+  moderation: {
+    blockUser: 'חסום',
+    reportUser: 'דווח',
+    block: 'חסום',
+    blockConfirmation: 'האם אתה בטוח שברצונך לחסום את {name}? אדם זה לא יוכל יותר ליצור איתך קשר והשיחה שלכם תימחק.',
+    userBlocked: 'המשתמש נחסם',
+    userBlockedMessage: 'אדם זה לא יכול יותר ליצור איתך קשר.',
+    reportReason: 'למה אתה מדווח על פרופיל זה?',
+    reportSent: 'הדיווח נשלח',
+    reportSentMessage: 'תודה על הדיווח. הצוות שלנו יבדוק את הפרופיל הזה.',
+    thisUser: 'משתמש זה',
+  },
+
+  // Time ago helpers
+  time: {
+    justNow: 'הרגע',
+    minutesAgo: '{0} דקות',
+    hoursAgo: '{0} שעות',
+    daysAgo: '{0} ימים',
+    weeksAgo: '{0} שבועות',
+  },
+
+  // Connection Rhythm
+  connectionRhythm: {
+    title: 'קצב החיבור',
+    loading: 'טוען...',
+    pendingTitle: 'קצב החיבור',
+    pendingSubtitle: 'עוד {count} הודעות כדי לחשב את הציון שלך',
+    howItWorks: 'איך זה עובד?',
+    explanation: 'ציון זה משקף את איכות השיחות שלכם: זמן תגובה, שעות פעילות משותפות, אורך הודעות וסדירות.',
+    // Labels
+    perfectHarmony: 'הרמוניה מושלמת',
+    greatConnection: 'חיבור מעולה',
+    goodCompatibility: 'תאימות טובה',
+    building: 'בהתהוות',
+    developing: 'בפיתוח',
+    // Descriptions
+    perfectHarmonyDesc: 'אתם על אותו גל',
+    greatConnectionDesc: 'התקשורת שלכם זורמת',
+    goodCompatibilityDesc: 'אתם לומדים להכיר אחד את השני',
+    buildingDesc: 'הקצב שלכם מתכוונן',
+    developingDesc: 'המשיכו לתקשר',
+    // Trends
+    trendUp: 'החיבור שלכם משתפר',
+    trendDown: 'תקשרו יותר באופן קבוע',
+    trendStable: 'הקצב שלכם יציב',
+    // Premium
+    upgradeForDetails: 'SHY+ לפרטים',
+  },
+
+  // Comfort Level
+  comfortLevel: {
+    title: 'רמת נוחות',
+    explanation: 'מערכת זו מאפשרת לך להתקדם בקצב שלך. תכונות נפתחות רק כששניכם מוכנים.',
+    mutual: 'רמה הדדית',
+    otherReady: 'מוכן/ה לעבור לרמה הבאה',
+    otherUserAt: '{name} מוכן/ה להעמיק',
+    mutualLevel: 'אתם באותה רמת נוחות',
+    selectLevel: 'בחר את הרמה שלך',
+    safetyTitle: 'הנוחות שלך, הבחירה שלך',
+    safetyText: 'אתה יכול לשנות את הרמה שלך בכל עת. שום דבר לא קבוע ואתה שומר על השליטה.',
+    resetLevel: 'חזור לרמה ההתחלתית',
+    resetTitle: 'אפס רמה',
+    resetMessage: 'האם ברצונך לחזור לרמת הצ\'אט? האדם השני יקבל הודעה.',
+    updateError: 'לא ניתן לעדכן את הרמה',
+    // Levels
+    chatting: 'צ\'אט',
+    chattingDesc: 'להכיר אחד את השני בנחת',
+    flirting: 'חיבור',
+    flirtingDesc: 'מוכן/ה להעמיק את הקשר',
+    openToMeet: 'פגישה',
+    openToMeetDesc: 'פתוח/ה להיפגש באופן אישי',
+  },
+
+  // Quick Meet (Coffee Break)
+  quickMeet: {
+    title: 'הפסקת קפה',
+    button: 'הצע הפסקה',
+    viewProposal: 'צפה בהצעה',
+    proposalSent: 'ההצעה נשלחה',
+    // Create
+    createTitle: 'הצע הפסקה',
+    createSubtitle: 'רגע קצר וקליל במקום ציבורי כדי להכיר',
+    duration: 'משך',
+    timeSlots: 'שעות זמינות',
+    placeType: 'סוג המקום',
+    addMessage: 'הוסף הודעה (אופציונלי)',
+    messagePlaceholder: 'לדוגמה: יהיה נחמד להיפגש לקפה!',
+    sendProposal: 'שלח הצעה',
+    selectSlotError: 'בחר לפחות שעה אחת',
+    proposalSentTitle: 'ההצעה נשלחה!',
+    proposalSentMessage: 'תקבל הודעה על התגובה.',
+    // Receive
+    receivedTitle: '{name} מציע/ה הפסקה',
+    receivedSubtitle: 'רגע קצר להכיר',
+    theirMessage: 'ההודעה שלהם',
+    selectTime: 'בחר שעה',
+    selectPlace: 'בחר מקום',
+    selectResponseError: 'בחר שעה ומקום',
+    accept: 'קבל',
+    decline: 'דחה',
+    acceptedTitle: 'הפגישה אושרה!',
+    acceptedMessage: 'יש לך פגישה עם {name}. שוחח כדי לסכם את הפרטים.',
+    declineTitle: 'דחה את ההצעה',
+    declineMessage: 'למה אתה רוצה לדחות?',
+    declineNotReady: 'עדיין לא מוכן/ה',
+    declinePreferChat: 'אני מעדיף/ה להמשיך לשוחח',
+    // Waiting
+    waitingTitle: 'ממתין לתגובה',
+    waitingText: '{name} עדיין לא הגיב/ה. תקבל הודעה על ההחלטה.',
+    cancelProposal: 'בטל את ההצעה שלי',
+    cancelTitle: 'לבטל את ההצעה?',
+    cancelMessage: 'האם אתה בטוח שברצונך לבטל את ההצעה הזו?',
+    // Safety
+    safetyInfo: 'תמיד בחר מקום ציבורי. ספר למישהו על הפגישה שלך.',
+    safetyTip: 'היפגשו במקום ציבורי עמוס. הבטיחות שלך חשובה.',
+    // Limit reached
+    limitReachedTitle: 'ההצעה נשלחה!',
+    limitReachedText: 'השתמשת בהצעה שלך להיום ({count}/{limit}). מעולה שאתה פעיל!',
+    upgradeForMore: 'עם SHY+, הציעו הפסקות קפה ללא הגבלה',
+    upgradeToPremium: 'שדרג ל-SHY+',
+  },
+
+  // Engagement Score
+  engagementScore: {
+    title: 'ציון מעורבות',
+    boostActive: '+{multiplier}% חשיפה',
+    responsiveness: 'תגובתיות',
+    conversation: 'שיחות',
+    meetings: 'פגישות',
+    activity: 'פעילות',
+    notEnoughData: 'המשך להשתמש באפליקציה כדי לראות את הציון המפורט שלך.',
+    explanation: 'ציון זה משקף את המעורבות שלך באפליקציה. ככל שאתה יותר פעיל ומגיב להודעות, כך הפרופיל שלך יהיה יותר גלוי.',
+    // Levels
+    veryActive: 'פעיל מאוד',
+    active: 'פעיל',
+    moderate: 'מתון',
+    casual: 'מזדמן',
+    new: 'חדש',
+    // Premium
+    upgradeForDetails: 'SHY+ לפירוט',
+  },
+
+  // Boost
+  boost: {
+    title: 'קדם את הפרופיל שלי',
+    description: 'הגדל זמנית את החשיפה של הפרופיל שלך',
+    activate: 'הפעל בוסט',
+    buy: 'קנה בוסטים',
+    active: 'בוסט פעיל',
+    activeHint: 'הפרופיל שלך מודגש',
+    remaining: '{count} בוסט(ים) נותרו',
+    noBoosts: 'אין בוסטים זמינים',
+    duration: '{minutes} דקות של חשיפה מוגברת',
+    disclaimer: 'הבוסט מגדיל חשיפה, ללא הבטחה לתוצאות',
+    orBuyMore: 'או קנה עוד בוסטים',
+    // Products
+    singleBoost: 'בוסט 1',
+    packOf: 'חבילה של {count}',
+    bestValue: 'הכי משתלם',
+    popular: 'פופולרי',
+  },
+};

@@ -16,12 +16,22 @@ import { colors, spacing, borderRadius } from '../../src/theme';
 import { IntentionBadge, AvailabilityBadge } from '../../src/components/profile';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useBoost } from '../../src/contexts/BoostContext';
 import { adminService } from '../../src/services/supabase/admin';
 import { supabase } from '../../src/services/supabase/client';
+import { BoostModal } from '../../src/components/boost/BoostModal';
+import { BoostIndicator } from '../../src/components/boost/BoostIndicator';
 
 export default function ProfileScreen() {
   const { user, profile, signOut } = useAuth();
   const { t } = useLanguage();
+  const {
+    boostsAvailable,
+    isBoostActive,
+    activeBoostExpiresAt,
+    refresh: refreshBoost,
+  } = useBoost();
+  const [showBoostModal, setShowBoostModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({
     invitationsSent: 0,
@@ -225,6 +235,34 @@ export default function ProfileScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
+        {/* Boost button */}
+        <TouchableOpacity
+          style={styles.boostButton}
+          onPress={() => setShowBoostModal(true)}
+        >
+          <LinearGradient
+            colors={[colors.boost, colors.accentLight]}
+            style={styles.boostGradient}
+          >
+            <View style={styles.boostContent}>
+              <Ionicons name="flash" size={24} color={colors.white} />
+              <View style={styles.boostTextContainer}>
+                <Text style={styles.boostText}>{t('boost.title')}</Text>
+                {isBoostActive ? (
+                  <BoostIndicator expiresAt={activeBoostExpiresAt} onExpire={refreshBoost} compact />
+                ) : (
+                  <Text style={styles.boostSubtext}>
+                    {boostsAvailable > 0
+                      ? t('boost.remaining', { count: boostsAvailable })
+                      : t('boost.noBoosts')}
+                  </Text>
+                )}
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.white} />
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* Menu items - GROS boutons */}
         <View style={styles.menu}>
           {menuItems.slice(1).map((item, index) => (
@@ -283,6 +321,12 @@ export default function ProfileScreen() {
         {/* Version */}
         <Text style={styles.version}>SHY v1.0.1</Text>
       </ScrollView>
+
+      {/* Boost modal */}
+      <BoostModal
+        visible={showBoostModal}
+        onClose={() => setShowBoostModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -419,6 +463,37 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 18,
     fontWeight: '600',
+  },
+
+  // Boost button
+  boostButton: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  boostGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 70,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  boostContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  boostTextContainer: {
+    gap: 2,
+  },
+  boostText: {
+    color: colors.white,
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  boostSubtext: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 13,
   },
 
   // Menu - GROS items

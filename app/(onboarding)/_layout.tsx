@@ -9,6 +9,7 @@ export default function OnboardingLayout() {
         <Stack.Screen name="face-verification" options={{ headerShown: false }} />
         <Stack.Screen name="basic-info" options={{ headerShown: false }} />
         <Stack.Screen name="intention" options={{ headerShown: false }} />
+        <Stack.Screen name="looking-for" options={{ headerShown: false }} />
         <Stack.Screen name="interests" options={{ headerShown: false }} />
         <Stack.Screen name="lifestyle" options={{ headerShown: false }} />
         <Stack.Screen name="location-consent" options={{ headerShown: false }} />

@@ -1,0 +1,627 @@
+import { TranslationKeys } from './fr';
+
+export const de: TranslationKeys = {
+  // Common
+  common: {
+    cancel: 'Abbrechen',
+    confirm: 'Bestätigen',
+    save: 'Speichern',
+    delete: 'Löschen',
+    edit: 'Bearbeiten',
+    next: 'Weiter',
+    back: 'Zurück',
+    skip: 'Überspringen',
+    done: 'Fertig',
+    loading: 'Laden...',
+    error: 'Fehler',
+    success: 'Erfolg',
+    yes: 'Ja',
+    no: 'Nein',
+    ok: 'OK',
+    continue: 'Fortfahren',
+    later: 'Später',
+    close: 'Schließen',
+    search: 'Suchen',
+    refresh: 'Aktualisieren',
+    retry: 'Erneut versuchen',
+    send: 'Senden',
+    years: 'Jahre',
+    km: 'km',
+  },
+
+  // Tabs
+  tabs: {
+    home: 'Home',
+    explore: 'Entdecken',
+    likes: 'Likes',
+    messages: 'Nachrichten',
+    profile: 'Profil',
+  },
+
+  // Welcome screen
+  welcome: {
+    tagline: 'Dating, vereinfacht.',
+    createAccount: 'Konto erstellen',
+    login: 'Anmelden',
+    footerText: 'Durch Fortfahren akzeptierst du unsere Bedingungen.',
+    terms: 'AGB',
+    privacy: 'Datenschutz',
+    features: {
+      verified: 'Verifizierte Profile',
+      nearby: 'In deiner Nähe',
+      connections: 'Echte Verbindungen',
+    },
+  },
+
+  // Auth
+  auth: {
+    email: 'E-Mail',
+    password: 'Passwort',
+    confirmPassword: 'Passwort bestätigen',
+    forgotPassword: 'Passwort vergessen?',
+    loginButton: 'Anmelden',
+    registerButton: 'Registrieren',
+    noAccount: 'Noch kein Konto?',
+    hasAccount: 'Bereits ein Konto?',
+    ageVerification: 'Ich bestätige, dass ich 18 Jahre oder älter bin',
+    invalidEmail: 'Ungültige E-Mail',
+    passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen haben',
+    passwordMismatch: 'Die Passwörter stimmen nicht überein',
+    loginTitle: 'Anmelden',
+    loginSubtitle: 'Willkommen zurück!',
+    registerTitle: 'Konto erstellen',
+    registerSubtitle: 'Werde Teil der SHY-Community',
+    fillAllFields: 'Bitte fülle alle Felder aus',
+    incorrectCredentials: 'Falsche E-Mail oder Passwort',
+    acceptTerms: 'Du musst die Bedingungen akzeptieren, um fortzufahren',
+    acceptTermsLabel: 'Ich akzeptiere die',
+    and: 'und die',
+    privacyPolicy: 'Datenschutzerklärung',
+    errorOccurred: 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.',
+    min8Chars: 'Mindestens 8 Zeichen',
+  },
+
+  // Profile
+  profile: {
+    title: 'Mein Profil',
+    editProfile: 'Mein Profil bearbeiten',
+    verification: 'Verifizierung',
+    subscription: 'Abonnement',
+    settings: 'Einstellungen',
+    privacy: 'Datenschutz',
+    help: 'Hilfe',
+    logout: 'Abmelden',
+    deleteAccount: 'Mein Konto löschen',
+    completeProfile: 'Mein Profil vervollständigen',
+    user: 'Benutzer',
+    stats: {
+      sent: 'Gesendet',
+      received: 'Erhalten',
+      connections: 'Verbindungen',
+    },
+    logoutConfirm: {
+      title: 'Abmelden',
+      message: 'Bist du sicher, dass du dich abmelden möchtest?',
+    },
+    deleteConfirm: {
+      title: 'Mein Konto löschen',
+      message: 'Diese Aktion ist unwiderruflich. Alle deine Daten, Fotos, Gespräche und Verbindungen werden dauerhaft gelöscht.',
+      finalTitle: 'Letzte Bestätigung',
+      finalMessage: 'Bist du dir absolut sicher? Dein Konto wird innerhalb von 30 Tagen gelöscht.',
+      keepAccount: 'Nein, mein Konto behalten',
+      confirmDelete: 'Ja, dauerhaft löschen',
+      successTitle: 'Konto gelöscht',
+      successMessage: 'Deine Löschanfrage wurde registriert. Dein Konto wird innerhalb von 30 Tagen gelöscht.',
+    },
+    adminPanel: 'Admin-Panel',
+  },
+
+  // Edit profile
+  editProfile: {
+    title: 'Profil bearbeiten',
+    photos: 'Fotos',
+    nameLabel: 'Vorname oder Spitzname',
+    namePlaceholder: 'Wie möchtest du genannt werden?',
+    aboutLabel: 'Über dich',
+    aboutPlaceholder: 'Erzähl uns von dir...',
+    intentionLabel: 'Deine Absicht',
+    availabilityLabel: 'Verfügbarkeit',
+    notSpecified: 'Nicht angegeben',
+    permissionRequired: 'Berechtigung erforderlich',
+    photoPermissionMessage: 'Bitte erlaube den Zugriff auf deine Fotos in den Einstellungen.',
+    errorSelectPhoto: 'Foto konnte nicht ausgewählt werden. Bitte versuche es erneut.',
+  },
+
+  // Settings
+  settings: {
+    title: 'Einstellungen',
+    languageSection: 'Sprache / Language',
+    locationSection: 'Standort',
+    enableLocation: 'Standort aktivieren',
+    locationDescription: 'Ermöglicht dir, Personen in der Nähe zu sehen und gesehen zu werden',
+    locationHint: 'Es wird nur eine ungefähre Entfernung geteilt, niemals deine genaue Adresse.',
+    searchPreferences: 'Sucheinstellungen',
+    maxDistance: 'Maximale Entfernung',
+    ageRange: 'Altersbereich',
+    minAge: 'Mindestalter',
+    maxAge: 'Höchstalter',
+    lookingFor: 'Ich suche',
+    lookingForHint: 'Leer lassen, um alle zu sehen',
+    savePreferences: 'Einstellungen speichern',
+    saving: 'Speichern...',
+    preferencesSaved: 'Deine Einstellungen wurden gespeichert',
+    notifications: 'Benachrichtigungen',
+    newInvitations: 'Neue Einladungen',
+    newInvitationsDesc: 'Benachrichtigung erhalten, wenn du eine neue Einladung erhältst',
+    messagesNotif: 'Nachrichten',
+    messagesNotifDesc: 'Benachrichtigung für neue Nachrichten erhalten',
+    soundVibration: 'Ton und Vibration',
+    soundVibrationDesc: 'Ton und Vibration für Benachrichtigungen aktivieren',
+    accountSection: 'Konto',
+    accountHint: 'Um deine E-Mail oder dein Passwort zu ändern, nutze die Funktion "Passwort vergessen" auf dem Anmeldebildschirm.',
+  },
+
+  // Subscription
+  subscription: {
+    title: 'Abonnement',
+    mySubscription: 'Mein Abonnement',
+    activeSubscription: 'Aktives Abonnement',
+    expiresOn: 'Läuft ab am',
+    yourBenefits: 'Deine Vorteile',
+    restorePurchases: 'Käufe wiederherstellen',
+    manageHint: 'Verwalte dein Abonnement in den Einstellungen des App Store oder Google Play',
+    firstMonthFree: 'ERSTER MONAT GRATIS',
+    includedFeatures: 'Enthaltene Funktionen',
+    chooseDuration: 'Wähle deine Laufzeit',
+    comingSoon: 'Demnächst',
+    comingSoonMessage: 'Abonnements werden sehr bald verfügbar sein!',
+    welcomePremium: 'Willkommen bei SHY Premium!',
+    welcomePlus: 'Willkommen bei SHY+!',
+    tryFree: 'GRATIS testen',
+    promoCode: 'Promo-Code',
+    promoCodePlaceholder: 'Code eingeben',
+    promoCodeApply: 'Anwenden',
+    promoCodeInvalid: 'Ungültiger Code',
+    promoCodeSuccess: 'Code angewendet!',
+    subscribe: 'Abonnieren',
+    termsApple: 'Die Zahlung wird bei Kaufbestätigung deinem iTunes-Konto belastet. Das Abonnement verlängert sich automatisch, es sei denn, die automatische Verlängerung wird mindestens 24 Stunden vor Ende der aktuellen Periode deaktiviert. Dein Konto wird innerhalb von 24 Stunden vor Ende der aktuellen Periode für die Verlängerung belastet. Du kannst deine Abonnements nach dem Kauf in deinen App Store-Kontoeinstellungen verwalten und kündigen.',
+    termsOfService: 'Nutzungsbedingungen',
+    privacyPolicyLink: 'Datenschutzerklärung',
+    appleEULA: 'Apple-EULA',
+    best: 'BESTE',
+    popular: 'BELIEBT',
+    month: 'Monat',
+  },
+
+  // Duration labels
+  duration: {
+    week: 'Woche',
+    month: 'Monat',
+    threeMonths: '3 Monate',
+    sixMonths: '6 Monate',
+    year: 'Jahr',
+  },
+
+  // Discover
+  discover: {
+    title: 'Entdecken',
+    favorites: 'Favoriten',
+    nearby: 'In meiner Nähe',
+    noMoreProfiles: 'Keine weiteren Profile',
+    comeBackLater: 'Komm später zurück, um neue Leute zu entdecken',
+    km: 'km',
+    at: 'bei',
+    active: 'Aktiv',
+    agoMinutes: 'Vor {0} Min.',
+    agoHours: 'Vor {0}h',
+    boostTitle: 'Boost',
+    boostDescription: 'Boost macht dein Profil 30 Minuten lang sichtbarer. Du erscheinst zuerst in den Suchen.',
+    activateBoost: 'Boost aktivieren',
+    invitationRequired: 'Einladung erforderlich',
+    invitationRequiredMessage: 'Sende zuerst eine Einladung, indem du nach rechts wischst',
+    locationDisabled: 'Standort deaktiviert',
+    // Availability modes
+    activateMode: 'Modus',
+    modeActivated: 'Modus aktiviert',
+    modeActivatedMessage: 'Du siehst nur Profile im gleichen Modus.',
+    deactivateMode: 'Modus deaktivieren',
+    deactivateModeConfirm: 'Bist du sicher, dass du den Modus deaktivieren möchtest?',
+    noProfilesInMode: 'Keine Profile in diesem Modus',
+    noProfilesInModeHint: 'Noch niemand hat diesen Modus aktiviert. Komm später wieder!',
+  },
+
+  // Availability Modes
+  availabilityModes: {
+    activateTitle: 'Einen Modus aktivieren',
+    description: 'Aktiviere einen Modus, um nur Profile mit der gleichen Stimmung zu sehen.',
+    activationsThisWeek: 'Aktivierungen diese Woche',
+    unlimited: 'Unbegrenzt',
+    chooseMode: 'Wähle einen Modus',
+    duration: 'Dauer',
+    activateButton: 'Modus aktivieren',
+    limitReached: 'Limit erreicht',
+    limitReachedMessage: 'Wechsle zu Premium für unbegrenzte Aktivierungen',
+    seeOffers: 'Angebote ansehen',
+    premium: 'Premium',
+    modeActive: 'Modus aktiv',
+    // Mode names
+    relaxed: 'Entspannt',
+    spontaneous: 'Spontan',
+    explorer: 'Entdecker',
+    // Mode badges
+    relaxedBadge: 'Heute verfügbar',
+    spontaneousBadge: 'Jetzt verfügbar',
+    explorerBadge: 'Diese Woche offen',
+    // Mode descriptions
+    relaxedDescription: 'Nimm dir Zeit für entspannte Gespräche',
+    spontaneousDescription: 'Bereit, schnell Leute kennenzulernen',
+    explorerDescription: 'Neugierig, neue Menschen zu entdecken',
+    // Durations
+    duration24h: '24 Stunden',
+    duration72h: '72 Stunden',
+  },
+
+  // Explore
+  explore: {
+    title: 'Entdecken',
+    map: 'Karte',
+    grid: 'Raster',
+    onlineNow: 'Jetzt online',
+    nearbySection: 'In der Nähe',
+    noOneNearby: 'Niemand in der Nähe',
+    enableLocationHint: 'Aktiviere deinen Standort, um Profile in deiner Umgebung zu entdecken.',
+    locationDisabled: 'Standort deaktiviert',
+  },
+
+  // Invitations
+  invitations: {
+    title: 'Einladungen',
+    received: 'Erhalten',
+    sent: 'Gesendet',
+    pending: 'Ausstehend',
+    accepted: 'Akzeptiert',
+    expired: 'Abgelaufen',
+    noInvitations: 'Noch keine Einladungen',
+    noInvitationsHint: 'Personen, die an deinem Profil interessiert sind, erscheinen hier. Entdecke weiter!',
+    accept: 'Akzeptieren',
+    decline: 'Ablehnen',
+    expiresIn: 'Läuft ab in',
+    days: 'Tagen',
+    refuseTitle: 'Diese Einladung ablehnen?',
+    refuseMessage: 'Bist du sicher, dass du die Einladung von {0} ablehnen möchtest?',
+    exploreProfiles: 'Profile entdecken',
+    justNow: 'Gerade eben',
+    minutesAgo: 'Vor {0} Min.',
+    hoursAgo: 'Vor {0}h',
+    yesterday: 'Gestern',
+    daysAgo: 'Vor {0} Tagen',
+    weeksAgo: 'Vor {0} Wo.',
+  },
+
+  // Connections / Matches
+  connections: {
+    title: 'Meine Verbindungen',
+    noConnections: 'Noch keine Verbindungen',
+    noConnectionsHint: 'Wenn jemand deine Einladung akzeptiert, kannst du hier chatten!',
+    discoverProfiles: 'Profile entdecken',
+    startChatting: 'Fang an zu chatten!',
+  },
+
+  // Messages
+  messages: {
+    title: 'Nachrichten',
+    noMessages: 'Keine Nachrichten',
+    startConversation: 'Beginne mit deinen Verbindungen zu chatten',
+    typeMessage: 'Nachricht eingeben...',
+    send: 'Senden',
+    conversationNotFound: 'Gespräch nicht gefunden',
+    startConversationHint: 'Starte das Gespräch',
+    sendFirstMessage: 'Sende eine erste Nachricht zum Kennenlernen',
+  },
+
+  // Chat
+  chat: {
+    seeOriginal: 'Original anzeigen',
+    seeTranslation: 'Übersetzung anzeigen',
+    translated: 'Übersetzt',
+  },
+
+  // Direct Messaging
+  directMessage: {
+    sendMessage: 'Nachricht senden',
+    startConversation: 'Gespräch beginnen',
+    privilegeWomen: 'Du kannst Männern, die dich interessieren, direkt eine Nachricht senden.',
+    privilegeNonBinary: 'Du kannst nicht-binären Personen direkt eine Nachricht senden.',
+    needInvitation: 'Sende eine Einladung, um ein Gespräch zu beginnen.',
+    messageSent: 'Nachricht gesendet!',
+    connectionCreated: 'Gespräch gestartet',
+  },
+
+  // Intentions
+  intentions: {
+    social: 'Sozial / Chatten',
+    dating: 'Dating',
+    amical: 'Freundschaft',
+    local: 'Lokal entdecken',
+  },
+
+  // Availability
+  availability: {
+    today: 'Heute verfügbar',
+    afternoon: 'Heute Nachmittag',
+    tonight: 'Heute Abend',
+    weekend: 'Dieses Wochenende',
+  },
+
+  // Onboarding
+  onboarding: {
+    // Profile photo
+    addPhoto: 'Füge ein Foto hinzu',
+    photoHelps: 'Ein Profilfoto hilft anderen, dich zu erkennen',
+    addPhotoButton: 'Foto hinzufügen',
+    gallery: 'Galerie',
+    camera: 'Kamera',
+    photoPermission: 'Berechtigung erforderlich',
+    photoPermissionMessage: 'Bitte erlaube den Zugriff auf deine Fotos in den Einstellungen.',
+    cameraPermission: 'Bitte erlaube den Zugriff auf die Kamera in den Einstellungen.',
+    photoError: 'Foto konnte nicht ausgewählt werden. Bitte versuche es erneut.',
+    cameraError: 'Foto konnte nicht aufgenommen werden. Bitte versuche es erneut.',
+
+    // Face verification
+    verifyIdentity: 'Verifiziere deine Identität',
+    protectYourself: 'Schütze dich und andere vor Fake-Profilen',
+    yourProfilePhoto: 'Dein Profilfoto',
+    howItWorks: 'Wie funktioniert es?',
+    step1Title: 'Schau in die Kamera',
+    step1Desc: 'Positioniere dein Gesicht im Rahmen',
+    step2Title: 'Folge den Anweisungen',
+    step2Desc: 'Drehe deinen Kopf nach links, dann nach rechts',
+    step3Title: 'Automatische Verifizierung',
+    step3Desc: 'Wir überprüfen, dass du es auf dem Foto bist',
+    startVerification: 'Verifizierung starten',
+    photoRequired: 'Foto erforderlich',
+    photoRequiredMessage: 'Du musst zuerst ein Profilfoto hinzufügen.',
+    verificationFailed: 'Verifizierung fehlgeschlagen',
+    verificationFailedMessage: 'Das erkannte Gesicht stimmt nicht mit deinem Profilfoto überein. Bitte versuche es erneut.',
+    retry: 'Erneut versuchen',
+    skipVerification: 'Verifizierung überspringen?',
+    skipVerificationMessage: 'Dein Profil wird nicht verifiziert und könnte weniger sichtbar sein.',
+    ignore: 'Überspringen',
+    profileVerified: 'Profil verifiziert!',
+    verificationConfirmed: 'Deine Identität wurde bestätigt. Du erhältst ein Verifizierungsabzeichen auf deinem Profil.',
+    verificationBadge: 'Verifizierungsabzeichen',
+    benefit1: 'Andere Nutzer wissen, dass du echt bist',
+    benefit2: 'Mehr Chancen auf Matches',
+    benefit3: 'Priorität in Suchergebnissen',
+
+    // Basic info
+    tellUsAboutYou: 'Erzähl uns von dir',
+    infoVisibleOnProfile: 'Diese Informationen werden auf deinem Profil sichtbar sein',
+    nameLabel: 'Vorname oder Spitzname *',
+    namePlaceholder: 'Wie möchtest du genannt werden?',
+    birthDateLabel: 'Geburtsdatum *',
+    birthDatePlaceholder: 'TT/MM/JJJJ',
+    must18: 'Du musst 18 Jahre oder älter sein',
+    genderLabel: 'Geschlecht *',
+    hairColorLabel: 'Haarfarbe',
+
+    // Intention
+    intentionTitle: 'Was ist deine Absicht?',
+    intentionSubtitle: 'Das hilft anderen zu verstehen, was du suchst',
+
+    // Interests
+    interestsTitle: 'Deine Interessen',
+    interestsSubtitle: 'Wähle bis zu 10 Interessen ({0}/10)',
+
+    // Location
+    enableLocationTitle: 'Standort aktivieren',
+    enableLocationDesc: 'Um dir Personen in der Nähe zu zeigen, benötigt SHY Zugriff auf deinen Standort.',
+    approxLocation: 'Ungefährer Standort',
+    approxLocationDesc: 'Es wird nur eine ungefähre Entfernung geteilt, niemals deine genaue Adresse.',
+    fullControl: 'Volle Kontrolle',
+    fullControlDesc: 'Du kannst deinen Standort jederzeit in den Einstellungen verbergen.',
+    disabledByDefault: 'Standardmäßig deaktiviert',
+    disabledByDefaultDesc: 'Auch wenn du Zugriff gewährst, bleibt er deaktiviert, bis du ihn aktivierst.',
+    authorizeLocation: 'Standort autorisieren',
+    maybeLater: 'Vielleicht später',
+    gettingLocation: 'Standort wird ermittelt...',
+    creatingProfile: 'Profil wird erstellt...',
+    profileCreationError: 'Beim Erstellen deines Profils ist ein Fehler aufgetreten. Bitte versuche es erneut.',
+  },
+
+  // Errors
+  errors: {
+    networkError: 'Verbindungsfehler',
+    serverError: 'Serverfehler',
+    tryAgain: 'Erneut versuchen',
+    somethingWrong: 'Etwas ist schiefgelaufen',
+    unableToLoad: 'Laden nicht möglich',
+    unableToLoadInvitations: 'Einladungen konnten nicht geladen werden',
+    unableToAccept: 'Einladung konnte nicht akzeptiert werden',
+    unableToRefuse: 'Einladung konnte nicht abgelehnt werden',
+  },
+
+  // Notifications
+  notifications: {
+    newInvitation: 'Neue Einladung',
+    invitationAccepted: 'Einladung akzeptiert',
+    newMessage: 'Neue Nachricht',
+    nearbyUser: 'Jemand in deiner Nähe',
+  },
+
+  // Alerts
+  alerts: {
+    errorTitle: 'Fehler',
+    successTitle: 'Erfolg',
+    confirmTitle: 'Bestätigung',
+  },
+
+  // Legal
+  legal: {
+    disclaimer: 'Diese Anwendung ist eine soziale Plattform zur Verbindung einwilligender Erwachsener. Sie bietet keine bezahlten sexuellen Dienstleistungen an und erleichtert diese auch nicht.',
+  },
+
+  // Moderation
+  moderation: {
+    blockUser: 'Blockieren',
+    reportUser: 'Melden',
+    block: 'Blockieren',
+    blockConfirmation: 'Bist du sicher, dass du {name} blockieren möchtest? Diese Person kann dich nicht mehr kontaktieren und euer Gespräch wird gelöscht.',
+    userBlocked: 'Nutzer blockiert',
+    userBlockedMessage: 'Diese Person kann dich nicht mehr kontaktieren.',
+    reportReason: 'Warum meldest du dieses Profil?',
+    reportSent: 'Meldung gesendet',
+    reportSentMessage: 'Danke für deine Meldung. Unser Team wird dieses Profil überprüfen.',
+    thisUser: 'diesen Nutzer',
+  },
+
+  // Time ago helpers
+  time: {
+    justNow: 'Gerade eben',
+    minutesAgo: '{0} Min.',
+    hoursAgo: '{0}h',
+    daysAgo: '{0}T',
+    weeksAgo: '{0}Wo',
+  },
+
+  // Connection Rhythm
+  connectionRhythm: {
+    title: 'Verbindungsrhythmus',
+    loading: 'Laden...',
+    pendingTitle: 'Verbindungsrhythmus',
+    pendingSubtitle: 'Noch {count} Nachrichten, um deinen Score zu berechnen',
+    howItWorks: 'Wie funktioniert es?',
+    explanation: 'Dieser Score spiegelt die Qualität eurer Unterhaltungen wider: Antwortzeit, gemeinsame aktive Zeiten, Nachrichtenlänge und Regelmäßigkeit.',
+    // Labels
+    perfectHarmony: 'Perfekte Harmonie',
+    greatConnection: 'Tolle Verbindung',
+    goodCompatibility: 'Gute Kompatibilität',
+    building: 'Im Aufbau',
+    developing: 'In Entwicklung',
+    // Descriptions
+    perfectHarmonyDesc: 'Ihr seid auf derselben Wellenlänge',
+    greatConnectionDesc: 'Eure Kommunikation fließt',
+    goodCompatibilityDesc: 'Ihr lernt euch kennen',
+    buildingDesc: 'Euer Rhythmus passt sich an',
+    developingDesc: 'Schreibt weiter',
+    // Trends
+    trendUp: 'Eure Verbindung verbessert sich',
+    trendDown: 'Schreibt regelmäßiger',
+    trendStable: 'Euer Rhythmus ist konstant',
+    // Premium
+    upgradeForDetails: 'SHY+ für Details',
+  },
+
+  // Comfort Level
+  comfortLevel: {
+    title: 'Komfortlevel',
+    explanation: 'Dieses System lässt dich in deinem eigenen Tempo voranschreiten. Funktionen werden erst freigeschaltet, wenn ihr beide bereit seid.',
+    mutual: 'Gemeinsames Level',
+    otherReady: 'Bereit für die nächste Stufe',
+    otherUserAt: '{name} ist bereit, weiter zu gehen',
+    mutualLevel: 'Ihr seid auf demselben Komfortlevel',
+    selectLevel: 'Wähle dein Level',
+    safetyTitle: 'Dein Komfort, deine Wahl',
+    safetyText: 'Du kannst dein Level jederzeit ändern. Nichts ist permanent und du behältst die Kontrolle.',
+    resetLevel: 'Zum Anfangslevel zurückkehren',
+    resetTitle: 'Level zurücksetzen',
+    resetMessage: 'Möchtest du zum Level Chatten zurückkehren? Die andere Person wird benachrichtigt.',
+    updateError: 'Level konnte nicht aktualisiert werden',
+    // Levels
+    chatting: 'Chatten',
+    chattingDesc: 'Sich in Ruhe kennenlernen',
+    flirting: 'Verbindung',
+    flirtingDesc: 'Bereit, die Beziehung zu vertiefen',
+    openToMeet: 'Treffen',
+    openToMeetDesc: 'Offen für ein persönliches Treffen',
+  },
+
+  // Quick Meet (Coffee Break)
+  quickMeet: {
+    title: 'Kaffeepause',
+    button: 'Pause vorschlagen',
+    viewProposal: 'Vorschlag ansehen',
+    proposalSent: 'Vorschlag gesendet',
+    // Create
+    createTitle: 'Eine Pause vorschlagen',
+    createSubtitle: 'Ein kurzer und ungezwungener Moment an einem öffentlichen Ort zum Kennenlernen',
+    duration: 'Dauer',
+    timeSlots: 'Verfügbare Zeitfenster',
+    placeType: 'Art des Ortes',
+    addMessage: 'Nachricht hinzufügen (optional)',
+    messagePlaceholder: 'Z.B.: Es wäre schön, sich auf einen Kaffee zu treffen!',
+    sendProposal: 'Vorschlag senden',
+    selectSlotError: 'Wähle mindestens ein Zeitfenster',
+    proposalSentTitle: 'Vorschlag gesendet!',
+    proposalSentMessage: 'Du wirst über die Antwort benachrichtigt.',
+    // Receive
+    receivedTitle: '{name} schlägt eine Pause vor',
+    receivedSubtitle: 'Ein kurzer Moment zum Kennenlernen',
+    theirMessage: 'Ihre Nachricht',
+    selectTime: 'Wähle ein Zeitfenster',
+    selectPlace: 'Wähle einen Ort',
+    selectResponseError: 'Wähle ein Zeitfenster und einen Ort',
+    accept: 'Akzeptieren',
+    decline: 'Ablehnen',
+    acceptedTitle: 'Treffen bestätigt!',
+    acceptedMessage: 'Du hast ein Treffen mit {name}. Chattet, um die Details zu klären.',
+    declineTitle: 'Vorschlag ablehnen',
+    declineMessage: 'Warum möchtest du ablehnen?',
+    declineNotReady: 'Noch nicht bereit',
+    declinePreferChat: 'Ich möchte lieber weiter chatten',
+    // Waiting
+    waitingTitle: 'Warte auf Antwort',
+    waitingText: '{name} hat noch nicht geantwortet. Du wirst über die Entscheidung benachrichtigt.',
+    cancelProposal: 'Meinen Vorschlag zurückziehen',
+    cancelTitle: 'Vorschlag zurückziehen?',
+    cancelMessage: 'Bist du sicher, dass du diesen Vorschlag zurückziehen möchtest?',
+    // Safety
+    safetyInfo: 'Wähle immer einen öffentlichen Ort. Informiere jemanden über dein Treffen.',
+    safetyTip: 'Trefft euch an einem belebten öffentlichen Ort. Deine Sicherheit ist wichtig.',
+    // Limit reached
+    limitReachedTitle: 'Vorschlag gesendet!',
+    limitReachedText: 'Du hast deinen Vorschlag für heute genutzt ({count}/{limit}). Super, dass du aktiv wirst!',
+    upgradeForMore: 'Mit SHY+ unbegrenzt Kaffeepausen vorschlagen',
+    upgradeToPremium: 'Zu SHY+ wechseln',
+  },
+
+  // Engagement Score
+  engagementScore: {
+    title: 'Engagement-Score',
+    boostActive: '+{multiplier}% Sichtbarkeit',
+    responsiveness: 'Reaktionsfähigkeit',
+    conversation: 'Gespräche',
+    meetings: 'Treffen',
+    activity: 'Aktivität',
+    notEnoughData: 'Nutze die App weiter, um deinen detaillierten Score zu sehen.',
+    explanation: 'Dieser Score spiegelt dein Engagement in der App wider. Je aktiver du bist und je mehr du auf Nachrichten antwortest, desto sichtbarer wird dein Profil.',
+    // Levels
+    veryActive: 'Sehr aktiv',
+    active: 'Aktiv',
+    moderate: 'Moderat',
+    casual: 'Gelegentlich',
+    new: 'Neu',
+    // Premium
+    upgradeForDetails: 'SHY+ für Aufschlüsselung',
+  },
+
+  // Boost
+  boost: {
+    title: 'Mein Profil boosten',
+    description: 'Erhöhe vorübergehend die Sichtbarkeit deines Profils',
+    activate: 'Boost aktivieren',
+    buy: 'Boosts kaufen',
+    active: 'Boost aktiv',
+    activeHint: 'Dein Profil wird hervorgehoben',
+    remaining: '{count} Boost(s) übrig',
+    noBoosts: 'Keine Boosts verfügbar',
+    duration: '{minutes} Minuten erhöhte Sichtbarkeit',
+    disclaimer: 'Boost erhöht die Sichtbarkeit, Ergebnisse nicht garantiert',
+    orBuyMore: 'Oder mehr Boosts kaufen',
+    // Products
+    singleBoost: '1 Boost',
+    packOf: '{count}er-Pack',
+    bestValue: 'Bestes Angebot',
+    popular: 'Beliebt',
+  },
+};

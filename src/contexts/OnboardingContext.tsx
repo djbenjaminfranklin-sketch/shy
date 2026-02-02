@@ -35,6 +35,9 @@ interface OnboardingData {
   children: ChildrenId | null;
   prompts: ProfilePromptAnswer[];
 
+  // Gender preferences (who you're looking for)
+  genderFilter: GenderId[];
+
   // Location
   locationEnabled: boolean;
   latitude: number | null;
@@ -64,6 +67,7 @@ const initialData: OnboardingData = {
   smoking: null,
   children: null,
   prompts: [],
+  genderFilter: [],
   locationEnabled: false,
   latitude: null,
   longitude: null,
@@ -135,6 +139,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         smoking: data.smoking,
         children: data.children,
         prompts: data.prompts,
+        genderFilter: data.genderFilter,
         locationEnabled: data.locationEnabled,
         latitude: data.latitude,
         longitude: data.longitude,

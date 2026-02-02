@@ -25,6 +25,7 @@ export interface CreateProfileData {
   smoking?: SmokingId | null;
   children?: ChildrenId | null;
   prompts?: ProfilePromptAnswer[];
+  genderFilter?: GenderId[];
   locationEnabled?: boolean;
   latitude?: number | null;
   longitude?: number | null;
@@ -41,6 +42,13 @@ export interface UpdateProfileData {
   interests?: string[];
   photos?: string[];
   videoUrl?: string | null;
+  // Lifestyle
+  height?: number | null;
+  drinking?: DrinkingId | null;
+  smoking?: SmokingId | null;
+  children?: ChildrenId | null;
+  prompts?: ProfilePromptAnswer[];
+  // Localisation
   locationEnabled?: boolean;
   latitude?: number | null;
   longitude?: number | null;
@@ -91,6 +99,7 @@ export const profilesService = {
           smoking: data.smoking || null,
           children: data.children || null,
           prompts: data.prompts || [],
+          gender_filter: data.genderFilter || [],
           location_enabled: data.locationEnabled || false,
           latitude: data.latitude || null,
           longitude: data.longitude || null,
@@ -154,6 +163,12 @@ export const profilesService = {
       if (data.interests !== undefined) updateData.interests = data.interests;
       if (data.photos !== undefined) updateData.photos = data.photos;
       if (data.videoUrl !== undefined) updateData.video_url = data.videoUrl;
+      // Lifestyle
+      if (data.height !== undefined) updateData.height = data.height;
+      if (data.drinking !== undefined) updateData.drinking = data.drinking;
+      if (data.smoking !== undefined) updateData.smoking = data.smoking;
+      if (data.children !== undefined) updateData.children = data.children;
+      if (data.prompts !== undefined) updateData.prompts = data.prompts;
       if (data.locationEnabled !== undefined) updateData.location_enabled = data.locationEnabled;
       if (data.latitude !== undefined) updateData.latitude = data.latitude;
       if (data.longitude !== undefined) updateData.longitude = data.longitude;

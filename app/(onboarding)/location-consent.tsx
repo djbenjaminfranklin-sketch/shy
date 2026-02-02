@@ -84,6 +84,8 @@ export default function LocationConsentScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
           <View style={[styles.progressDot, styles.progressActive]} />
         </View>
 

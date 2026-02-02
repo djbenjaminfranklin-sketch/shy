@@ -128,7 +128,9 @@ export default function LifestyleScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
           <View style={[styles.progressDot, styles.progressActive]} />
+          <View style={styles.progressDot} />
         </View>
 
         <Text style={styles.title}>Un peu plus sur vous</Text>

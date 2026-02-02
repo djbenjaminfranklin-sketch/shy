@@ -48,20 +48,53 @@ export default function ProfileViewScreen() {
   useEffect(() => {
     if (!userId || !user) return;
 
+    // Éviter de recharger si on a déjà le profil
+    if (profile && profile.id === userId) {
+      setIsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
     const loadProfiles = async () => {
       setIsLoading(true);
-      // Charger le profil consulté et mon propre profil en parallèle
-      const [targetProfile, ownProfile] = await Promise.all([
-        profilesService.getProfile(userId),
-        profilesService.getProfile(user.id),
-      ]);
-      setProfile(targetProfile.profile);
-      setMyProfile(ownProfile.profile);
-      setIsLoading(false);
+
+      // Timeout de sécurité - arrêter le chargement après 10 secondes
+      const timeout = setTimeout(() => {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }, 10000);
+
+      try {
+        // Charger le profil consulté et mon propre profil en parallèle
+        const [targetProfile, ownProfile] = await Promise.all([
+          profilesService.getProfile(userId),
+          profilesService.getProfile(user.id),
+        ]);
+
+        clearTimeout(timeout);
+
+        if (isMounted) {
+          setProfile(targetProfile.profile);
+          setMyProfile(ownProfile.profile);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        clearTimeout(timeout);
+        console.error('Error loading profile:', error);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     };
 
     loadProfiles();
-  }, [userId, user]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userId, user?.id]);
 
   // Vérifier si je peux envoyer un message direct
   const canDirectMessage = myProfile && profile

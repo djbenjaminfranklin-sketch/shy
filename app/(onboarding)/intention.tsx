@@ -18,7 +18,7 @@ export default function IntentionScreen() {
   const handleContinue = () => {
     if (!selectedIntention) return;
     updateData({ intention: selectedIntention });
-    router.push('/(onboarding)/interests');
+    router.push('/(onboarding)/looking-for');
   };
 
   return (
@@ -29,6 +29,8 @@ export default function IntentionScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={[styles.progressDot, styles.progressActive]} />
+          <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
         </View>

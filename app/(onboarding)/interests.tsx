@@ -36,7 +36,9 @@ export default function InterestsScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
           <View style={[styles.progressDot, styles.progressActive]} />
+          <View style={styles.progressDot} />
           <View style={styles.progressDot} />
         </View>
 

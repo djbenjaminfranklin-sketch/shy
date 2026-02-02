@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
@@ -19,6 +19,7 @@ export default function ProfilePhotoScreen() {
   const video = data.videoUri;
   const [_isLoading, _setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(true);
 
   const pickImage = async () => {
     try {
@@ -95,6 +96,7 @@ export default function ProfilePhotoScreen() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         console.log('Video selected:', result.assets[0].uri);
+        setVideoLoading(true);
         updateData({ videoUri: result.assets[0].uri });
       }
     } catch (error) {
@@ -113,6 +115,8 @@ export default function ProfilePhotoScreen() {
         <View style={styles.content}>
           <View style={styles.progress}>
             <View style={[styles.progressDot, styles.progressActive]} />
+            <View style={styles.progressDot} />
+            <View style={styles.progressDot} />
             <View style={styles.progressDot} />
             <View style={styles.progressDot} />
             <View style={styles.progressDot} />
@@ -178,13 +182,22 @@ export default function ProfilePhotoScreen() {
 
             {video ? (
               <View style={styles.videoPreviewContainer}>
+                {videoLoading && (
+                  <View style={styles.videoLoadingOverlay}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.videoLoadingText}>Chargement de la vidéo...</Text>
+                  </View>
+                )}
                 <Video
                   source={{ uri: video }}
-                  style={styles.videoPreview}
+                  style={[styles.videoPreview, videoLoading && { opacity: 0.3 }]}
                   resizeMode={ResizeMode.COVER}
                   shouldPlay={false}
                   isLooping={false}
                   useNativeControls
+                  onLoadStart={() => setVideoLoading(true)}
+                  onLoad={() => setVideoLoading(false)}
+                  onError={() => setVideoLoading(false)}
                 />
                 <Pressable style={styles.removeVideoButton} onPress={removeVideo}>
                   <Ionicons name="close-circle" size={28} color={colors.error} />
@@ -418,5 +431,22 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.text,
     flex: 1,
+  },
+  videoLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    borderRadius: borderRadius.md,
+  },
+  videoLoadingText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
 });

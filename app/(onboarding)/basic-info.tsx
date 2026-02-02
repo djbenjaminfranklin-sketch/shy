@@ -105,6 +105,8 @@ export default function BasicInfoScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
         </View>
 
         <Text style={styles.title}>{t('onboarding.tellUsAboutYou')}</Text>

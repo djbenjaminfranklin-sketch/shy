@@ -123,6 +123,8 @@ export default function FaceVerificationScreen() {
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
           <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
+          <View style={styles.progressDot} />
         </View>
 
         <View style={styles.iconContainer}>
