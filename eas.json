@@ -34,9 +34,7 @@
       },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://naxbbnsmvrvrwcbrdsls.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heGJibnNtdnJ2cndjYnJkc2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjkzODgsImV4cCI6MjA4NTAwNTM4OH0.VOu_P3FvFGOQMp6H4EXm-BZvjZEVuAkyATZOJmrykAU",
-        "EXPO_PUBLIC_GOOGLE_PLACES_API_KEY": "AIzaSyABKtyNluw7RJuG2R_xxQcqKDKE8sr4bCU",
-        "EXPO_PUBLIC_GOOGLE_VISION_API_KEY": "AIzaSyAWypIshhSAXpuorlKvOGQMVPqvzqWshYE"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5heGJibnNtdnJ2cndjYnJkc2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MjkzODgsImV4cCI6MjA4NTAwNTM4OH0.VOu_P3FvFGOQMp6H4EXm-BZvjZEVuAkyATZOJmrykAU"
       }
     },
     "production-test": {
