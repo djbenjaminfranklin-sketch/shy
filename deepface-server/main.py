@@ -28,9 +28,10 @@ app.add_middleware(
 )
 
 # Configuration
-SIMILARITY_THRESHOLD = 0.6  # Seuil de distance (plus bas = plus strict)
-MIN_MATCHING_PHOTOS = 2  # Minimum de photos qui doivent correspondre
-MODEL_NAME = "ArcFace"  # Modèle le plus précis
+# Seuil ajusté pour être plus tolérant aux variations de lumière/angle
+SIMILARITY_THRESHOLD = 0.45  # Seuil de distance (plus haut = plus tolérant)
+MIN_MATCHING_PHOTOS = 1  # Minimum de photos qui doivent correspondre (1 sur 3)
+MODEL_NAME = "Facenet512"  # Modèle plus tolérant que ArcFace, bon équilibre précision/tolérance
 DETECTOR_BACKEND = "retinaface"  # Détecteur de visage précis
 
 # Secret pour sécuriser l'API (à configurer en variable d'environnement)
@@ -85,26 +86,34 @@ def compare_faces(source_path: str, target_path: str) -> dict:
             img2_path=target_path,
             model_name=MODEL_NAME,
             detector_backend=DETECTOR_BACKEND,
-            enforce_detection=True,
+            enforce_detection=False,  # Plus tolérant si le visage n'est pas parfaitement détecté
             align=True,
         )
 
         distance = result["distance"]
-        threshold = result["threshold"]
-        verified = result["verified"]
+
+        # Utiliser notre propre seuil plus tolérant
+        # Facenet512 a généralement un threshold autour de 0.30
+        # On utilise 0.45 pour être plus tolérant
+        matched = distance <= SIMILARITY_THRESHOLD
 
         # Convertir la distance en pourcentage de similarité
-        # Distance 0 = 100% similaire, Distance >= threshold = 0%
-        similarity_percent = max(0, min(100, (1 - distance / threshold) * 100))
+        # Distance 0 = 100% similaire, Distance >= 1 = 0%
+        # Formule ajustée pour donner des scores plus intuitifs
+        similarity_percent = max(0, min(100, (1 - distance) * 100))
+
+        print(f"[compare_faces] distance={distance}, threshold={SIMILARITY_THRESHOLD}, matched={matched}, similarity={similarity_percent}%")
 
         return {
-            "matched": verified,
+            "matched": matched,
             "distance": round(distance, 4),
             "similarity_percent": round(similarity_percent, 2),
             "error": None
         }
     except Exception as e:
         error_msg = str(e)
+        print(f"[compare_faces] Error: {error_msg}")
+
         # Erreurs courantes
         if "Face could not be detected" in error_msg:
             error_msg = "Visage non détecté dans l'image"
