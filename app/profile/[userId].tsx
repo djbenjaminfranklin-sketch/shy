@@ -46,10 +46,7 @@ export default function ProfileViewScreen() {
   const [isSendingInvitation, setIsSendingInvitation] = useState(false);
 
   useEffect(() => {
-    if (!userId || !user) return;
-
-    // Éviter de recharger si on a déjà le profil
-    if (profile && profile.id === userId) {
+    if (!userId || !user) {
       setIsLoading(false);
       return;
     }
@@ -57,16 +54,24 @@ export default function ProfileViewScreen() {
     let isMounted = true;
 
     const loadProfiles = async () => {
+      // Si on a déjà le profil, pas besoin de recharger
+      if (profile && profile.id === userId) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
 
-      // Timeout de sécurité - arrêter le chargement après 10 secondes
+      // Timeout de sécurité - arrêter le chargement après 8 secondes
       const timeout = setTimeout(() => {
         if (isMounted) {
+          console.log('[ProfileView] Timeout reached, stopping loading');
           setIsLoading(false);
         }
-      }, 10000);
+      }, 8000);
 
       try {
+        console.log('[ProfileView] Loading profiles for:', userId);
         // Charger le profil consulté et mon propre profil en parallèle
         const [targetProfile, ownProfile] = await Promise.all([
           profilesService.getProfile(userId),
@@ -76,13 +81,14 @@ export default function ProfileViewScreen() {
         clearTimeout(timeout);
 
         if (isMounted) {
+          console.log('[ProfileView] Profiles loaded successfully');
           setProfile(targetProfile.profile);
           setMyProfile(ownProfile.profile);
           setIsLoading(false);
         }
       } catch (error) {
         clearTimeout(timeout);
-        console.error('Error loading profile:', error);
+        console.error('[ProfileView] Error loading profile:', error);
         if (isMounted) {
           setIsLoading(false);
         }
@@ -94,7 +100,7 @@ export default function ProfileViewScreen() {
     return () => {
       isMounted = false;
     };
-  }, [userId, user?.id]);
+  }, [userId, user?.id, profile?.id]);
 
   // Vérifier si je peux envoyer un message direct
   const canDirectMessage = myProfile && profile

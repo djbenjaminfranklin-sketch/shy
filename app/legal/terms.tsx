@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,10 +11,12 @@ export default function TermsScreen() {
   const router = useRouter();
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const webViewRef = useRef<WebView>(null);
 
   const handleRetry = () => {
     setHasError(false);
     setIsLoading(true);
+    webViewRef.current?.reload();
   };
 
   return (
@@ -50,6 +52,7 @@ export default function TermsScreen() {
             </View>
           )}
           <WebView
+            ref={webViewRef}
             source={{ uri: 'https://shydating.eu/terms' }}
             style={[styles.webview, isLoading && { opacity: 0 }]}
             onLoadStart={() => setIsLoading(true)}
@@ -62,6 +65,14 @@ export default function TermsScreen() {
               setIsLoading(false);
               setHasError(true);
             }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={true}
+            scalesPageToFit={true}
+            mixedContentMode="compatibility"
+            allowsInlineMediaPlayback={true}
+            originWhitelist={['*']}
+            cacheEnabled={true}
           />
         </>
       )}

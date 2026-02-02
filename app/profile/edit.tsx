@@ -61,6 +61,7 @@ export default function EditProfileScreen() {
   const [prompts, setPrompts] = useState<ProfilePromptAnswer[]>(profile?.prompts || []);
   const [isSaving, setIsSaving] = useState(false);
   const [videoLoading, setVideoLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   // Pour le modal des prompts
   const [showPromptModal, setShowPromptModal] = useState(false);
@@ -200,9 +201,11 @@ export default function EditProfileScreen() {
     if (!user) return;
 
     setIsSaving(true);
+    setUploadStatus('Préparation...');
 
     try {
       // Upload new photos to Supabase Storage
+      setUploadStatus('Upload des photos...');
       const oldPhotos = profile?.photos || [];
       const { urls: uploadedUrls, error: uploadError } = await storageService.replaceUserPhotos(
         user.id,
@@ -213,6 +216,7 @@ export default function EditProfileScreen() {
       if (uploadError) {
         Alert.alert('Erreur', uploadError);
         setIsSaving(false);
+        setUploadStatus(null);
         return;
       }
 
@@ -220,13 +224,18 @@ export default function EditProfileScreen() {
       let uploadedVideoUrl: string | null = profile?.videoUrl || null;
       if (videoUri && videoUri !== profile?.videoUrl) {
         // New video selected, upload it
+        setUploadStatus('Upload de la vidéo... (peut prendre du temps)');
         const { url, error: videoError } = await storageService.uploadProfileVideo(
           user.id,
           videoUri
         );
         if (videoError) {
           console.error('Error uploading video:', videoError);
-          // Continue without video, don't block the save
+          Alert.alert(
+            'Attention',
+            'La vidéo n\'a pas pu être uploadée. Le reste de votre profil sera sauvegardé.',
+            [{ text: 'OK' }]
+          );
         } else {
           uploadedVideoUrl = url;
         }
@@ -236,6 +245,7 @@ export default function EditProfileScreen() {
       }
 
       // Save profile with uploaded photo URLs and video
+      setUploadStatus('Enregistrement du profil...');
       const { error } = await profilesService.updateProfile(user.id, {
         displayName,
         bio: bio || null,
@@ -261,6 +271,7 @@ export default function EditProfileScreen() {
       Alert.alert('Erreur', 'Une erreur est survenue');
     } finally {
       setIsSaving(false);
+      setUploadStatus(null);
     }
   };
 
@@ -596,11 +607,17 @@ export default function EditProfileScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
+        {uploadStatus && (
+          <View style={styles.uploadStatus}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.uploadStatusText}>{uploadStatus}</Text>
+          </View>
+        )}
         <Button
-          title="Enregistrer"
+          title={isSaving ? 'Enregistrement...' : 'Enregistrer'}
           onPress={handleSave}
           loading={isSaving}
-          disabled={!displayName.trim()}
+          disabled={!displayName.trim() || isSaving}
         />
       </View>
 
@@ -793,6 +810,17 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  uploadStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  uploadStatusText: {
+    ...typography.bodySmall,
+    color: colors.primary,
   },
   // Video section styles
   videoHeader: {
