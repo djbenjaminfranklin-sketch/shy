@@ -27,8 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuration - Mode strict pour une vérification fiable
-SIMILARITY_THRESHOLD = 0.40  # Seuil de distance strict (ArcFace recommande ~0.40)
+# Configuration - Mode équilibré pour une vérification fiable mais tolérante
+SIMILARITY_THRESHOLD = 0.70  # Seuil de distance plus tolérant pour ArcFace
 MIN_MATCHING_PHOTOS = 2  # Minimum de photos qui doivent correspondre (2 sur 3)
 MODEL_NAME = "ArcFace"  # Modèle le plus précis pour la reconnaissance faciale
 DETECTOR_BACKEND = "retinaface"  # Meilleur détecteur de visages
