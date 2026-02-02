@@ -13,7 +13,7 @@ export const verificationService = {
   /**
    * Upload verification photos and verify face against profile photo
    * @param userId - The user's ID
-   * @param profilePhotoUrl - URL of the profile photo to compare against
+   * @param profilePhotoUrl - URL or local URI of the profile photo to compare against
    * @param verificationPhotoUris - Local URIs of captured verification photos
    * @returns Verification result
    */
@@ -27,7 +27,20 @@ export const verificationService = {
       console.log('[verificationService] Profile photo:', profilePhotoUrl);
       console.log('[verificationService] Verification photos:', verificationPhotoUris.length);
 
-      // 1. Upload verification photos to storage
+      // 1. Upload profile photo if it's a local URI (not already a remote URL)
+      let profilePhotoPublicUrl = profilePhotoUrl;
+      if (!profilePhotoUrl.startsWith('http')) {
+        console.log('[verificationService] Profile photo is local URI, uploading first...');
+        const { url, error } = await storageService.uploadVerificationPhoto(userId, profilePhotoUrl, 999);
+        if (error || !url) {
+          console.error('[verificationService] Failed to upload profile photo:', error);
+          throw new Error('Erreur lors de l\'upload de la photo de profil');
+        }
+        profilePhotoPublicUrl = url;
+        console.log('[verificationService] Profile photo uploaded:', profilePhotoPublicUrl);
+      }
+
+      // 2. Upload verification photos to storage
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < verificationPhotoUris.length; i++) {
@@ -43,10 +56,10 @@ export const verificationService = {
         console.log(`[verificationService] Uploaded photo ${i + 1}:`, url);
       }
 
-      // 2. Call the Edge Function for face comparison
+      // 3. Call the Edge Function for face comparison
       const { data, error } = await supabase.functions.invoke('verify-face', {
         body: {
-          profilePhotoUrl,
+          profilePhotoUrl: profilePhotoPublicUrl,
           verificationPhotoUrls: uploadedUrls,
           userId,
         },
@@ -59,7 +72,7 @@ export const verificationService = {
 
       console.log('[verificationService] Verification result:', data);
 
-      // 3. Clean up verification photos from storage (optional, for privacy)
+      // 4. Clean up verification photos from storage (optional, for privacy)
       // We keep them for now in case of disputes/moderation
 
       return {
