@@ -23,6 +23,8 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { profilesService } from '../../src/services/supabase/profiles';
 import { matchesService } from '../../src/services/supabase/matches';
 import { invitationsService } from '../../src/services/supabase/invitations';
+import { subscriptionsService } from '../../src/services/supabase/subscriptions';
+import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../../src/constants/subscriptions';
 import { canSendDirectMessage } from '../../src/utils/messagingPermissions';
 import { Profile, ProfileWithDistance } from '../../src/types/profile';
 import { useAvailabilityMode } from '../../src/hooks/useAvailabilityMode';
@@ -30,6 +32,9 @@ import { useTravelMode } from '../../src/hooks/useTravelMode';
 import { ActiveModeIndicator, ModeActivationModal } from '../../src/components/availability';
 import { PaywallModal } from '../../src/components/subscription/PaywallModal';
 import { FilterModal } from '../../src/components/discover/FilterModal';
+import { BoostModal } from '../../src/components/boost/BoostModal';
+import { BoostIndicator } from '../../src/components/boost/BoostIndicator';
+import { useBoost } from '../../src/contexts/BoostContext';
 import type { AvailabilityModeType, ModeDuration } from '../../src/types/availabilityMode';
 import type { TravelLocation } from '../../src/types/travelMode';
 import type { ProfileFilters } from '../../src/types/profile';
@@ -82,6 +87,7 @@ export default function DiscoverScreen() {
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<ProfileWithDistance[]>([]);
   const [imageError, setImageError] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Availability mode state
   const {
@@ -100,6 +106,25 @@ export default function DiscoverScreen() {
   const [showModeModal, setShowModeModal] = useState(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [canUseAllFilters, setCanUseAllFilters] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState<'likes' | 'superLikes' | 'rewind' | 'mode'>('mode');
+
+  // Boost feature
+  const {
+    boostsAvailable,
+    isBoostActive,
+    activeBoostExpiresAt,
+    refresh: refreshBoost,
+  } = useBoost();
+
+  // Daily limits tracking
+  const [likesUsed, setLikesUsed] = useState(0);
+  const [likesLimit, setLikesLimit] = useState(20);
+  const [superLikesUsed, setSuperLikesUsed] = useState(0);
+  const [superLikesLimit, setSuperLikesLimit] = useState(1);
+  const [rewindsUsed, setRewindsUsed] = useState(0);
+  const [rewindsLimit, setRewindsLimit] = useState(1);
 
   // Travel mode hook
   const {
@@ -129,6 +154,35 @@ export default function DiscoverScreen() {
         setMyProfile(profile);
       });
     }
+  }, [user]);
+
+  // Charger les features premium et limites
+  useEffect(() => {
+    if (!user) return;
+    const loadSubscriptionFeatures = async () => {
+      try {
+        const { subscription } = await subscriptionsService.getUserSubscription(user.id);
+        const planId = (subscription?.planId || 'free') as PlanType;
+        const plan = SUBSCRIPTION_PLANS_BY_ID[planId];
+
+        // Features
+        setCanUseAllFilters(plan?.features.allFilters ?? false);
+
+        // Limites quotidiennes
+        setLikesLimit(plan?.features.dailyLikes ?? 20);
+        setSuperLikesLimit(plan?.features.superLikesPerDay ?? 1);
+        setRewindsLimit(plan?.features.rewindPerDay ?? 1);
+
+        // Charger l'utilisation quotidienne
+        const { limits } = await subscriptionsService.getUserLimits(user.id);
+        setLikesUsed(limits?.likesUsed || 0);
+        setSuperLikesUsed(limits?.superLikesUsed || 0);
+        setRewindsUsed(limits?.rewindsUsed || 0);
+      } catch (error) {
+        console.error('Error loading subscription features:', error);
+      }
+    };
+    loadSubscriptionFeatures();
   }, [user]);
 
   // Charger les profils depuis Supabase
@@ -171,6 +225,7 @@ export default function DiscoverScreen() {
   const likeOpacity = useRef(new Animated.Value(0)).current;
   const nopeOpacity = useRef(new Animated.Value(0)).current;
   const superLikeOpacity = useRef(new Animated.Value(0)).current;
+  const isAnimatingRef = useRef(false);
 
   // Filtrer les profils selon l'onglet actif
   const filteredProfiles = activeTab === 'nearby'
@@ -225,6 +280,8 @@ export default function DiscoverScreen() {
 
   // Swipe animation - simplifié sans opacité
   const swipeCard = useCallback((direction: 'left' | 'right' | 'up') => {
+    setIsAnimating(true);
+    isAnimatingRef.current = true;
     const x = direction === 'left' ? -SCREEN_WIDTH * 1.5 : direction === 'right' ? SCREEN_WIDTH * 1.5 : 0;
     const y = direction === 'up' ? -SCREEN_HEIGHT : 0;
 
@@ -233,6 +290,8 @@ export default function DiscoverScreen() {
       duration: SWIPE_OUT_DURATION,
       useNativeDriver: true,
     }).start(() => {
+      setIsAnimating(false);
+      isAnimatingRef.current = false;
       goToNextProfile();
     });
   }, [swipeAnim, goToNextProfile]);
@@ -241,11 +300,24 @@ export default function DiscoverScreen() {
   const handleLike = useCallback(async () => {
     if (!profile || !user) return; // Pas de profil a liker
 
+    // Vérifier la limite de likes (sauf si illimité = -1)
+    if (likesLimit !== -1 && likesUsed >= likesLimit) {
+      setPaywallFeature('likes');
+      setShowPaywallModal(true);
+      return;
+    }
+
     // Creer une invitation
     const { error } = await invitationsService.sendInvitation(user.id, profile.id);
     if (error) {
       console.log('Invitation error:', error);
     }
+
+    // Incrémenter le compteur local
+    setLikesUsed((prev) => prev + 1);
+
+    // Incrémenter sur le serveur
+    subscriptionsService.incrementLikes(user.id);
 
     // Animation puis next
     Animated.sequence([
@@ -258,7 +330,7 @@ export default function DiscoverScreen() {
     ]).start(() => {
       swipeCard('right');
     });
-  }, [likeOpacity, swipeCard, profile, user]);
+  }, [likeOpacity, swipeCard, profile, user, likesUsed, likesLimit]);
 
   const handleNope = useCallback(() => {
     if (!profile) return; // Pas de profil à refuser
@@ -275,8 +347,24 @@ export default function DiscoverScreen() {
     });
   }, [nopeOpacity, swipeCard, profile]);
 
-  const handleSuperLike = useCallback(() => {
-    if (!profile) return; // Pas de profil
+  const handleSuperLike = useCallback(async () => {
+    if (!profile || !user) return; // Pas de profil
+
+    // Vérifier la limite de super likes (sauf si illimité = -1)
+    if (superLikesLimit !== -1 && superLikesUsed >= superLikesLimit) {
+      setPaywallFeature('superLikes');
+      setShowPaywallModal(true);
+      return;
+    }
+
+    // Incrémenter le compteur local
+    setSuperLikesUsed((prev) => prev + 1);
+
+    // Incrémenter sur le serveur
+    subscriptionsService.incrementSuperLikes(user.id);
+
+    // Envoyer l'invitation (super like trackée via incrementSuperLikes)
+    await invitationsService.sendInvitation(user.id, profile.id);
 
     Animated.sequence([
       Animated.timing(superLikeOpacity, {
@@ -288,11 +376,26 @@ export default function DiscoverScreen() {
     ]).start(() => {
       swipeCard('up');
     });
-  }, [superLikeOpacity, swipeCard, profile]);
+  }, [superLikeOpacity, swipeCard, profile, user, superLikesUsed, superLikesLimit]);
 
   const handleRewind = useCallback(() => {
+    // Vérifier la limite de rewinds (sauf si illimité = -1)
+    if (rewindsLimit !== -1 && rewindsUsed >= rewindsLimit) {
+      setPaywallFeature('rewind');
+      setShowPaywallModal(true);
+      return;
+    }
+
+    // Incrémenter le compteur local
+    setRewindsUsed((prev) => prev + 1);
+
+    // Incrémenter sur le serveur
+    if (user) {
+      subscriptionsService.incrementRewinds(user.id);
+    }
+
     goToPreviousProfile();
-  }, [goToPreviousProfile]);
+  }, [goToPreviousProfile, rewindsUsed, rewindsLimit, user]);
 
   // Vérifier si je peux envoyer un message direct au profil actuel
   const canDirectMessage = (myProfile && profile)
@@ -342,12 +445,16 @@ export default function DiscoverScreen() {
         _: GestureResponderEvent,
         gestureState: PanResponderGestureState
       ) => {
+        // Ne pas capturer les gestes pendant l'animation
+        if (isAnimatingRef.current) return false;
         return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
       },
       onPanResponderGrant: () => {
+        if (isAnimatingRef.current) return;
         swipeAnim.extractOffset();
       },
       onPanResponderMove: (_, gestureState) => {
+        if (isAnimatingRef.current) return;
         swipeAnim.setValue({ x: gestureState.dx, y: gestureState.dy });
 
         // Update rotation based on swipe
@@ -466,6 +573,7 @@ export default function DiscoverScreen() {
 
   const handleOpenModeModal = useCallback(() => {
     if (!hasRemainingActivations) {
+      setPaywallFeature('mode');
       setShowPaywallModal(true);
     } else {
       setShowModeModal(true);
@@ -578,11 +686,25 @@ export default function DiscoverScreen() {
 
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => router.push('/profile/subscription' as never)}
+            onPress={() => setShowBoostModal(true)}
           >
-            <Ionicons name="flash" size={26} color={colors.boost} />
+            <View>
+              <Ionicons name="flash" size={26} color={colors.boost} />
+              {boostsAvailable > 0 && !isBoostActive && (
+                <View style={styles.boostBadge}>
+                  <Text style={styles.boostBadgeText}>{boostsAvailable}</Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         </SafeAreaView>
+
+        {/* Boost indicator when active */}
+        {isBoostActive && (
+          <View style={styles.boostIndicatorContainer}>
+            <BoostIndicator expiresAt={activeBoostExpiresAt} onExpire={refreshBoost} />
+          </View>
+        )}
 
         {/* Empty state centre */}
         <View style={styles.emptyContent}>
@@ -601,12 +723,19 @@ export default function DiscoverScreen() {
           }}
           travelMode={travelMode}
           canUseTravelMode={canUseTravelMode}
+          canUseAllFilters={canUseAllFilters}
           onActivateTravelMode={handleActivateTravelMode}
           onDeactivateTravelMode={handleDeactivateTravelMode}
           onUpgradeToPremium={() => {
             setShowFilterModal(false);
             router.push('/profile/subscription' as never);
           }}
+        />
+
+        {/* Boost modal - also available in empty state */}
+        <BoostModal
+          visible={showBoostModal}
+          onClose={() => setShowBoostModal(false)}
         />
       </View>
     );
@@ -831,20 +960,25 @@ export default function DiscoverScreen() {
 
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => {
-            Alert.alert(
-              t('discover.boostTitle'),
-              t('discover.boostDescription'),
-              [
-                { text: t('common.later'), style: 'cancel' },
-                { text: t('discover.activateBoost'), onPress: () => router.push('/profile/subscription' as never) }
-              ]
-            );
-          }}
+          onPress={() => setShowBoostModal(true)}
         >
-          <Ionicons name="flash" size={26} color={colors.boost} />
+          <View>
+            <Ionicons name="flash" size={26} color={colors.boost} />
+            {boostsAvailable > 0 && !isBoostActive && (
+              <View style={styles.boostBadge}>
+                <Text style={styles.boostBadgeText}>{boostsAvailable}</Text>
+              </View>
+            )}
+          </View>
         </TouchableOpacity>
       </SafeAreaView>
+
+      {/* Boost indicator when active */}
+      {isBoostActive && (
+        <View style={styles.boostIndicatorContainer}>
+          <BoostIndicator expiresAt={activeBoostExpiresAt} onExpire={refreshBoost} />
+        </View>
+      )}
 
       {/* Action buttons */}
       <View style={styles.actionsContainer} pointerEvents="box-none">
@@ -900,15 +1034,26 @@ export default function DiscoverScreen() {
         weeklyActivationsLimit={weeklyActivationsLimit}
         onUpgrade={() => {
           setShowModeModal(false);
+          setPaywallFeature('mode');
           setShowPaywallModal(true);
         }}
       />
 
-      {/* Paywall modal for availability mode */}
+      {/* Paywall modal - dynamique selon la feature */}
       <PaywallModal
         visible={showPaywallModal}
         onClose={() => setShowPaywallModal(false)}
-        feature="availabilityMode"
+        feature={paywallFeature}
+        currentUsage={
+          paywallFeature === 'likes' ? likesUsed :
+          paywallFeature === 'superLikes' ? superLikesUsed :
+          paywallFeature === 'rewind' ? rewindsUsed : undefined
+        }
+        limit={
+          paywallFeature === 'likes' ? likesLimit :
+          paywallFeature === 'superLikes' ? superLikesLimit :
+          paywallFeature === 'rewind' ? rewindsLimit : undefined
+        }
         onUpgrade={() => {
           setShowPaywallModal(false);
           router.push('/profile/subscription' as never);
@@ -926,12 +1071,19 @@ export default function DiscoverScreen() {
         }}
         travelMode={travelMode}
         canUseTravelMode={canUseTravelMode}
+        canUseAllFilters={canUseAllFilters}
         onActivateTravelMode={handleActivateTravelMode}
         onDeactivateTravelMode={handleDeactivateTravelMode}
         onUpgradeToPremium={() => {
           setShowFilterModal(false);
           router.push('/profile/subscription' as never);
         }}
+      />
+
+      {/* Boost modal */}
+      <BoostModal
+        visible={showBoostModal}
+        onClose={() => setShowBoostModal(false)}
       />
     </View>
   );
@@ -1027,6 +1179,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  boostBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.boost,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  boostBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  boostIndicatorContainer: {
+    position: 'absolute',
+    top: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
   },
   modeIndicatorContainer: {
     position: 'absolute',
