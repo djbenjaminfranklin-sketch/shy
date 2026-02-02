@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -44,6 +44,16 @@ export default function LifestyleScreen() {
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null);
   const [selectedPromptId, setSelectedPromptId] = useState<PromptId | null>(null);
   const [promptAnswer, setPromptAnswer] = useState('');
+  const answerInputRef = useRef<TextInput>(null);
+
+  // Focus sur le champ de réponse quand une question est sélectionnée
+  useEffect(() => {
+    if (selectedPromptId && answerInputRef.current) {
+      setTimeout(() => {
+        answerInputRef.current?.focus();
+      }, 100);
+    }
+  }, [selectedPromptId]);
 
   const handleAddPrompt = () => {
     setEditingPromptIndex(null);
@@ -338,14 +348,16 @@ export default function LifestyleScreen() {
               <View style={styles.answerSection}>
                 <Text style={styles.modalSectionTitle}>Votre reponse</Text>
                 <TextInput
+                  ref={answerInputRef}
                   style={styles.answerInput}
                   value={promptAnswer}
                   onChangeText={setPromptAnswer}
-                  placeholder="Ecrivez votre reponse..."
+                  placeholder="Tapez votre réponse ici pour activer OK..."
                   placeholderTextColor={colors.textTertiary}
                   multiline
                   maxLength={300}
                   textAlignVertical="top"
+                  autoFocus
                 />
                 <Text style={styles.charCount}>{promptAnswer.length}/300</Text>
               </View>
