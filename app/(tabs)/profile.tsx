@@ -25,7 +25,7 @@ import { BoostModal } from '../../src/components/boost/BoostModal';
 import { BoostIndicator } from '../../src/components/boost/BoostIndicator';
 
 export default function ProfileScreen() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, deleteAccount } = useAuth();
   const { t } = useLanguage();
   const {
     boostsAvailable,
@@ -129,13 +129,15 @@ export default function ProfileScreen() {
                   text: t('profile.deleteConfirm.confirmDelete'),
                   style: 'destructive',
                   onPress: async () => {
-                    // TODO: Appeler le service de suppression
-                    // await deleteAccount();
-                    Alert.alert(
-                      t('profile.deleteConfirm.successTitle'),
-                      t('profile.deleteConfirm.successMessage'),
-                      [{ text: t('common.ok'), onPress: signOut }]
-                    );
+                    const { error } = await deleteAccount();
+                    if (error) {
+                      Alert.alert(t('alerts.errorTitle'), error);
+                    } else {
+                      Alert.alert(
+                        t('profile.deleteConfirm.successTitle'),
+                        t('profile.deleteConfirm.successMessage')
+                      );
+                    }
                   },
                 },
               ]

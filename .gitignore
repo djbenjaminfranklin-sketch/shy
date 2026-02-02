@@ -41,3 +41,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+*.aab
+*.ipa
+build android def/
+build ios final/

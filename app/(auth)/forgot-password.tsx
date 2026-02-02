@@ -14,9 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -32,9 +34,12 @@ export default function ForgotPasswordScreen() {
     setError(null);
 
     try {
-      // TODO: Implement Supabase password reset
-      // await supabase.auth.resetPasswordForEmail(email);
-      setIsSuccess(true);
+      const { error: resetError } = await resetPassword(email);
+      if (resetError) {
+        setError(resetError);
+      } else {
+        setIsSuccess(true);
+      }
     } catch (err) {
       setError('Une erreur est survenue. Veuillez réessayer.');
     } finally {

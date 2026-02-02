@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Linking, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,8 +14,7 @@ export default function PrivacyScreen() {
   const { isEnabled: locationEnabled, disableLocation } = useLocation();
 
   const handleDataRequest = () => {
-    // TODO: Implement data export
-    Linking.openURL('mailto:contact@shydating.eu?subject=Demande de données personnelles');
+    router.push('/profile/export-data');
   };
 
   return (
