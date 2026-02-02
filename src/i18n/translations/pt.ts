@@ -1,0 +1,693 @@
+import { TranslationKeys } from './fr';
+
+export const pt: TranslationKeys = {
+  // Common
+  common: {
+    cancel: 'Cancelar',
+    confirm: 'Confirmar',
+    save: 'Salvar',
+    delete: 'Excluir',
+    edit: 'Editar',
+    next: 'Seguinte',
+    back: 'Voltar',
+    skip: 'Pular',
+    done: 'Concluido',
+    loading: 'Carregando...',
+    error: 'Erro',
+    success: 'Sucesso',
+    yes: 'Sim',
+    no: 'Nao',
+    ok: 'OK',
+    continue: 'Continuar',
+    later: 'Mais tarde',
+    close: 'Fechar',
+    search: 'Pesquisar',
+    refresh: 'Atualizar',
+    retry: 'Tentar novamente',
+    send: 'Enviar',
+    years: 'anos',
+    km: 'km',
+  },
+
+  // Tabs
+  tabs: {
+    home: 'Inicio',
+    explore: 'Explorar',
+    likes: 'Curtidas',
+    messages: 'Mensagens',
+    profile: 'Perfil',
+  },
+
+  // Welcome screen
+  welcome: {
+    tagline: 'Encontros, simplificados.',
+    createAccount: 'Criar uma conta',
+    login: 'Entrar',
+    footerText: 'Ao continuar, voce concorda com nossos termos.',
+    terms: 'Termos',
+    privacy: 'Privacidade',
+    features: {
+      verified: 'Perfis verificados',
+      nearby: 'Perto de voce',
+      connections: 'Conexoes reais',
+    },
+  },
+
+  // Auth
+  auth: {
+    email: 'Email',
+    password: 'Senha',
+    confirmPassword: 'Confirmar senha',
+    forgotPassword: 'Esqueceu a senha?',
+    loginButton: 'Entrar',
+    registerButton: 'Cadastrar',
+    noAccount: 'Nao tem uma conta?',
+    hasAccount: 'Ja tem uma conta?',
+    ageVerification: 'Confirmo que tenho 18 anos ou mais',
+    invalidEmail: 'Email invalido',
+    passwordTooShort: 'A senha deve ter pelo menos 8 caracteres',
+    passwordMismatch: 'As senhas nao coincidem',
+    loginTitle: 'Login',
+    loginSubtitle: 'Bem-vindo de volta!',
+    registerTitle: 'Criar uma conta',
+    registerSubtitle: 'Junte-se a comunidade SHY',
+    fillAllFields: 'Por favor, preencha todos os campos',
+    incorrectCredentials: 'Email ou senha incorretos',
+    acceptTerms: 'Voce deve aceitar os termos para continuar',
+    acceptTermsLabel: 'Eu aceito os',
+    and: 'e a',
+    privacyPolicy: 'politica de privacidade',
+    errorOccurred: 'Ocorreu um erro. Por favor, tente novamente.',
+    min8Chars: 'Minimo de 8 caracteres',
+  },
+
+  // Profile
+  profile: {
+    title: 'Meu perfil',
+    editProfile: 'Editar meu perfil',
+    verification: 'Verificacao',
+    subscription: 'Assinatura',
+    settings: 'Configuracoes',
+    privacy: 'Privacidade',
+    help: 'Ajuda',
+    logout: 'Sair',
+    deleteAccount: 'Excluir minha conta',
+    completeProfile: 'Completar meu perfil',
+    user: 'Usuario',
+    stats: {
+      sent: 'Enviados',
+      received: 'Recebidos',
+      connections: 'Conexoes',
+    },
+    logoutConfirm: {
+      title: 'Sair',
+      message: 'Tem certeza de que deseja sair?',
+    },
+    deleteConfirm: {
+      title: 'Excluir minha conta',
+      message: 'Esta acao e irreversivel. Todos os seus dados, fotos, conversas e conexoes serao excluidos permanentemente.',
+      finalTitle: 'Confirmacao final',
+      finalMessage: 'Tem certeza absoluta? Sua conta sera excluida em 30 dias.',
+      keepAccount: 'Nao, manter minha conta',
+      confirmDelete: 'Sim, excluir permanentemente',
+      successTitle: 'Conta excluida',
+      successMessage: 'Sua solicitacao de exclusao foi registrada. Sua conta sera excluida em 30 dias.',
+    },
+    adminPanel: 'Painel Admin',
+  },
+
+  // Edit profile
+  editProfile: {
+    title: 'Editar perfil',
+    photos: 'Fotos',
+    nameLabel: 'Nome ou apelido',
+    namePlaceholder: 'Como gostaria de ser chamado?',
+    aboutLabel: 'Sobre voce',
+    aboutPlaceholder: 'Conte-nos sobre voce...',
+    intentionLabel: 'Sua intencao',
+    availabilityLabel: 'Disponibilidade',
+    notSpecified: 'Nao especificado',
+    permissionRequired: 'Permissao necessaria',
+    photoPermissionMessage: 'Por favor, permita o acesso as suas fotos nas configuracoes.',
+    errorSelectPhoto: 'Nao foi possivel selecionar a foto. Por favor, tente novamente.',
+  },
+
+  // Settings
+  settings: {
+    title: 'Configuracoes',
+    languageSection: 'Idioma / Language',
+    locationSection: 'Localizacao',
+    enableLocation: 'Ativar localizacao',
+    locationDescription: 'Permite ver e ser visto por pessoas proximas',
+    locationHint: 'Apenas uma distancia aproximada e compartilhada, nunca seu endereco exato.',
+    searchPreferences: 'Preferencias de busca',
+    maxDistance: 'Distancia maxima',
+    ageRange: 'Faixa etaria',
+    minAge: 'Idade minima',
+    maxAge: 'Idade maxima',
+    lookingFor: 'Estou procurando',
+    lookingForHint: 'Deixe vazio para ver todos',
+    savePreferences: 'Salvar preferencias',
+    saving: 'Salvando...',
+    preferencesSaved: 'Suas preferencias foram salvas',
+    notifications: 'Notificacoes',
+    newInvitations: 'Novos convites',
+    newInvitationsDesc: 'Receba uma notificacao quando receber um novo convite',
+    messagesNotif: 'Mensagens',
+    messagesNotifDesc: 'Receba uma notificacao para novas mensagens',
+    soundVibration: 'Som e vibracao',
+    soundVibrationDesc: 'Ativar som e vibracao para notificacoes',
+    accountSection: 'Conta',
+    accountHint: 'Para alterar seu email ou senha, use o recurso "Esqueci a senha" na tela de login.',
+  },
+
+  // Subscription
+  subscription: {
+    title: 'Assinatura',
+    mySubscription: 'Minha assinatura',
+    activeSubscription: 'Assinatura ativa',
+    expiresOn: 'Expira em',
+    yourBenefits: 'Seus beneficios',
+    restorePurchases: 'Restaurar compras',
+    manageHint: 'Gerencie sua assinatura nas configuracoes da App Store ou Google Play',
+    firstMonthFree: 'PRIMEIRO MES GRATIS',
+    includedFeatures: 'Recursos incluidos',
+    chooseDuration: 'Escolha sua duracao',
+    comingSoon: 'Em breve',
+    comingSoonMessage: 'As assinaturas estarao disponiveis muito em breve!',
+    welcomePremium: 'Bem-vindo ao SHY Premium!',
+    welcomePlus: 'Bem-vindo ao SHY+!',
+    tryFree: 'Experimente GRATIS',
+    promoCode: 'Codigo promocional',
+    promoCodePlaceholder: 'Digite um codigo',
+    promoCodeApply: 'Aplicar',
+    promoCodeInvalid: 'Codigo invalido',
+    promoCodeSuccess: 'Codigo aplicado!',
+    subscribe: 'Assinar',
+    termsApple: 'O pagamento sera cobrado na sua conta iTunes ao confirmar a compra. A assinatura e renovada automaticamente, a menos que a renovacao automatica seja desativada pelo menos 24 horas antes do final do periodo atual. Sua conta sera cobrada pela renovacao dentro de 24 horas antes do final do periodo atual. Voce pode gerenciar e cancelar suas assinaturas acessando as configuracoes da sua conta da App Store apos a compra.',
+    termsOfService: 'Termos de Servico',
+    privacyPolicyLink: 'Politica de Privacidade',
+    appleEULA: 'EULA da Apple',
+    best: 'MELHOR',
+    popular: 'POPULAR',
+    month: 'mes',
+  },
+
+  // Duration labels
+  duration: {
+    week: 'Semana',
+    month: 'Mes',
+    threeMonths: '3 meses',
+    sixMonths: '6 meses',
+    year: 'Ano',
+  },
+
+  // Discover
+  discover: {
+    title: 'Descobrir',
+    favorites: 'Favoritos',
+    nearby: 'Perto de mim',
+    noMoreProfiles: 'Sem mais perfis',
+    comeBackLater: 'Volte mais tarde para descobrir novas pessoas',
+    km: 'km',
+    at: 'a',
+    active: 'Ativo',
+    agoMinutes: 'ha {0} min',
+    agoHours: 'ha {0}h',
+    boostTitle: 'Boost',
+    boostDescription: 'O Boost torna seu perfil mais visivel por 30 minutos. Voce aparece primeiro nas buscas.',
+    activateBoost: 'Ativar Boost',
+    invitationRequired: 'Convite necessario',
+    invitationRequiredMessage: 'Envie um convite primeiro deslizando para a direita',
+    locationDisabled: 'Localizacao desativada',
+    // Availability modes
+    activateMode: 'Modo',
+    modeActivated: 'Modo ativado',
+    modeActivatedMessage: 'Voce so vera perfis no mesmo modo.',
+    deactivateMode: 'Desativar modo',
+    deactivateModeConfirm: 'Tem certeza de que deseja desativar o modo?',
+    noProfilesInMode: 'Sem perfis neste modo',
+    noProfilesInModeHint: 'Ninguem ativou este modo ainda. Volte mais tarde!',
+  },
+
+  // Availability Modes
+  availabilityModes: {
+    activateTitle: 'Ativar um modo',
+    description: 'Ative um modo para ver apenas perfis no mesmo estado de espirito que voce.',
+    activationsThisWeek: 'Ativacoes esta semana',
+    unlimited: 'Ilimitado',
+    chooseMode: 'Escolha um modo',
+    duration: 'Duracao',
+    activateButton: 'Ativar modo',
+    limitReached: 'Limite atingido',
+    limitReachedMessage: 'Atualize para Premium para ativacoes ilimitadas',
+    seeOffers: 'Ver ofertas',
+    premium: 'Premium',
+    modeActive: 'Modo ativo',
+    // Mode names
+    relaxed: 'Relaxado',
+    spontaneous: 'Espontaneo',
+    explorer: 'Explorador',
+    // Mode badges
+    relaxedBadge: 'Disponivel hoje',
+    spontaneousBadge: 'Disponivel agora',
+    explorerBadge: 'Aberto esta semana',
+    // Mode descriptions
+    relaxedDescription: 'Tenha tempo para conversar calmamente',
+    spontaneousDescription: 'Pronto para conhecer pessoas rapidamente',
+    explorerDescription: 'Curioso para descobrir novas pessoas',
+    // Durations
+    duration24h: '24 horas',
+    duration72h: '72 horas',
+  },
+
+  // Explore
+  explore: {
+    title: 'Explorar',
+    map: 'Mapa',
+    grid: 'Grade',
+    onlineNow: 'Online agora',
+    nearbySection: 'Por perto',
+    noOneNearby: 'Ninguem por perto',
+    enableLocationHint: 'Ative sua localizacao para descobrir perfis ao seu redor.',
+    locationDisabled: 'Localizacao desativada',
+  },
+
+  // Invitations
+  invitations: {
+    title: 'Convites',
+    received: 'Recebidos',
+    sent: 'Enviados',
+    pending: 'Pendente',
+    accepted: 'Aceito',
+    expired: 'Expirado',
+    noInvitations: 'Nenhum convite ainda',
+    noInvitationsHint: 'Pessoas interessadas no seu perfil aparecerao aqui. Continue explorando!',
+    accept: 'Aceitar',
+    decline: 'Recusar',
+    expiresIn: 'Expira em',
+    days: 'dias',
+    refuseTitle: 'Recusar este convite?',
+    refuseMessage: 'Tem certeza de que deseja recusar o convite de {0}?',
+    exploreProfiles: 'Explorar perfis',
+    justNow: 'Agora mesmo',
+    minutesAgo: 'ha {0} min',
+    hoursAgo: 'ha {0}h',
+    yesterday: 'Ontem',
+    daysAgo: 'ha {0} dias',
+    weeksAgo: 'ha {0} semanas',
+  },
+
+  // Connections / Matches
+  connections: {
+    title: 'Minhas Conexoes',
+    noConnections: 'Nenhuma conexao ainda',
+    noConnectionsHint: 'Quando alguem aceitar seu convite, voce podera conversar aqui!',
+    discoverProfiles: 'Descobrir perfis',
+    startChatting: 'Comece a conversar!',
+    messagesTitle: 'Mensagens',
+    likes: 'Curtidas',
+    newMatches: 'Novos Matches',
+    messagesSection: 'Mensagens',
+    noMessagesYet: 'Nenhuma mensagem ainda',
+  },
+
+  // Messages
+  messages: {
+    title: 'Mensagens',
+    noMessages: 'Sem mensagens',
+    startConversation: 'Comece a conversar com suas conexoes',
+    typeMessage: 'Digite uma mensagem...',
+    send: 'Enviar',
+    conversationNotFound: 'Conversa nao encontrada',
+    startConversationHint: 'Inicie a conversa',
+    sendFirstMessage: 'Envie uma primeira mensagem para se conhecerem',
+  },
+
+  // Chat
+  chat: {
+    seeOriginal: 'Ver original',
+    seeTranslation: 'Ver traducao',
+    translated: 'Traduzido',
+  },
+
+  // Direct Messaging
+  directMessage: {
+    sendMessage: 'Enviar uma mensagem',
+    startConversation: 'Iniciar uma conversa',
+    privilegeWomen: 'Voce pode enviar uma mensagem diretamente aos homens que lhe interessam.',
+    privilegeNonBinary: 'Voce pode enviar uma mensagem diretamente a pessoas nao-binarias.',
+    needInvitation: 'Envie um convite para iniciar uma conversa.',
+    messageSent: 'Mensagem enviada!',
+    connectionCreated: 'Conversa iniciada',
+  },
+
+  // Intentions
+  intentions: {
+    social: 'Social / conversar',
+    dating: 'Namoro',
+    amical: 'Amizade',
+    local: 'Descobrir localmente',
+  },
+
+  // Availability
+  availability: {
+    today: 'Disponivel hoje',
+    afternoon: 'Esta tarde',
+    tonight: 'Esta noite',
+    weekend: 'Este fim de semana',
+  },
+
+  // Onboarding
+  onboarding: {
+    // Profile photo
+    addPhoto: 'Adicionar uma foto',
+    photoHelps: 'Uma foto de perfil ajuda outras pessoas a reconhece-lo',
+    addPhotoButton: 'Adicionar uma foto',
+    gallery: 'Galeria',
+    camera: 'Camera',
+    photoPermission: 'Permissao necessaria',
+    photoPermissionMessage: 'Por favor, permita o acesso as suas fotos nas configuracoes.',
+    cameraPermission: 'Por favor, permita o acesso a camera nas configuracoes.',
+    photoError: 'Nao foi possivel selecionar a foto. Por favor, tente novamente.',
+    cameraError: 'Nao foi possivel tirar a foto. Por favor, tente novamente.',
+
+    // Profile video
+    addVideo: 'Adicionar um video',
+    optional: 'Opcional',
+    selectVideo: 'Selecionar um video',
+    videoBonus: 'Perfis com video recebem 3x mais visualizacoes e mais matches!',
+    videoError: 'Nao foi possivel selecionar o video. Por favor, tente novamente.',
+
+    // Face verification
+    verifyIdentity: 'Verifique sua identidade',
+    protectYourself: 'Proteja-se e proteja os outros de perfis falsos',
+    yourProfilePhoto: 'Sua foto de perfil',
+    howItWorks: 'Como funciona?',
+    step1Title: 'Olhe para a camera',
+    step1Desc: 'Posicione seu rosto no quadro',
+    step2Title: 'Siga as instrucoes',
+    step2Desc: 'Vire a cabeca para a esquerda, depois para a direita',
+    step3Title: 'Verificacao automatica',
+    step3Desc: 'Verificamos que e voce na foto',
+    startVerification: 'Iniciar verificacao',
+    photoRequired: 'Foto necessaria',
+    photoRequiredMessage: 'Voce deve primeiro adicionar uma foto de perfil.',
+    verificationFailed: 'Verificacao falhou',
+    verificationFailedMessage: 'O rosto detectado nao corresponde a sua foto de perfil. Por favor, tente novamente.',
+    retry: 'Tentar novamente',
+    skipVerification: 'Pular verificacao?',
+    skipVerificationMessage: 'Seu perfil nao sera verificado e pode ter menos visibilidade.',
+    ignore: 'Pular',
+    profileVerified: 'Perfil verificado!',
+    verificationConfirmed: 'Sua identidade foi confirmada. Voce tera um selo de verificacao no seu perfil.',
+    verificationBadge: 'Selo de verificacao',
+    benefit1: 'Outros usuarios saberao que voce e autentico',
+    benefit2: 'Mais chances de conseguir matches',
+    benefit3: 'Prioridade nos resultados de busca',
+
+    // Basic info
+    tellUsAboutYou: 'Conte-nos sobre voce',
+    infoVisibleOnProfile: 'Esta informacao sera visivel no seu perfil',
+    nameLabel: 'Nome ou apelido *',
+    namePlaceholder: 'Como gostaria de ser chamado?',
+    birthDateLabel: 'Data de nascimento *',
+    birthDatePlaceholder: 'DD/MM/AAAA',
+    must18: 'Voce deve ter 18 anos ou mais',
+    genderLabel: 'Genero *',
+    hairColorLabel: 'Cor do cabelo',
+
+    // Intention
+    intentionTitle: 'Qual e sua intencao?',
+    intentionSubtitle: 'Isso ajuda os outros a entender o que voce esta procurando',
+
+    // Interests
+    interestsTitle: 'Seus interesses',
+    interestsSubtitle: 'Selecione ate 10 interesses ({0}/10)',
+
+    // Location
+    enableLocationTitle: 'Ativar localizacao',
+    enableLocationDesc: 'Para mostrar pessoas proximas, o SHY precisa acessar sua localizacao.',
+    approxLocation: 'Localizacao aproximada',
+    approxLocationDesc: 'Apenas uma distancia aproximada e compartilhada, nunca seu endereco exato.',
+    fullControl: 'Controle total',
+    fullControlDesc: 'Voce pode ocultar sua localizacao a qualquer momento nas configuracoes.',
+    disabledByDefault: 'Desativado por padrao',
+    disabledByDefaultDesc: 'Mesmo que voce conceda acesso, ele permanece desativado ate que voce o ative.',
+    authorizeLocation: 'Autorizar localizacao',
+    maybeLater: 'Talvez mais tarde',
+    gettingLocation: 'Obtendo localizacao...',
+    creatingProfile: 'Criando perfil...',
+    profileCreationError: 'Ocorreu um erro ao criar seu perfil. Por favor, tente novamente.',
+  },
+
+  // Errors
+  errors: {
+    networkError: 'Erro de conexao',
+    serverError: 'Erro do servidor',
+    tryAgain: 'Tente novamente',
+    somethingWrong: 'Algo deu errado',
+    unableToLoad: 'Nao foi possivel carregar',
+    unableToLoadInvitations: 'Nao foi possivel carregar os convites',
+    unableToAccept: 'Nao foi possivel aceitar o convite',
+    unableToRefuse: 'Nao foi possivel recusar o convite',
+  },
+
+  // Notifications
+  notifications: {
+    newInvitation: 'Novo convite',
+    invitationAccepted: 'Convite aceito',
+    newMessage: 'Nova mensagem',
+    nearbyUser: 'Alguem perto de voce',
+  },
+
+  // Alerts
+  alerts: {
+    errorTitle: 'Erro',
+    successTitle: 'Sucesso',
+    confirmTitle: 'Confirmacao',
+  },
+
+  // Legal
+  legal: {
+    disclaimer: 'Esta aplicacao e uma plataforma social para conectar adultos consentidos. Nao oferece nem facilita nenhum servico sexual pago.',
+  },
+
+  // Moderation
+  moderation: {
+    blockUser: 'Bloquear',
+    reportUser: 'Denunciar',
+    block: 'Bloquear',
+    blockConfirmation: 'Tem certeza de que deseja bloquear {name}? Esta pessoa nao podera mais entrar em contato com voce e sua conversa sera excluida.',
+    userBlocked: 'Usuario bloqueado',
+    userBlockedMessage: 'Esta pessoa nao pode mais entrar em contato com voce.',
+    reportReason: 'Por que voce esta denunciando este perfil?',
+    reportSent: 'Denuncia enviada',
+    reportSentMessage: 'Obrigado pela sua denuncia. Nossa equipe analisara este perfil.',
+    thisUser: 'este usuario',
+  },
+
+  // Time ago helpers
+  time: {
+    justNow: 'Agora mesmo',
+    minutesAgo: '{0} min',
+    hoursAgo: '{0}h',
+    daysAgo: '{0}d',
+    weeksAgo: '{0}sem',
+  },
+
+  // Connection Rhythm
+  connectionRhythm: {
+    title: 'Ritmo de conexao',
+    loading: 'Carregando...',
+    pendingTitle: 'Ritmo de conexao',
+    pendingSubtitle: 'Mais {count} mensagens para calcular sua pontuacao',
+    howItWorks: 'Como funciona?',
+    explanation: 'Esta pontuacao reflete a qualidade de suas trocas: tempo de resposta, horarios ativos em comum, tamanho das mensagens e regularidade.',
+    // Labels
+    perfectHarmony: 'Harmonia perfeita',
+    greatConnection: 'Otima conexao',
+    goodCompatibility: 'Boa compatibilidade',
+    building: 'Construindo',
+    developing: 'Desenvolvendo',
+    // Descriptions
+    perfectHarmonyDesc: 'Voces estao na mesma sintonia',
+    greatConnectionDesc: 'Sua comunicacao esta fluindo',
+    goodCompatibilityDesc: 'Voces estao se conhecendo',
+    buildingDesc: 'Seu ritmo esta se ajustando',
+    developingDesc: 'Continue trocando mensagens',
+    // Trends
+    trendUp: 'Sua conexao esta melhorando',
+    trendDown: 'Troque mensagens mais regularmente',
+    trendStable: 'Seu ritmo esta estavel',
+    // Premium
+    upgradeForDetails: 'SHY+ para ver detalhes',
+  },
+
+  // Comfort Level
+  comfortLevel: {
+    title: 'Nivel de conforto',
+    explanation: 'Este sistema permite que voce progrida no seu proprio ritmo. Os recursos so sao desbloqueados quando ambos estao prontos.',
+    mutual: 'Nivel mutuo',
+    otherReady: 'Pronto para passar para o proximo nivel',
+    otherUserAt: '{name} esta pronto para ir mais longe',
+    mutualLevel: 'Voces estao no mesmo nivel de conforto',
+    selectLevel: 'Escolha seu nivel',
+    safetyTitle: 'Seu conforto, sua escolha',
+    safetyText: 'Voce pode mudar seu nivel a qualquer momento. Nada e permanente e voce mantem o controle.',
+    resetLevel: 'Voltar ao nivel inicial',
+    resetTitle: 'Redefinir nivel',
+    resetMessage: 'Deseja voltar ao nivel Conversando? A outra pessoa sera notificada.',
+    updateError: 'Nao foi possivel atualizar o nivel',
+    // Levels
+    chatting: 'Conversando',
+    chattingDesc: 'Conhecendo-se calmamente',
+    flirting: 'Conexao',
+    flirtingDesc: 'Pronto para aprofundar o relacionamento',
+    openToMeet: 'Encontro',
+    openToMeetDesc: 'Aberto para se encontrar pessoalmente',
+  },
+
+  // Quick Meet (Coffee Break)
+  quickMeet: {
+    title: 'Coffee Break',
+    button: 'Sugerir uma pausa',
+    viewProposal: 'Ver proposta',
+    proposalSent: 'Proposta enviada',
+    // Create
+    createTitle: 'Sugerir uma pausa',
+    createSubtitle: 'Um momento curto e casual em um lugar publico para se conhecerem',
+    duration: 'Duracao',
+    timeSlots: 'Horarios disponiveis',
+    placeType: 'Tipo de lugar',
+    addMessage: 'Adicionar uma mensagem (opcional)',
+    messagePlaceholder: 'Ex.: Seria legal nos encontrarmos para um cafe!',
+    sendProposal: 'Enviar proposta',
+    selectSlotError: 'Selecione pelo menos um horario',
+    proposalSentTitle: 'Proposta enviada!',
+    proposalSentMessage: 'Voce sera notificado da resposta.',
+    // Receive
+    receivedTitle: '{name} sugere uma pausa',
+    receivedSubtitle: 'Um momento curto para se conhecerem',
+    theirMessage: 'A mensagem dele(a)',
+    selectTime: 'Escolha um horario',
+    selectPlace: 'Escolha um lugar',
+    selectResponseError: 'Selecione um horario e um lugar',
+    accept: 'Aceitar',
+    decline: 'Recusar',
+    acceptedTitle: 'Encontro confirmado!',
+    acceptedMessage: 'Voce tem um encontro com {name}. Converse para finalizar os detalhes.',
+    declineTitle: 'Recusar a proposta',
+    declineMessage: 'Por que voce gostaria de recusar?',
+    declineNotReady: 'Ainda nao estou pronto',
+    declinePreferChat: 'Prefiro continuar conversando',
+    // Waiting
+    waitingTitle: 'Aguardando resposta',
+    waitingText: '{name} ainda nao respondeu. Voce sera notificado da decisao.',
+    cancelProposal: 'Cancelar minha proposta',
+    cancelTitle: 'Cancelar a proposta?',
+    cancelMessage: 'Tem certeza de que deseja cancelar esta proposta?',
+    // Safety
+    safetyInfo: 'Sempre escolha um lugar publico. Avise alguem sobre seu encontro.',
+    safetyTip: 'Encontre-se em um lugar publico movimentado. Sua seguranca e importante.',
+    // Limit reached
+    limitReachedTitle: 'Proposta enviada!',
+    limitReachedText: 'Voce usou sua proposta de hoje ({count}/{limit}). Otimo trabalho ao tomar iniciativa!',
+    upgradeForMore: 'Com SHY+, proponha coffee breaks ilimitados',
+    upgradeToPremium: 'Atualizar para SHY+',
+  },
+
+  // Engagement Score
+  engagementScore: {
+    title: 'Pontuacao de engajamento',
+    boostActive: '+{multiplier}% visibilidade',
+    responsiveness: 'Responsividade',
+    conversation: 'Conversas',
+    meetings: 'Encontros',
+    activity: 'Atividade',
+    notEnoughData: 'Continue usando o app para ver sua pontuacao detalhada.',
+    explanation: 'Esta pontuacao reflete seu engajamento no app. Quanto mais ativo voce for e responder as mensagens, mais visivel sera seu perfil.',
+    // Levels
+    veryActive: 'Muito ativo',
+    active: 'Ativo',
+    moderate: 'Moderado',
+    casual: 'Casual',
+    new: 'Novo',
+    // Premium
+    upgradeForDetails: 'SHY+ para ver detalhes',
+  },
+
+  // Boost
+  boost: {
+    title: 'Impulsionar meu perfil',
+    description: 'Aumente temporariamente a visibilidade do seu perfil',
+    activate: 'Ativar um boost',
+    buy: 'Comprar boosts',
+    active: 'Boost ativo',
+    activeHint: 'Seu perfil esta sendo destacado',
+    remaining: '{count} boost(s) restante(s)',
+    noBoosts: 'Sem boosts disponiveis',
+    duration: '{minutes} minutos de maior visibilidade',
+    disclaimer: 'O Boost aumenta a visibilidade, resultados nao garantidos',
+    orBuyMore: 'Ou compre mais boosts',
+    // Products
+    singleBoost: '1 Boost',
+    packOf: 'Pacote de {count}',
+    bestValue: 'Melhor valor',
+    popular: 'Popular',
+  },
+
+  // Notification Consent
+  notificationConsent: {
+    title: 'Fique conectado',
+    description: 'Ative as notificacoes para nao perder nenhuma oportunidade de conexao.',
+    newMatches: 'Novos matches',
+    newMatchesDesc: 'Seja notificado quando alguem aceitar seu convite.',
+    newMessages: 'Mensagens',
+    newMessagesDesc: 'Receba mensagens das suas conexoes em tempo real.',
+    invitations: 'Convites',
+    invitationsDesc: 'Descubra quando alguem se interessa pelo seu perfil.',
+    privacyNote: 'Voce pode alterar essas preferencias a qualquer momento nas configuracoes.',
+    enable: 'Ativar notificacoes',
+    skip: 'Talvez mais tarde',
+  },
+
+  // Data Export (GDPR)
+  dataExport: {
+    title: 'Exportar meus dados',
+    description: 'De acordo com o RGPD (Artigo 20), voce pode baixar uma copia de todos os seus dados pessoais.',
+    whatIncluded: 'Dados incluidos',
+    profileInfo: 'Informacoes do perfil',
+    profileInfoDesc: 'Nome, data de nascimento, bio, preferencias',
+    photos: 'Fotos',
+    photosDesc: 'Links para suas fotos de perfil',
+    messages: 'Mensagens',
+    messagesDesc: 'Historico das suas conversas',
+    connections: 'Conexoes',
+    connectionsDesc: 'Lista dos seus matches e convites',
+    activityData: 'Dados de atividade',
+    activityDataDesc: 'Historico de login, preferencias',
+    exportButton: 'Baixar meus dados',
+    exporting: 'Preparando exportacao...',
+    exportSuccess: 'Dados exportados',
+    exportSuccessMessage: 'Seus dados foram baixados com sucesso.',
+    exportError: 'Erro de exportacao',
+    exportErrorMessage: 'Ocorreu um erro. Por favor, tente novamente.',
+    formatNote: 'Os dados sao exportados em formato JSON, legivel pela maioria dos aplicativos.',
+  },
+
+  // Safety Tips
+  safetyTips: {
+    title: 'Dicas de seguranca',
+    beforeMeeting: 'Antes de se encontrar',
+    tip1Title: 'Lugar publico',
+    tip1Desc: 'Sempre escolha um cafe, restaurante ou local movimentado.',
+    tip2Title: 'Avise alguem',
+    tip2Desc: 'Informe alguem sobre seu encontro e o horario previsto.',
+    tip3Title: 'Verifique o perfil',
+    tip3Desc: 'Procure perfis verificados com o selo azul.',
+    tip4Title: 'Fique atento',
+    tip4Desc: 'Nao hesite em sair se se sentir desconfortavel.',
+    understood: 'Entendido',
+  },
+};

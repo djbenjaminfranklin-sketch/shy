@@ -58,8 +58,8 @@ export const matchesService = {
       const { data: reciprocalInvitation } = await supabase
         .from('invitations')
         .select('id, status')
-        .eq('from_user_id', toUserId)
-        .eq('to_user_id', fromUserId)
+        .eq('sender_id', toUserId)
+        .eq('receiver_id', fromUserId)
         .eq('status', 'pending')
         .single();
 
@@ -106,8 +106,8 @@ export const matchesService = {
       const { error: invitationError } = await supabase
         .from('invitations')
         .insert({
-          from_user_id: fromUserId,
-          to_user_id: toUserId,
+          sender_id: fromUserId,
+          receiver_id: toUserId,
           type: isSuperLike ? 'super_like' : 'like',
           status: 'pending',
         });
@@ -184,14 +184,73 @@ export const matchesService = {
 
       const conversationMap = new Map((conversations || []).map((c) => [c.connection_id, c]));
 
-      // Construire le résultat
-      const result: MatchWithProfile[] = connections.map((connection) => {
+      console.log('[Matches] Connections found:', connections.length);
+      console.log('[Matches] Existing conversations:', conversations?.length || 0);
+
+      // Créer les conversations manquantes
+      for (const connection of connections) {
+        if (!conversationMap.has(connection.id)) {
+          console.log('[Matches] Creating missing conversation for connection:', connection.id);
+          const { data: newConversation, error: createError } = await supabase
+            .from('conversations')
+            .insert({ connection_id: connection.id })
+            .select('id, connection_id, last_message_at')
+            .single();
+
+          console.log('[Matches] Create conversation result:', { newConversation, createError });
+
+          if (newConversation) {
+            conversationMap.set(connection.id, newConversation);
+          }
+        }
+      }
+
+      console.log('[Matches] Final conversation map size:', conversationMap.size);
+
+      // Récupérer les derniers messages pour chaque conversation
+      const conversationIds = Array.from(conversationMap.values()).map(c => c.id);
+      const lastMessagesMap = new Map<string, { content: string; senderId: string }>();
+      const unreadCountMap = new Map<string, number>();
+
+      if (conversationIds.length > 0) {
+        // Récupérer le dernier message de chaque conversation
+        for (const convId of conversationIds) {
+          const { data: lastMsg } = await supabase
+            .from('messages')
+            .select('content, sender_id')
+            .eq('conversation_id', convId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (lastMsg) {
+            lastMessagesMap.set(convId, { content: lastMsg.content, senderId: lastMsg.sender_id });
+          }
+
+          // Compter les messages non lus
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', convId)
+            .eq('is_read', false)
+            .neq('sender_id', userId);
+
+          unreadCountMap.set(convId, count || 0);
+        }
+      }
+
+      // Construire le résultat - filtrer les connexions sans conversation valide
+      const result: MatchWithProfile[] = connections
+        .filter((connection) => conversationMap.has(connection.id))
+        .map((connection) => {
         const otherUserId = connection.user1_id === userId ? connection.user2_id : connection.user1_id;
         const otherUser = profilesMap.get(otherUserId);
-        const conversation = conversationMap.get(connection.id);
+        const conversation = conversationMap.get(connection.id)!;
+        const lastMsg = lastMessagesMap.get(conversation.id);
+        const unreadCount = unreadCountMap.get(conversation.id) || 0;
 
         return {
-          id: conversation?.id || connection.id, // Utiliser l'ID de conversation pour la navigation vers le chat
+          id: conversation.id, // Toujours utiliser l'ID de conversation
           user1Id: connection.user1_id,
           user2Id: connection.user2_id,
           createdAt: connection.created_at,
@@ -208,6 +267,12 @@ export const matchesService = {
             languages: otherUser.languages || [],
             interests: otherUser.interests || [],
             photos: otherUser.photos || [],
+            videoUrl: otherUser.video_url || null,
+            height: otherUser.height || null,
+            drinking: otherUser.drinking || null,
+            smoking: otherUser.smoking || null,
+            children: otherUser.children || null,
+            prompts: otherUser.prompts || [],
             locationEnabled: otherUser.location_enabled,
             latitude: otherUser.latitude,
             longitude: otherUser.longitude,
@@ -232,6 +297,12 @@ export const matchesService = {
             languages: [],
             interests: [],
             photos: [],
+            videoUrl: null,
+            height: null,
+            drinking: null,
+            smoking: null,
+            children: null,
+            prompts: [],
             locationEnabled: false,
             latitude: null,
             longitude: null,
@@ -243,9 +314,9 @@ export const matchesService = {
             createdAt: '',
             updatedAt: '',
           },
-          lastMessage: undefined,
+          lastMessage: lastMsg?.content,
           lastMessageAt: conversation?.last_message_at,
-          unreadCount: 0,
+          unreadCount: unreadCount,
         };
       });
 
@@ -290,8 +361,8 @@ export const matchesService = {
       // Récupérer les invitations en attente reçues
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select('id, from_user_id, type, created_at')
-        .eq('to_user_id', userId)
+        .select('id, sender_id, type, created_at')
+        .eq('receiver_id', userId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -304,20 +375,20 @@ export const matchesService = {
       }
 
       // Récupérer les profils des utilisateurs
-      const fromUserIds = invitations.map((inv) => inv.from_user_id);
+      const senderIds = invitations.map((inv) => inv.sender_id);
       const { data: profiles } = await supabase
         .from('profiles')
         .select('*')
-        .in('id', fromUserIds);
+        .in('id', senderIds);
 
       const profilesMap = new Map((profiles || []).map((p) => [p.id, p]));
 
       const result = invitations.map((invitation) => {
-        const profileData = profilesMap.get(invitation.from_user_id);
+        const profileData = profilesMap.get(invitation.sender_id);
 
         return {
           id: invitation.id,
-          fromUserId: invitation.from_user_id,
+          fromUserId: invitation.sender_id,
           type: invitation.type,
           createdAt: invitation.created_at,
           profile: profileData ? {

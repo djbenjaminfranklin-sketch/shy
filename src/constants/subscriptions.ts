@@ -269,24 +269,24 @@ type DurationLabelEntry = Record<SupportedLanguage, string> & { short: Record<Su
 
 export const DURATION_LABELS: Record<PlanDuration, DurationLabelEntry> = {
   week: {
-    fr: '1 semaine', en: '1 week', es: '1 semana', it: '1 settimana', de: '1 Woche', he: 'שבוע 1',
-    short: { fr: '1 sem.', en: '1 wk', es: '1 sem.', it: '1 sett.', de: '1 Wo.', he: '1 שב.' }
+    fr: '1 semaine', en: '1 week', es: '1 semana', it: '1 settimana', de: '1 Woche', he: 'שבוע 1', pt: '1 semana',
+    short: { fr: '1 sem.', en: '1 wk', es: '1 sem.', it: '1 sett.', de: '1 Wo.', he: '1 שב.', pt: '1 sem.' }
   },
   month: {
-    fr: '1 mois', en: '1 month', es: '1 mes', it: '1 mese', de: '1 Monat', he: 'חודש 1',
-    short: { fr: '1 mois', en: '1 mo', es: '1 mes', it: '1 mese', de: '1 Mo.', he: '1 חו.' }
+    fr: '1 mois', en: '1 month', es: '1 mes', it: '1 mese', de: '1 Monat', he: 'חודש 1', pt: '1 mes',
+    short: { fr: '1 mois', en: '1 mo', es: '1 mes', it: '1 mese', de: '1 Mo.', he: '1 חו.', pt: '1 mes' }
   },
   '3months': {
-    fr: '3 mois', en: '3 months', es: '3 meses', it: '3 mesi', de: '3 Monate', he: '3 חודשים',
-    short: { fr: '3 mois', en: '3 mo', es: '3 mes', it: '3 mesi', de: '3 Mo.', he: '3 חו.' }
+    fr: '3 mois', en: '3 months', es: '3 meses', it: '3 mesi', de: '3 Monate', he: '3 חודשים', pt: '3 meses',
+    short: { fr: '3 mois', en: '3 mo', es: '3 mes', it: '3 mesi', de: '3 Mo.', he: '3 חו.', pt: '3 mes' }
   },
   '6months': {
-    fr: '6 mois', en: '6 months', es: '6 meses', it: '6 mesi', de: '6 Monate', he: '6 חודשים',
-    short: { fr: '6 mois', en: '6 mo', es: '6 mes', it: '6 mesi', de: '6 Mo.', he: '6 חו.' }
+    fr: '6 mois', en: '6 months', es: '6 meses', it: '6 mesi', de: '6 Monate', he: '6 חודשים', pt: '6 meses',
+    short: { fr: '6 mois', en: '6 mo', es: '6 mes', it: '6 mesi', de: '6 Mo.', he: '6 חו.', pt: '6 mes' }
   },
   year: {
-    fr: '1 an', en: '1 year', es: '1 año', it: '1 anno', de: '1 Jahr', he: 'שנה 1',
-    short: { fr: '1 an', en: '1 yr', es: '1 año', it: '1 anno', de: '1 Jr.', he: '1 שנה' }
+    fr: '1 an', en: '1 year', es: '1 año', it: '1 anno', de: '1 Jahr', he: 'שנה 1', pt: '1 ano',
+    short: { fr: '1 an', en: '1 yr', es: '1 año', it: '1 anno', de: '1 Jr.', he: '1 שנה', pt: '1 ano' }
   },
 };
 

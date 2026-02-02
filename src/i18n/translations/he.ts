@@ -301,10 +301,15 @@ export const he: TranslationKeys = {
   // Connections / Matches
   connections: {
     title: 'החיבורים שלי',
+    messagesTitle: 'הודעות',
     noConnections: 'עדיין אין חיבורים',
     noConnectionsHint: 'כשמישהו יקבל את ההזמנה שלך, תוכל לשוחח כאן!',
     discoverProfiles: 'גלה פרופילים',
     startChatting: 'התחל לשוחח!',
+    likes: 'לייקים',
+    newMatches: 'התאמות חדשות',
+    messagesSection: 'הודעות',
+    noMessagesYet: 'עדיין אין הודעות',
   },
 
   // Messages
@@ -366,6 +371,13 @@ export const he: TranslationKeys = {
     cameraPermission: 'אנא אפשר גישה למצלמה בהגדרות.',
     photoError: 'לא ניתן לבחור את התמונה. אנא נסה שוב.',
     cameraError: 'לא ניתן לצלם. אנא נסה שוב.',
+
+    // Profile video
+    addVideo: 'הוסף סרטון',
+    optional: 'אופציונלי',
+    selectVideo: 'בחר סרטון',
+    videoBonus: 'פרופילים עם סרטון נצפים פי 3 ומקבלים יותר התאמות!',
+    videoError: 'לא ניתן לבחור סרטון. אנא נסה שוב.',
 
     // Face verification
     verifyIdentity: 'אמת את הזהות שלך',
@@ -623,5 +635,59 @@ export const he: TranslationKeys = {
     packOf: 'חבילה של {count}',
     bestValue: 'הכי משתלם',
     popular: 'פופולרי',
+  },
+
+  // Notification Consent
+  notificationConsent: {
+    title: 'הישאר מחובר',
+    description: 'הפעל התראות כדי לא לפספס שום הזדמנות להתחבר.',
+    newMatches: 'התאמות חדשות',
+    newMatchesDesc: 'קבל התראה כשמישהו מקבל את ההזמנה שלך.',
+    newMessages: 'הודעות',
+    newMessagesDesc: 'קבל הודעות מהחיבורים שלך בזמן אמת.',
+    invitations: 'הזמנות',
+    invitationsDesc: 'גלה כשמישהו מתעניין בפרופיל שלך.',
+    privacyNote: 'אתה יכול לשנות הגדרות אלו בכל עת בהגדרות.',
+    enable: 'הפעל התראות',
+    skip: 'אולי אחר כך',
+  },
+
+  // Data Export (GDPR)
+  dataExport: {
+    title: 'ייצא את הנתונים שלי',
+    description: 'בהתאם ל-GDPR (סעיף 20), אתה יכול להוריד עותק של כל הנתונים האישיים שלך.',
+    whatIncluded: 'נתונים כלולים',
+    profileInfo: 'מידע פרופיל',
+    profileInfoDesc: 'שם, תאריך לידה, ביו, העדפות',
+    photos: 'תמונות',
+    photosDesc: 'קישורים לתמונות הפרופיל שלך',
+    messages: 'הודעות',
+    messagesDesc: 'היסטוריית השיחות שלך',
+    connections: 'חיבורים',
+    connectionsDesc: 'רשימת ההתאמות וההזמנות שלך',
+    activityData: 'נתוני פעילות',
+    activityDataDesc: 'היסטוריית כניסה, העדפות',
+    exportButton: 'הורד את הנתונים שלי',
+    exporting: 'מכין ייצוא...',
+    exportSuccess: 'נתונים יוצאו',
+    exportSuccessMessage: 'הנתונים שלך הורדו בהצלחה.',
+    exportError: 'שגיאת ייצוא',
+    exportErrorMessage: 'אירעה שגיאה. אנא נסה שוב.',
+    formatNote: 'הנתונים מיוצאים בפורמט JSON, קריא על ידי רוב האפליקציות.',
+  },
+
+  // Safety Tips
+  safetyTips: {
+    title: 'טיפים לבטיחות',
+    beforeMeeting: 'לפני המפגש',
+    tip1Title: 'מקום ציבורי',
+    tip1Desc: 'בחר תמיד בית קפה, מסעדה או מקום עמוס.',
+    tip2Title: 'ספר למישהו',
+    tip2Desc: 'עדכן מישהו על הפגישה שלך ועל הזמן המתוכנן.',
+    tip3Title: 'בדוק את הפרופיל',
+    tip3Desc: 'חפש פרופילים מאומתים עם התג הכחול.',
+    tip4Title: 'הישאר ערני',
+    tip4Desc: 'אל תהסס לעזוב אם אתה לא מרגיש בנוח.',
+    understood: 'הבנתי',
   },
 };

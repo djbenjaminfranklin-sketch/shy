@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Video, ResizeMode } from 'expo-av';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
@@ -32,75 +33,66 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Cache pour éviter de recharger le profil quand on revient du signalement
+const profileCache: Record<string, { profile: Profile | null; myProfile: Profile | null }> = {};
+
 export default function ProfileViewScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
   const { user } = useAuth();
   const { language } = useLanguage();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialiser avec le cache si disponible
+  const cached = userId ? profileCache[userId] : null;
+  const [profile, setProfile] = useState<Profile | null>(cached?.profile || null);
+  const [myProfile, setMyProfile] = useState<Profile | null>(cached?.myProfile || null);
+  const [isLoading, setIsLoading] = useState(!cached);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isSendingInvitation, setIsSendingInvitation] = useState(false);
 
+  // Charger les profils si pas en cache
   useEffect(() => {
-    if (!userId || !user) {
-      setIsLoading(false);
-      return;
-    }
-
-    let isMounted = true;
-
     const loadProfiles = async () => {
-      // Si on a déjà le profil, pas besoin de recharger
-      if (profile && profile.id === userId) {
+      if (!userId || !user) {
         setIsLoading(false);
         return;
       }
 
-      setIsLoading(true);
-
-      // Timeout de sécurité - arrêter le chargement après 8 secondes
-      const timeout = setTimeout(() => {
-        if (isMounted) {
-          console.log('[ProfileView] Timeout reached, stopping loading');
-          setIsLoading(false);
-        }
-      }, 8000);
+      // Si déjà en cache, ne pas recharger
+      if (profileCache[userId]) {
+        setProfile(profileCache[userId].profile);
+        setMyProfile(profileCache[userId].myProfile);
+        setIsLoading(false);
+        return;
+      }
 
       try {
         console.log('[ProfileView] Loading profiles for:', userId);
-        // Charger le profil consulté et mon propre profil en parallèle
         const [targetProfile, ownProfile] = await Promise.all([
           profilesService.getProfile(userId),
           profilesService.getProfile(user.id),
         ]);
 
-        clearTimeout(timeout);
+        console.log('[ProfileView] Profiles loaded successfully');
 
-        if (isMounted) {
-          console.log('[ProfileView] Profiles loaded successfully');
-          setProfile(targetProfile.profile);
-          setMyProfile(ownProfile.profile);
-          setIsLoading(false);
-        }
+        // Mettre en cache
+        profileCache[userId] = {
+          profile: targetProfile.profile,
+          myProfile: ownProfile.profile,
+        };
+
+        setProfile(targetProfile.profile);
+        setMyProfile(ownProfile.profile);
       } catch (error) {
-        clearTimeout(timeout);
         console.error('[ProfileView] Error loading profile:', error);
-        if (isMounted) {
-          setIsLoading(false);
-        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadProfiles();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId, user?.id, profile?.id]);
+  }, [userId, user?.id]);
 
   // Vérifier si je peux envoyer un message direct
   const canDirectMessage = myProfile && profile
@@ -108,7 +100,47 @@ export default function ProfileViewScreen() {
     : false;
 
   const handleReport = () => {
-    router.push(`/moderation/report?userId=${userId}` as any);
+    Alert.alert(
+      'Signaler ce profil',
+      'Pourquoi souhaitez-vous signaler ce profil ?',
+      [
+        {
+          text: 'Faux profil',
+          onPress: () => submitReport('fake_profile'),
+        },
+        {
+          text: 'Harcèlement',
+          onPress: () => submitReport('harassment'),
+        },
+        {
+          text: 'Contenu inapproprié',
+          onPress: () => submitReport('inappropriate_content'),
+        },
+        {
+          text: 'Mineur suspecté',
+          onPress: () => submitReport('underage'),
+        },
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const submitReport = async (reason: string) => {
+    if (!user || !userId) return;
+
+    try {
+      const { error } = await moderationService.reportUser(user.id, userId, reason as any);
+      if (error) {
+        Alert.alert('Erreur', error);
+      } else {
+        Alert.alert('Signalement envoyé', 'Merci, notre équipe va examiner ce profil.');
+      }
+    } catch (err) {
+      Alert.alert('Erreur', 'Une erreur est survenue');
+    }
   };
 
   const handleBlock = async () => {
@@ -195,11 +227,23 @@ export default function ProfileViewScreen() {
   }
 
   if (!profile) {
+    // Si on est en train de charger, afficher le spinner
+    if (isLoading) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        </SafeAreaView>
+      );
+    }
+
+    // Sinon, le profil n'existe vraiment pas - retour vers explore
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Profil non trouvé</Text>
-          <Button title="Retour" onPress={() => router.back()} variant="outline" />
+          <Button title="Retour" onPress={() => router.replace('/(tabs)/explore')} variant="outline" />
         </View>
       </SafeAreaView>
     );
@@ -285,6 +329,22 @@ export default function ProfileViewScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>À propos</Text>
             <Text style={styles.bio}>{profile.bio}</Text>
+          </View>
+        )}
+
+        {profile.videoUrl && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Vidéo de présentation</Text>
+            <View style={styles.videoContainer}>
+              <Video
+                source={{ uri: profile.videoUrl }}
+                style={styles.video}
+                resizeMode={ResizeMode.COVER}
+                shouldPlay={false}
+                isLooping={false}
+                useNativeControls
+              />
+            </View>
           </View>
         )}
 
@@ -472,6 +532,15 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.text,
     lineHeight: 24,
+  },
+  videoContainer: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  video: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.surface,
   },
   mainAction: {
     marginBottom: spacing.lg,

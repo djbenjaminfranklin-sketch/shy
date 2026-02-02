@@ -1,81 +1,116 @@
-import { useState, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { WebView } from 'react-native-webview';
 import { colors } from '../../src/theme/colors';
-import { Pressable } from 'react-native';
 
 export default function TermsScreen() {
   const router = useRouter();
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const webViewRef = useRef<WebView>(null);
 
-  const handleRetry = () => {
-    setHasError(false);
-    setIsLoading(true);
-    webViewRef.current?.reload();
+  const handleBack = () => {
+    router.replace('/profile/settings');
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>CGU</Text>
+        <Text style={styles.headerTitle}>Conditions d'utilisation</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {hasError ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={64} color={colors.textTertiary} />
-          <Text style={styles.errorTitle}>Page indisponible</Text>
-          <Text style={styles.errorText}>
-            Impossible de charger les conditions d'utilisation.
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>Retour</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          {isLoading && (
-            <View style={styles.loading}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Chargement...</Text>
-            </View>
-          )}
-          <WebView
-            ref={webViewRef}
-            source={{ uri: 'https://shydating.eu/terms' }}
-            style={[styles.webview, isLoading && { opacity: 0 }]}
-            onLoadStart={() => setIsLoading(true)}
-            onLoadEnd={() => setIsLoading(false)}
-            onError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            onHttpError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            mixedContentMode="compatibility"
-            allowsInlineMediaPlayback={true}
-            originWhitelist={['*']}
-            cacheEnabled={true}
-          />
-        </>
-      )}
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.lastUpdate}>Dernière mise à jour : 1er février 2026</Text>
+
+        <Text style={styles.sectionTitle}>1. Acceptation des conditions</Text>
+        <Text style={styles.paragraph}>
+          En accédant et en utilisant l'application SHY ("l'Application"), vous acceptez d'être lié par les présentes Conditions Générales d'Utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser l'Application.
+        </Text>
+
+        <Text style={styles.sectionTitle}>2. Description du service</Text>
+        <Text style={styles.paragraph}>
+          SHY est une plateforme sociale de mise en relation entre adultes consentants âgés de 18 ans et plus. L'Application permet aux utilisateurs de créer un profil, de découvrir d'autres utilisateurs et d'échanger des messages.
+        </Text>
+        <Text style={styles.paragraph}>
+          SHY ne propose ni ne facilite aucun service sexuel rémunéré. L'Application est destinée uniquement à des fins de rencontres sociales légitimes.
+        </Text>
+
+        <Text style={styles.sectionTitle}>3. Éligibilité</Text>
+        <Text style={styles.paragraph}>
+          Pour utiliser SHY, vous devez :
+        </Text>
+        <Text style={styles.bulletPoint}>• Avoir au moins 18 ans</Text>
+        <Text style={styles.bulletPoint}>• Être légalement autorisé à utiliser ce service dans votre juridiction</Text>
+        <Text style={styles.bulletPoint}>• Ne pas avoir été précédemment banni de l'Application</Text>
+        <Text style={styles.bulletPoint}>• Ne pas être inscrit sur un registre de délinquants sexuels</Text>
+
+        <Text style={styles.sectionTitle}>4. Compte utilisateur</Text>
+        <Text style={styles.paragraph}>
+          Vous êtes responsable de maintenir la confidentialité de vos identifiants de connexion et de toutes les activités qui se produisent sous votre compte. Vous acceptez de nous informer immédiatement de toute utilisation non autorisée de votre compte.
+        </Text>
+
+        <Text style={styles.sectionTitle}>5. Règles de conduite</Text>
+        <Text style={styles.paragraph}>
+          En utilisant SHY, vous acceptez de ne pas :
+        </Text>
+        <Text style={styles.bulletPoint}>• Publier du contenu illégal, offensant ou inapproprié</Text>
+        <Text style={styles.bulletPoint}>• Harceler, menacer ou intimider d'autres utilisateurs</Text>
+        <Text style={styles.bulletPoint}>• Usurper l'identité d'une autre personne</Text>
+        <Text style={styles.bulletPoint}>• Utiliser l'Application à des fins commerciales non autorisées</Text>
+        <Text style={styles.bulletPoint}>• Solliciter des services sexuels rémunérés</Text>
+        <Text style={styles.bulletPoint}>• Partager du contenu impliquant des mineurs</Text>
+        <Text style={styles.bulletPoint}>• Collecter des informations sur d'autres utilisateurs sans leur consentement</Text>
+
+        <Text style={styles.sectionTitle}>5bis. Système de messagerie et protection contre le harcèlement</Text>
+        <Text style={styles.paragraph}>
+          SHY utilise un système de messagerie asymétrique conçu pour protéger les utilisateurs contre le harcèlement non sollicité. Ce système permet à certains utilisateurs (notamment les femmes) d'initier des conversations directement, tandis que d'autres doivent d'abord envoyer une invitation qui doit être acceptée.
+        </Text>
+        <Text style={styles.paragraph}>
+          Cette mesure vise à :
+        </Text>
+        <Text style={styles.bulletPoint}>• Réduire significativement le harcèlement et les messages non désirés</Text>
+        <Text style={styles.bulletPoint}>• Permettre aux utilisateurs de choisir avec qui ils souhaitent communiquer</Text>
+        <Text style={styles.bulletPoint}>• Créer un environnement plus sûr et respectueux pour tous</Text>
+        <Text style={styles.paragraph}>
+          Cette fonctionnalité est basée sur les retours de notre communauté et les meilleures pratiques de l'industrie en matière de sécurité sur les applications de rencontres. Tous les utilisateurs peuvent modifier leurs préférences de contact dans leurs paramètres.</Text>
+
+        <Text style={styles.sectionTitle}>6. Contenu utilisateur</Text>
+        <Text style={styles.paragraph}>
+          Vous conservez tous les droits sur le contenu que vous publiez sur SHY. En publiant du contenu, vous nous accordez une licence mondiale, non exclusive et libre de redevances pour utiliser, afficher et distribuer ce contenu dans le cadre de l'Application.
+        </Text>
+        <Text style={styles.paragraph}>
+          Nous nous réservons le droit de supprimer tout contenu qui viole ces conditions ou que nous jugeons inapproprié.
+        </Text>
+
+        <Text style={styles.sectionTitle}>7. Abonnements et achats</Text>
+        <Text style={styles.paragraph}>
+          Certaines fonctionnalités de SHY peuvent nécessiter un abonnement payant. Les paiements sont traités via l'App Store d'Apple. Les abonnements se renouvellent automatiquement sauf si vous les annulez au moins 24 heures avant la fin de la période en cours.
+        </Text>
+
+        <Text style={styles.sectionTitle}>8. Résiliation</Text>
+        <Text style={styles.paragraph}>
+          Vous pouvez supprimer votre compte à tout moment depuis les paramètres de l'Application. Nous nous réservons le droit de suspendre ou de résilier votre compte en cas de violation de ces conditions.
+        </Text>
+
+        <Text style={styles.sectionTitle}>9. Limitation de responsabilité</Text>
+        <Text style={styles.paragraph}>
+          SHY est fourni "tel quel" sans garantie d'aucune sorte. Nous ne sommes pas responsables des interactions entre utilisateurs ni des dommages résultant de l'utilisation de l'Application.
+        </Text>
+
+        <Text style={styles.sectionTitle}>10. Modifications</Text>
+        <Text style={styles.paragraph}>
+          Nous nous réservons le droit de modifier ces conditions à tout moment. Les modifications entreront en vigueur dès leur publication dans l'Application.
+        </Text>
+
+        <Text style={styles.sectionTitle}>11. Contact</Text>
+        <Text style={styles.paragraph}>
+          Pour toute question concernant ces conditions, contactez-nous à : support@shydating.eu
+        </Text>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -105,61 +140,39 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
-  webview: {
+  content: {
     flex: 1,
   },
-  loading: {
-    position: 'absolute',
-    top: 80,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    zIndex: 10,
+  contentContainer: {
+    padding: 20,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  lastUpdate: {
+    fontSize: 12,
+    color: colors.textTertiary,
     marginBottom: 24,
+    fontStyle: 'italic',
   },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  paragraph: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
     marginBottom: 12,
   },
-  retryText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  backLink: {
-    padding: 12,
-  },
-  backLinkText: {
-    color: colors.primary,
+  bulletPoint: {
     fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginLeft: 12,
+    marginBottom: 4,
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

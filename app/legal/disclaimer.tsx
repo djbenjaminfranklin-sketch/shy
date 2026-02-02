@@ -1,81 +1,105 @@
-import { useState, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { WebView } from 'react-native-webview';
 import { colors } from '../../src/theme/colors';
-import { Pressable } from 'react-native';
 
 export default function DisclaimerScreen() {
   const router = useRouter();
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const webViewRef = useRef<WebView>(null);
 
-  const handleRetry = () => {
-    setHasError(false);
-    setIsLoading(true);
-    webViewRef.current?.reload();
+  const handleBack = () => {
+    router.replace('/profile/settings');
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Mentions légales</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {hasError ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={64} color={colors.textTertiary} />
-          <Text style={styles.errorTitle}>Page indisponible</Text>
-          <Text style={styles.errorText}>
-            Impossible de charger les mentions légales.
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.lastUpdate}>Dernière mise à jour : 1er février 2026</Text>
+
+        <View style={styles.disclaimerBox}>
+          <Ionicons name="information-circle" size={24} color={colors.primary} style={styles.disclaimerIcon} />
+          <Text style={styles.disclaimerText}>
+            SHY est une plateforme sociale de mise en relation entre adultes consentants. Elle ne propose ni ne facilite aucun service sexuel rémunéré.
           </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>Retour</Text>
-          </TouchableOpacity>
         </View>
-      ) : (
-        <>
-          {isLoading && (
-            <View style={styles.loading}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Chargement...</Text>
-            </View>
-          )}
-          <WebView
-            ref={webViewRef}
-            source={{ uri: 'https://shydating.eu/disclaimer' }}
-            style={[styles.webview, isLoading && { opacity: 0 }]}
-            onLoadStart={() => setIsLoading(true)}
-            onLoadEnd={() => setIsLoading(false)}
-            onError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            onHttpError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            mixedContentMode="compatibility"
-            allowsInlineMediaPlayback={true}
-            originWhitelist={['*']}
-            cacheEnabled={true}
-          />
-        </>
-      )}
+
+        <Text style={styles.sectionTitle}>1. Éditeur de l'application</Text>
+        <Text style={styles.paragraph}>
+          SHY Dating{'\n'}
+          Application mobile de rencontres sociales{'\n'}
+          Email : contact@shydating.eu
+        </Text>
+
+        <Text style={styles.sectionTitle}>2. Hébergement</Text>
+        <Text style={styles.paragraph}>
+          Les données sont hébergées par Supabase Inc. sur des serveurs sécurisés conformes aux standards européens de protection des données.
+        </Text>
+
+        <Text style={styles.sectionTitle}>3. Nature du service</Text>
+        <Text style={styles.paragraph}>
+          SHY est une application de rencontres destinée aux adultes de 18 ans et plus souhaitant faire des rencontres sociales, amicales ou amoureuses.
+        </Text>
+        <Text style={styles.paragraph}>
+          L'Application propose :
+        </Text>
+        <Text style={styles.bulletPoint}>• La création d'un profil personnel</Text>
+        <Text style={styles.bulletPoint}>• La découverte d'autres utilisateurs</Text>
+        <Text style={styles.bulletPoint}>• Un système de "match" mutuel</Text>
+        <Text style={styles.bulletPoint}>• Une messagerie privée entre utilisateurs ayant "matché"</Text>
+
+        <Text style={styles.sectionTitle}>4. Restriction d'âge</Text>
+        <Text style={styles.paragraph}>
+          L'utilisation de SHY est strictement réservée aux personnes majeures (18 ans et plus). Une vérification de l'âge est effectuée lors de l'inscription.
+        </Text>
+
+        <Text style={styles.sectionTitle}>5. Responsabilité</Text>
+        <Text style={styles.paragraph}>
+          SHY agit en tant qu'intermédiaire technique permettant la mise en relation entre utilisateurs. Nous ne sommes pas responsables :
+        </Text>
+        <Text style={styles.bulletPoint}>• Du contenu publié par les utilisateurs</Text>
+        <Text style={styles.bulletPoint}>• Des interactions entre utilisateurs</Text>
+        <Text style={styles.bulletPoint}>• Des rencontres ayant lieu en dehors de l'Application</Text>
+        <Text style={styles.bulletPoint}>• De l'exactitude des informations fournies par les utilisateurs</Text>
+
+        <Text style={styles.sectionTitle}>6. Modération</Text>
+        <Text style={styles.paragraph}>
+          Nous mettons en place des outils de modération pour assurer un environnement sûr :
+        </Text>
+        <Text style={styles.bulletPoint}>• Système de signalement des profils</Text>
+        <Text style={styles.bulletPoint}>• Possibilité de bloquer des utilisateurs</Text>
+        <Text style={styles.bulletPoint}>• Modération des contenus signalés</Text>
+        <Text style={styles.bulletPoint}>• Suspension des comptes violant les règles</Text>
+
+        <Text style={styles.sectionTitle}>7. Propriété intellectuelle</Text>
+        <Text style={styles.paragraph}>
+          L'ensemble des éléments de l'Application (logo, design, code, textes) sont protégés par le droit de la propriété intellectuelle. Toute reproduction non autorisée est interdite.
+        </Text>
+
+        <Text style={styles.sectionTitle}>8. Droit applicable</Text>
+        <Text style={styles.paragraph}>
+          Les présentes mentions légales sont soumises au droit européen. En cas de litige, les tribunaux compétents seront ceux du ressort du siège social de l'éditeur.
+        </Text>
+
+        <Text style={styles.sectionTitle}>9. Contact</Text>
+        <Text style={styles.paragraph}>
+          Pour toute question ou réclamation :{'\n'}
+          Email : contact@shydating.eu
+        </Text>
+        <Text style={styles.paragraph}>
+          Pour les questions relatives à vos données personnelles :{'\n'}
+          Email : privacy@shydating.eu
+        </Text>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -105,61 +129,58 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
-  webview: {
+  content: {
     flex: 1,
   },
-  loading: {
-    position: 'absolute',
-    top: 80,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    zIndex: 10,
+  contentContainer: {
+    padding: 20,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  lastUpdate: {
+    fontSize: 12,
+    color: colors.textTertiary,
     marginBottom: 24,
+    fontStyle: 'italic',
   },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  disclaimerBox: {
+    flexDirection: 'row',
+    backgroundColor: colors.primaryLight || '#FFF0F0',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  disclaimerIcon: {
+    marginRight: 12,
+  },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  paragraph: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
     marginBottom: 12,
   },
-  retryText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  backLink: {
-    padding: 12,
-  },
-  backLinkText: {
-    color: colors.primary,
+  bulletPoint: {
     fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginLeft: 12,
+    marginBottom: 4,
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

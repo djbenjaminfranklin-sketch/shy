@@ -3,17 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   Image,
   RefreshControl,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { colors } from '../../src/theme/colors';
-import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
@@ -24,9 +24,6 @@ import type { MatchWithProfile } from '../../src/types/match';
 // Helper Functions
 // =============================================================================
 
-/**
- * Convertit une date ISO en temps relatif lisible
- */
 function getTimeAgo(dateString: string | undefined, t: (key: string) => string): string {
   if (!dateString) return '';
 
@@ -53,12 +50,6 @@ function getTimeAgo(dateString: string | undefined, t: (key: string) => string):
     return t('time.daysAgo').replace('{0}', String(diffInDays));
   }
 
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) {
-    return t('time.weeksAgo').replace('{0}', String(diffInWeeks));
-  }
-
-  // Format date for older messages
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
@@ -66,82 +57,123 @@ function getTimeAgo(dateString: string | undefined, t: (key: string) => string):
 // Components
 // =============================================================================
 
-interface ConnectionCardProps {
+interface LikesCardProps {
+  count: number;
+  onPress: () => void;
+  t: (key: string) => string;
+}
+
+/**
+ * Carte des likes reçus (première carte dans la section horizontale)
+ */
+function LikesCard({ count, onPress, t }: LikesCardProps) {
+  return (
+    <TouchableOpacity style={styles.likesCard} onPress={onPress} activeOpacity={0.8}>
+      <LinearGradient
+        colors={['#FFD700', '#FFA500']}
+        style={styles.likesGradient}
+      >
+        <View style={styles.likesContent}>
+          <Text style={styles.likesCount}>{count}</Text>
+          <Ionicons name="heart" size={24} color="#fff" />
+        </View>
+        <Text style={styles.likesLabel}>{t('connections.likes')}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
+interface NewMatchCardProps {
+  match: MatchWithProfile;
+  onPress: () => void;
+}
+
+/**
+ * Carte d'un nouveau match (section horizontale)
+ */
+function NewMatchCard({ match, onPress }: NewMatchCardProps) {
+  const hasPhoto = match.profile.photos && match.profile.photos.length > 0;
+
+  return (
+    <TouchableOpacity style={styles.newMatchCard} onPress={onPress} activeOpacity={0.8}>
+      {hasPhoto ? (
+        <Image source={{ uri: match.profile.photos[0] }} style={styles.newMatchPhoto} />
+      ) : (
+        <View style={[styles.newMatchPhoto, styles.newMatchPhotoPlaceholder]}>
+          <Ionicons name="person" size={32} color={colors.textTertiary} />
+        </View>
+      )}
+      <Text style={styles.newMatchName} numberOfLines={1}>
+        {match.profile.displayName}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+interface MessageRowProps {
   connection: MatchWithProfile;
   onPress: () => void;
   t: (key: string) => string;
 }
 
 /**
- * Carte de connexion - Grande et lisible
+ * Ligne de message (section verticale)
  */
-function ConnectionCard({ connection, onPress, t }: ConnectionCardProps) {
+function MessageRow({ connection, onPress, t }: MessageRowProps) {
   const { profile, lastMessage, lastMessageAt, unreadCount } = connection;
   const timeAgo = getTimeAgo(lastMessageAt, t);
   const hasPhoto = profile.photos && profile.photos.length > 0;
 
   return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.messageRow} onPress={onPress} activeOpacity={0.7}>
       {/* Avatar */}
-      <View style={styles.avatarContainer}>
+      <View style={styles.messageAvatarContainer}>
         {hasPhoto ? (
-          <Image source={{ uri: profile.photos[0] }} style={styles.avatar} />
+          <Image source={{ uri: profile.photos[0] }} style={styles.messageAvatar} />
         ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <View style={[styles.messageAvatar, styles.messageAvatarPlaceholder]}>
             <Ionicons name="person" size={28} color={colors.textTertiary} />
           </View>
         )}
-
-        {/* Badge messages non lus */}
-        {unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Text style={styles.unreadText}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Text>
-          </View>
-        )}
+        {/* Point de notification */}
+        {unreadCount > 0 && <View style={styles.onlineDot} />}
       </View>
 
       {/* Contenu */}
-      <View style={styles.cardContent}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.name} numberOfLines={1}>
-            {profile.displayName}, {profile.age}
+      <View style={styles.messageContent}>
+        <View style={styles.messageHeader}>
+          <Text style={[styles.messageName, unreadCount > 0 && styles.messageNameUnread]} numberOfLines={1}>
+            {profile.displayName}
           </Text>
-          {timeAgo && (
-            <Text style={styles.time}>{timeAgo}</Text>
+          {timeAgo ? (
+            <Text style={styles.messageTime}>{timeAgo}</Text>
+          ) : null}
+        </View>
+        <View style={styles.messagePreviewRow}>
+          {lastMessage ? (
+            <>
+              <Ionicons name="return-down-forward" size={14} color={colors.textTertiary} style={styles.replyIcon} />
+              <Text style={[styles.messagePreview, unreadCount > 0 && styles.messagePreviewUnread]} numberOfLines={1}>
+                {lastMessage}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.messagePreviewNew}>{t('connections.startChatting')}</Text>
           )}
         </View>
-
-        <Text
-          style={[
-            styles.lastMessage,
-            unreadCount > 0 && styles.lastMessageUnread,
-          ]}
-          numberOfLines={1}
-        >
-          {lastMessage || t('connections.startChatting')}
-        </Text>
       </View>
-
-      {/* Chevron */}
-      <Ionicons name="chevron-forward" size={24} color={colors.textTertiary} />
     </TouchableOpacity>
   );
 }
 
 /**
- * Etat vide - Pas de connexions
+ * État vide
  */
 function EmptyState({ t }: { t: (key: string) => string }) {
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>
-        <Ionicons name="heart-outline" size={64} color={colors.primaryLight} />
+        <Ionicons name="chatbubbles-outline" size={64} color={colors.primaryLight} />
       </View>
       <Text style={styles.emptyTitle}>{t('connections.noConnections')}</Text>
       <Text style={styles.emptySubtitle}>{t('connections.noConnectionsHint')}</Text>
@@ -157,34 +189,22 @@ function EmptyState({ t }: { t: (key: string) => string }) {
   );
 }
 
-/**
- * Etat de chargement
- */
-function LoadingState({ t }: { t: (key: string) => string }) {
-  return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.loadingText}>{t('common.loading')}</Text>
-    </View>
-  );
-}
-
 // =============================================================================
 // Main Screen
 // =============================================================================
 
-export default function ConnectionsScreen() {
+export default function MessagesScreen() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [connections, setConnections] = useState<MatchWithProfile[]>([]);
+  const [likesCount, setLikesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  // Note: error state is tracked but not displayed in UI for now
-  const [_error, setError] = useState<string | null>(null);
 
-  /**
-   * Charger les connexions depuis le backend
-   */
+  // Séparer les nouveaux matchs (sans message) et les conversations actives
+  const newMatches = connections.filter(c => !c.lastMessage);
+  const activeConversations = connections.filter(c => c.lastMessage);
+
   const loadConnections = useCallback(async () => {
     if (!user) {
       setConnections([]);
@@ -192,70 +212,62 @@ export default function ConnectionsScreen() {
       return;
     }
 
-    setIsLoading(true);
     try {
-      setError(null);
       const { matches, error: fetchError } = await matchesService.getMatches(user.id);
 
       if (fetchError) {
         console.error('Error loading connections:', fetchError);
-        setError(fetchError);
         setConnections([]);
       } else {
-        // Trier par dernier message (plus recent en premier)
+        // Trier par dernier message (plus récent en premier)
         const sorted = [...matches].sort((a, b) => {
-          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : new Date(a.createdAt).getTime();
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : new Date(b.createdAt).getTime();
           return dateB - dateA;
         });
         setConnections(sorted);
       }
+
+      // Charger le nombre de likes reçus
+      const { likes } = await matchesService.getReceivedLikes(user.id);
+      setLikesCount(likes.length);
     } catch (err) {
       console.error('Error loading connections:', err);
-      setError('Une erreur est survenue');
       setConnections([]);
     } finally {
       setIsLoading(false);
     }
   }, [user]);
 
-  /**
-   * Chargement initial
-   */
   useEffect(() => {
     loadConnections();
   }, [loadConnections]);
 
-  /**
-   * Rafraichissement pull-to-refresh
-   */
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await loadConnections();
     setIsRefreshing(false);
   }, [loadConnections]);
 
-  /**
-   * Navigation vers le chat
-   */
   const handleConnectionPress = useCallback((connection: MatchWithProfile) => {
-    // Navigation vers le chat avec l'ID du match
     router.push(`/chat/${connection.id}` as never);
   }, []);
 
-  /**
-   * Compter les messages non lus
-   */
+  const handleLikesPress = useCallback(() => {
+    router.push('/(tabs)/likes' as never);
+  }, []);
+
   const totalUnread = connections.reduce((sum, c) => sum + c.unreadCount, 0);
 
-  // Affichage du chargement
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>{t('connections.title')}</Text>
+          <Text style={styles.title}>{t('connections.messagesTitle')}</Text>
         </View>
-        <LoadingState t={t} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -264,47 +276,73 @@ export default function ConnectionsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>{t('connections.title')}</Text>
-        {connections.length > 0 && (
-          <View style={styles.countBadge}>
-            <Text style={styles.countText}>{connections.length}</Text>
-          </View>
-        )}
+        <Text style={styles.title}>{t('connections.messagesTitle')}</Text>
         {totalUnread > 0 && (
-          <View style={styles.unreadTotalBadge}>
-            <Ionicons name="chatbubble" size={14} color={colors.white} />
-            <Text style={styles.unreadTotalText}>{totalUnread}</Text>
+          <View style={styles.unreadBadge}>
+            <Text style={styles.unreadBadgeText}>{totalUnread}</Text>
           </View>
         )}
       </View>
 
-      {/* Liste des connexions */}
-      <FlatList
-        data={connections}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ConnectionCard
-            connection={item}
-            onPress={() => handleConnectionPress(item)}
-            t={t}
-          />
-        )}
-        contentContainerStyle={[
-          styles.list,
-          connections.length === 0 && styles.listEmpty,
-        ]}
+      <ScrollView
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
             tintColor={colors.primary}
-            colors={[colors.primary]}
           />
         }
-        ListEmptyComponent={<EmptyState t={t} />}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+      >
+        {connections.length === 0 ? (
+          <EmptyState t={t} />
+        ) : (
+          <>
+            {/* Section: Nouveaux Matchs */}
+            {(likesCount > 0 || newMatches.length > 0) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t('connections.newMatches')}</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.newMatchesScroll}
+                >
+                  {/* Carte des likes */}
+                  {likesCount > 0 && (
+                    <LikesCard count={likesCount} onPress={handleLikesPress} t={t} />
+                  )}
+                  {/* Nouveaux matchs sans conversation */}
+                  {newMatches.map((match) => (
+                    <NewMatchCard
+                      key={match.id}
+                      match={match}
+                      onPress={() => handleConnectionPress(match)}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Section: Messages */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('connections.messagesSection')}</Text>
+              {activeConversations.length === 0 ? (
+                <Text style={styles.noMessages}>{t('connections.noMessagesYet')}</Text>
+              ) : (
+                activeConversations.map((connection) => (
+                  <MessageRow
+                    key={connection.id}
+                    connection={connection}
+                    onPress={() => handleConnectionPress(connection)}
+                    t={t}
+                  />
+                ))
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -318,8 +356,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-
-  // Header
+  scrollView: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -333,134 +372,173 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-  countBadge: {
+  unreadBadge: {
     marginLeft: spacing.sm,
     backgroundColor: colors.primary,
     borderRadius: 12,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 8,
     paddingVertical: 2,
     minWidth: 24,
     alignItems: 'center',
   },
-  countText: {
+  unreadBadgeText: {
     color: colors.white,
     fontSize: 14,
     fontWeight: '600',
   },
-  unreadTotalBadge: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    gap: 4,
   },
-  unreadTotalText: {
-    color: colors.white,
-    fontSize: 13,
+
+  // Section
+  section: {
+    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '600',
+    color: colors.text,
+    marginBottom: spacing.md,
   },
 
-  // Liste
-  list: {
-    padding: spacing.lg,
+  // Nouveaux Matchs - Scroll horizontal
+  newMatchesScroll: {
+    paddingRight: spacing.lg,
+    gap: spacing.md,
   },
-  listEmpty: {
-    flexGrow: 1,
+  likesCard: {
+    width: 100,
+    height: 140,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
   },
-  separator: {
-    height: spacing.md,
+  likesGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+  },
+  likesContent: {
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  likesCount: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  likesLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  newMatchCard: {
+    width: 100,
+    alignItems: 'center',
+  },
+  newMatchPhoto: {
+    width: 100,
+    height: 140,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
+  },
+  newMatchPhotoPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newMatchName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+    marginTop: spacing.xs,
+    textAlign: 'center',
   },
 
-  // Card - Grande et touchable
-  card: {
+  // Messages - Liste verticale
+  messageRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    // Shadow douce
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  avatarContainer: {
+  messageAvatarContainer: {
     position: 'relative',
   },
-  avatar: {
+  messageAvatar: {
     width: 64,
     height: 64,
     borderRadius: 32,
     backgroundColor: colors.surface,
   },
-  avatarPlaceholder: {
+  messageAvatarPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  unreadBadge: {
+  onlineDot: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.card,
-    paddingHorizontal: 6,
+    borderColor: colors.background,
   },
-  unreadText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  cardContent: {
+  messageContent: {
     flex: 1,
     marginLeft: spacing.md,
-    marginRight: spacing.sm,
   },
-  cardHeader: {
+  messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
-  name: {
+  messageName: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.text,
     flex: 1,
   },
-  time: {
+  messageNameUnread: {
+    fontWeight: '700',
+  },
+  messageTime: {
     fontSize: 13,
     color: colors.textTertiary,
     marginLeft: spacing.sm,
   },
-  lastMessage: {
+  messagePreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  replyIcon: {
+    marginRight: 4,
+  },
+  messagePreview: {
     fontSize: 15,
     color: colors.textSecondary,
+    flex: 1,
   },
-  lastMessageUnread: {
+  messagePreviewUnread: {
     color: colors.text,
     fontWeight: '500',
   },
-
-  // Loading state
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.md,
+  messagePreviewNew: {
+    fontSize: 15,
+    color: colors.primary,
+    fontStyle: 'italic',
   },
-  loadingText: {
-    ...typography.body,
+  noMessages: {
+    fontSize: 15,
     color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.xl,
   },
 
   // Empty state
@@ -469,6 +547,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    paddingTop: 100,
   },
   emptyIcon: {
     width: 120,

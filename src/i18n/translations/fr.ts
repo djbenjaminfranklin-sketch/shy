@@ -299,10 +299,15 @@ export const fr = {
   // Connections / Matches
   connections: {
     title: 'Mes Connexions',
+    messagesTitle: 'Messages',
     noConnections: 'Pas encore de connexions',
     noConnectionsHint: "Quand quelqu'un acceptera votre invitation, vous pourrez discuter ici !",
     discoverProfiles: 'Découvrir des profils',
     startChatting: 'Commencez à discuter !',
+    likes: 'Likes',
+    newMatches: 'Nouveaux Matchs',
+    messagesSection: 'Messages',
+    noMessagesYet: 'Pas encore de messages',
   },
 
   // Messages
@@ -628,6 +633,60 @@ export const fr = {
     packOf: 'Pack de {count}',
     bestValue: 'Meilleure offre',
     popular: 'Populaire',
+  },
+
+  // Notification Consent (Onboarding)
+  notificationConsent: {
+    title: 'Restez connecté',
+    description: 'Activez les notifications pour ne manquer aucune opportunité de rencontre.',
+    newMatches: 'Nouveaux matchs',
+    newMatchesDesc: 'Soyez informé quand quelqu\'un accepte votre invitation.',
+    newMessages: 'Messages',
+    newMessagesDesc: 'Recevez les messages de vos connexions en temps réel.',
+    invitations: 'Invitations',
+    invitationsDesc: 'Découvrez quand quelqu\'un s\'intéresse à votre profil.',
+    privacyNote: 'Vous pouvez modifier ces préférences à tout moment dans les paramètres.',
+    enable: 'Activer les notifications',
+    skip: 'Peut-être plus tard',
+  },
+
+  // Data Export (GDPR)
+  dataExport: {
+    title: 'Exporter mes données',
+    description: 'Conformément au RGPD (Article 20), vous pouvez télécharger une copie de toutes vos données personnelles.',
+    whatIncluded: 'Données incluses',
+    profileInfo: 'Informations du profil',
+    profileInfoDesc: 'Nom, date de naissance, bio, préférences',
+    photos: 'Photos',
+    photosDesc: 'Liens vers vos photos de profil',
+    messages: 'Messages',
+    messagesDesc: 'Historique de vos conversations',
+    connections: 'Connexions',
+    connectionsDesc: 'Liste de vos matchs et invitations',
+    activityData: 'Données d\'activité',
+    activityDataDesc: 'Historique de connexion, préférences',
+    exportButton: 'Télécharger mes données',
+    exporting: 'Préparation en cours...',
+    exportSuccess: 'Données exportées',
+    exportSuccessMessage: 'Vos données ont été téléchargées avec succès.',
+    exportError: 'Erreur lors de l\'export',
+    exportErrorMessage: 'Une erreur est survenue. Veuillez réessayer.',
+    formatNote: 'Les données sont exportées au format JSON, lisible par la plupart des applications.',
+  },
+
+  // Safety Tips
+  safetyTips: {
+    title: 'Conseils de sécurité',
+    beforeMeeting: 'Avant de vous rencontrer',
+    tip1Title: 'Lieu public',
+    tip1Desc: 'Choisissez toujours un café, restaurant ou lieu fréquenté.',
+    tip2Title: 'Prévenez un proche',
+    tip2Desc: 'Informez quelqu\'un de votre rendez-vous et de l\'heure prévue.',
+    tip3Title: 'Vérifiez le profil',
+    tip3Desc: 'Privilégiez les profils vérifiés avec le badge bleu.',
+    tip4Title: 'Restez vigilant',
+    tip4Desc: 'N\'hésitez pas à partir si vous ne vous sentez pas à l\'aise.',
+    understood: 'J\'ai compris',
   },
 };
 

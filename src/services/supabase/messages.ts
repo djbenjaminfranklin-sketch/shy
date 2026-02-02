@@ -2,6 +2,57 @@ import { supabase } from './client';
 import type { Message, ConversationWithDetails } from '../../types/message';
 import { AUTO_REPLY_TEMPLATES } from '../../constants/subscriptions';
 
+// Rate limiting constants
+const MAX_MESSAGES_PER_MINUTE = 5;
+const MAX_MESSAGES_PER_HOUR = 30;
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_HOUR_MS = 60 * 60 * 1000; // 1 hour
+
+// In-memory rate limit tracking (will reset on app restart, but that's acceptable)
+const messageSendTimes: Map<string, number[]> = new Map();
+
+/**
+ * Check if user is rate limited
+ */
+function isRateLimited(userId: string): { limited: boolean; waitTime: number } {
+  const now = Date.now();
+  const userSendTimes = messageSendTimes.get(userId) || [];
+
+  // Clean up old entries
+  const recentMinute = userSendTimes.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  const recentHour = userSendTimes.filter(t => now - t < RATE_LIMIT_HOUR_MS);
+
+  // Check minute limit
+  if (recentMinute.length >= MAX_MESSAGES_PER_MINUTE) {
+    const oldestInMinute = Math.min(...recentMinute);
+    const waitTime = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - oldestInMinute)) / 1000);
+    return { limited: true, waitTime };
+  }
+
+  // Check hour limit
+  if (recentHour.length >= MAX_MESSAGES_PER_HOUR) {
+    const oldestInHour = Math.min(...recentHour);
+    const waitTime = Math.ceil((RATE_LIMIT_HOUR_MS - (now - oldestInHour)) / 1000);
+    return { limited: true, waitTime };
+  }
+
+  return { limited: false, waitTime: 0 };
+}
+
+/**
+ * Record a message send for rate limiting
+ */
+function recordMessageSend(userId: string): void {
+  const now = Date.now();
+  const userSendTimes = messageSendTimes.get(userId) || [];
+
+  // Keep only recent entries (last hour)
+  const filteredTimes = userSendTimes.filter(t => now - t < RATE_LIMIT_HOUR_MS);
+  filteredTimes.push(now);
+
+  messageSendTimes.set(userId, filteredTimes);
+}
+
 export const messagesService = {
   /**
    * Récupérer toutes les conversations d'un utilisateur
@@ -88,6 +139,8 @@ export const messagesService = {
    */
   async getMessages(conversationId: string, limit = 50, before?: string): Promise<{ messages: Message[]; error: string | null }> {
     try {
+      console.log('[Messages] getMessages for:', conversationId);
+
       let query = supabase
         .from('messages')
         .select('*')
@@ -100,6 +153,8 @@ export const messagesService = {
       }
 
       const { data: messages, error } = await query;
+
+      console.log('[Messages] getMessages result:', { count: messages?.length, error });
 
       if (error) {
         return { messages: [], error: error.message };
@@ -125,6 +180,32 @@ export const messagesService = {
    */
   async sendMessage(conversationId: string, senderId: string, content: string): Promise<{ message: Message | null; error: string | null }> {
     try {
+      console.log('[Messages] sendMessage called:', { conversationId, senderId, content: content.substring(0, 20) });
+
+      // Vérifier le rate limiting
+      const rateLimit = isRateLimited(senderId);
+      if (rateLimit.limited) {
+        console.log('[Messages] Rate limited:', senderId, 'wait:', rateLimit.waitTime);
+        return {
+          message: null,
+          error: `Vous envoyez des messages trop rapidement. Veuillez attendre ${rateLimit.waitTime} secondes.`,
+        };
+      }
+
+      // Vérifier que la conversation existe
+      const { data: conv, error: convError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('id', conversationId)
+        .single();
+
+      console.log('[Messages] Conversation check:', { conv, convError });
+
+      if (convError || !conv) {
+        console.error('[Messages] Conversation not found:', conversationId);
+        return { message: null, error: 'Conversation introuvable' };
+      }
+
       const { data: message, error } = await supabase
         .from('messages')
         .insert({
@@ -135,9 +216,15 @@ export const messagesService = {
         .select()
         .single();
 
+      console.log('[Messages] Insert result:', { message, error });
+
       if (error) {
+        console.error('[Messages] Insert error:', error);
         return { message: null, error: error.message };
       }
+
+      // Enregistrer l'envoi pour le rate limiting
+      recordMessageSend(senderId);
 
       // Mettre à jour last_message_at de la conversation
       await supabase

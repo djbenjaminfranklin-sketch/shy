@@ -301,10 +301,15 @@ export const es: TranslationKeys = {
   // Connections / Matches
   connections: {
     title: 'Mis Conexiones',
+    messagesTitle: 'Mensajes',
     noConnections: 'Aún no hay conexiones',
     noConnectionsHint: '¡Cuando alguien acepte tu invitación, podrás chatear aquí!',
     discoverProfiles: 'Descubrir perfiles',
     startChatting: '¡Empieza a chatear!',
+    likes: 'Me gusta',
+    newMatches: 'Nuevos Matches',
+    messagesSection: 'Mensajes',
+    noMessagesYet: 'Aún no hay mensajes',
   },
 
   // Messages
@@ -366,6 +371,13 @@ export const es: TranslationKeys = {
     cameraPermission: 'Por favor permite el acceso a la cámara en la configuración.',
     photoError: 'No se pudo seleccionar la foto. Por favor intenta de nuevo.',
     cameraError: 'No se pudo tomar la foto. Por favor intenta de nuevo.',
+
+    // Profile video
+    addVideo: 'Añadir video',
+    optional: 'Opcional',
+    selectVideo: 'Seleccionar video',
+    videoBonus: '¡Los perfiles con video son vistos 3 veces más y reciben más matches!',
+    videoError: 'No se pudo seleccionar el video. Por favor intenta de nuevo.',
 
     // Face verification
     verifyIdentity: 'Verifica tu identidad',
@@ -623,5 +635,59 @@ export const es: TranslationKeys = {
     packOf: 'Pack de {count}',
     bestValue: 'Mejor oferta',
     popular: 'Popular',
+  },
+
+  // Notification Consent
+  notificationConsent: {
+    title: 'Mantente conectado',
+    description: 'Activa las notificaciones para no perder ninguna oportunidad de conectar.',
+    newMatches: 'Nuevos matches',
+    newMatchesDesc: 'Recibe una notificación cuando alguien acepte tu invitación.',
+    newMessages: 'Mensajes',
+    newMessagesDesc: 'Recibe mensajes de tus conexiones en tiempo real.',
+    invitations: 'Invitaciones',
+    invitationsDesc: 'Descubre cuando alguien se interesa en tu perfil.',
+    privacyNote: 'Puedes cambiar estas preferencias en cualquier momento en ajustes.',
+    enable: 'Activar notificaciones',
+    skip: 'Quizás más tarde',
+  },
+
+  // Data Export (GDPR)
+  dataExport: {
+    title: 'Exportar mis datos',
+    description: 'De acuerdo con el RGPD (Artículo 20), puedes descargar una copia de todos tus datos personales.',
+    whatIncluded: 'Datos incluidos',
+    profileInfo: 'Información del perfil',
+    profileInfoDesc: 'Nombre, fecha de nacimiento, bio, preferencias',
+    photos: 'Fotos',
+    photosDesc: 'Enlaces a tus fotos de perfil',
+    messages: 'Mensajes',
+    messagesDesc: 'Historial de tus conversaciones',
+    connections: 'Conexiones',
+    connectionsDesc: 'Lista de tus matches e invitaciones',
+    activityData: 'Datos de actividad',
+    activityDataDesc: 'Historial de inicio de sesión, preferencias',
+    exportButton: 'Descargar mis datos',
+    exporting: 'Preparando exportación...',
+    exportSuccess: 'Datos exportados',
+    exportSuccessMessage: 'Tus datos se han descargado correctamente.',
+    exportError: 'Error de exportación',
+    exportErrorMessage: 'Ha ocurrido un error. Por favor, inténtalo de nuevo.',
+    formatNote: 'Los datos se exportan en formato JSON, legible por la mayoría de aplicaciones.',
+  },
+
+  // Safety Tips
+  safetyTips: {
+    title: 'Consejos de seguridad',
+    beforeMeeting: 'Antes de encontrarse',
+    tip1Title: 'Lugar público',
+    tip1Desc: 'Elige siempre una cafetería, restaurante o lugar concurrido.',
+    tip2Title: 'Avisa a alguien',
+    tip2Desc: 'Informa a alguien sobre tu cita y la hora prevista.',
+    tip3Title: 'Verifica el perfil',
+    tip3Desc: 'Busca perfiles verificados con la insignia azul.',
+    tip4Title: 'Mantente alerta',
+    tip4Desc: 'No dudes en irte si te sientes incómodo/a.',
+    understood: 'Entendido',
   },
 };

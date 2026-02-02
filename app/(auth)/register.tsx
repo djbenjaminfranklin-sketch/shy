@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +30,8 @@ export default function RegisterScreen() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const passwordInputRef = useRef<TextInput>(null);
+  const confirmPasswordInputRef = useRef<TextInput>(null);
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -81,6 +84,8 @@ export default function RegisterScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
           <View style={styles.header}>
             <Pressable style={styles.backButton} onPress={() => router.back()}>
@@ -102,12 +107,16 @@ export default function RegisterScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordInputRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.password')}</Text>
               <TextInput
+                ref={passwordInputRef}
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
@@ -115,12 +124,16 @@ export default function RegisterScreen() {
                 placeholderTextColor={colors.textTertiary}
                 secureTextEntry
                 autoComplete="new-password"
+                returnKeyType="next"
+                onSubmitEditing={() => confirmPasswordInputRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>{t('auth.confirmPassword')}</Text>
               <TextInput
+                ref={confirmPasswordInputRef}
                 style={styles.input}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -128,6 +141,8 @@ export default function RegisterScreen() {
                 placeholderTextColor={colors.textTertiary}
                 secureTextEntry
                 autoComplete="new-password"
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
               />
             </View>
 

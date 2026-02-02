@@ -43,19 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return profile;
   }, []);
 
-  // Enregistrer le push token si disponible
+  // Enregistrer le push token si permission déjà accordée (ne demande PAS la permission)
+  // La demande de permission est faite dans l'écran notification-consent.tsx
   const registerPushToken = useCallback(async (userId: string) => {
     try {
+      // Vérifier si la permission a déjà été accordée (sans la demander)
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
 
       if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        console.log('Push notification permission not granted');
+        console.log('Push notification permission not yet granted - will be requested during onboarding');
         return;
       }
 

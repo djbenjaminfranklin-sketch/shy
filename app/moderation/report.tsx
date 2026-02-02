@@ -7,6 +7,7 @@ import {
   TextInput,
   Alert,
   Pressable,
+  Keyboard,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,7 +46,7 @@ export default function ReportScreen() {
         Alert.alert(
           'Signalement envoyé',
           'Merci pour votre signalement. Notre équipe va examiner ce profil.',
-          [{ text: 'OK', onPress: () => router.back() }]
+          [{ text: 'OK', onPress: () => router.dismiss() }]
         );
       }
     } catch (err) {
@@ -57,7 +58,7 @@ export default function ReportScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.header}>
           <Text style={styles.title}>Signaler ce profil</Text>
           <Text style={styles.subtitle}>
@@ -101,6 +102,9 @@ export default function ReportScreen() {
             placeholderTextColor={colors.textTertiary}
             multiline
             maxLength={1000}
+            returnKeyType="done"
+            blurOnSubmit={true}
+            onSubmitEditing={Keyboard.dismiss}
           />
           <Text style={styles.charCount}>{details.length}/1000</Text>
         </View>
@@ -118,7 +122,7 @@ export default function ReportScreen() {
       <View style={styles.footer}>
         <Button
           title="Annuler"
-          onPress={() => router.back()}
+          onPress={() => router.dismiss()}
           variant="outline"
           style={styles.button}
         />

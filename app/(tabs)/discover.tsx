@@ -11,6 +11,7 @@ import {
   GestureResponderEvent,
   PanResponderGestureState,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,12 +25,13 @@ import { profilesService } from '../../src/services/supabase/profiles';
 import { matchesService } from '../../src/services/supabase/matches';
 import { invitationsService } from '../../src/services/supabase/invitations';
 import { subscriptionsService } from '../../src/services/supabase/subscriptions';
+import { adminService } from '../../src/services/supabase/admin';
 import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../../src/constants/subscriptions';
 import { canSendDirectMessage } from '../../src/utils/messagingPermissions';
 import { Profile, ProfileWithDistance } from '../../src/types/profile';
 import { useAvailabilityMode } from '../../src/hooks/useAvailabilityMode';
 import { useTravelMode } from '../../src/hooks/useTravelMode';
-import { ActiveModeIndicator, ModeActivationModal } from '../../src/components/availability';
+import { ModeActivationModal } from '../../src/components/availability';
 import { PaywallModal } from '../../src/components/subscription/PaywallModal';
 import { FilterModal } from '../../src/components/discover/FilterModal';
 import { BoostModal } from '../../src/components/boost/BoostModal';
@@ -41,12 +43,14 @@ import type { ProfileFilters } from '../../src/types/profile';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
-const SWIPE_OUT_DURATION = 300;
+const SWIPE_OUT_DURATION = 400;
 
 // Action Button Component
 interface ActionButtonProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  emoji?: string;
+  image?: any;
+  color?: string;
   glowColor: string;
   size?: number;
   onPress: () => void;
@@ -54,6 +58,8 @@ interface ActionButtonProps {
 
 const ActionButton: React.FC<ActionButtonProps> = ({
   icon,
+  emoji,
+  image,
   color,
   glowColor,
   size = 60,
@@ -72,7 +78,13 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     onPress={onPress}
     activeOpacity={0.8}
   >
-    <Ionicons name={icon} size={size * 0.45} color={color} />
+    {emoji ? (
+      <Text style={{ fontSize: size * 0.45 }}>{emoji}</Text>
+    ) : image ? (
+      <Image source={image} style={{ width: size * 0.5, height: size * 0.5, resizeMode: 'contain' }} />
+    ) : icon ? (
+      <Ionicons name={icon} size={size * 0.45} color={color} />
+    ) : null}
   </TouchableOpacity>
 );
 
@@ -80,23 +92,19 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { isEnabled: locationEnabled, city, getLocationDisplayName, latitude, longitude } = useLocation();
+  const { latitude, longitude, city } = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<'favorites' | 'nearby'>('favorites');
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<ProfileWithDistance[]>([]);
   const [imageError, setImageError] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Availability mode state
   const {
     activeMode,
     hasActiveMode,
-    remainingTimeFormatted,
-    isExpiringSoon,
     activateMode,
-    deactivateMode,
     canUse72Hours,
     hasRemainingActivations,
     weeklyActivationsUsed,
@@ -143,15 +151,16 @@ export default function DiscoverScreen() {
   const effectiveLongitude = hasActiveTravelMode && travelMode
     ? travelMode.destination.longitude
     : longitude;
-  const effectiveLocationName = hasActiveTravelMode && travelMode
-    ? travelMode.destination.city
-    : (city || getLocationDisplayName());
 
-  // Charger mon profil pour connaitre mon genre
+  // Charger mon profil pour connaitre mon genre et vérifier si admin
   useEffect(() => {
     if (user) {
       profilesService.getProfile(user.id).then(({ profile }) => {
         setMyProfile(profile);
+      });
+      // Vérifier si l'utilisateur est admin (pour voir tous les profils sans limite de distance)
+      adminService.isAdmin(user.id).then((admin) => {
+        setIsAdmin(admin);
       });
     }
   }, [user]);
@@ -195,18 +204,19 @@ export default function DiscoverScreen() {
       const { profiles: loadedProfiles } = await profilesService.getDiscoverProfiles(
         user.id,
         {
-          minAge: myProfile?.minAgeFilter || 18,
-          maxAge: myProfile?.maxAgeFilter || 99,
-          genders: myProfile?.genderFilter || [],
+          minAge: isAdmin ? 18 : (myProfile?.minAgeFilter || 18),
+          maxAge: isAdmin ? 99 : (myProfile?.maxAgeFilter || 99),
+          genders: isAdmin ? [] : (myProfile?.genderFilter || []), // Admin: tous les genres
           intentions: [],
           hairColors: [],
           languages: [],
           interests: [],
-          searchRadius: myProfile?.searchRadius || 50,
+          searchRadius: isAdmin ? 50000 : (myProfile?.searchRadius || 50), // Admin: rayon mondial
         },
         effectiveLatitude ?? undefined,
         effectiveLongitude ?? undefined,
-        activeModeType
+        activeModeType,
+        isAdmin // Permet de voir tous les profils sans limite de distance
       );
       if (loadedProfiles) {
         setProfiles(loadedProfiles);
@@ -217,7 +227,7 @@ export default function DiscoverScreen() {
     if (myProfile) {
       loadProfiles();
     }
-  }, [user, myProfile, effectiveLatitude, effectiveLongitude, hasActiveMode, activeMode?.modeType, hasActiveTravelMode]);
+  }, [user, myProfile, effectiveLatitude, effectiveLongitude, hasActiveMode, activeMode?.modeType, hasActiveTravelMode, isAdmin]);
 
   const swipeAnim = useRef(new Animated.ValueXY()).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -227,23 +237,12 @@ export default function DiscoverScreen() {
   const superLikeOpacity = useRef(new Animated.Value(0)).current;
   const isAnimatingRef = useRef(false);
 
-  // Filtrer les profils selon l'onglet actif
-  const filteredProfiles = activeTab === 'nearby'
-    ? profiles.filter(p => p.distance !== null && p.distance <= 5) // Profils a moins de 5km
-    : profiles; // Tous les profils pour "Coups de Coeur"
+  // Refs pour les callbacks (utilisées par le panResponder)
+  const handleLikeActionRef = useRef<() => void>(() => {});
+  const handleSuperLikeActionRef = useRef<() => void>(() => {});
+  const goToNextProfileRef = useRef<() => void>(() => {});
 
-  const profile = filteredProfiles[currentIndex];
-
-  // Reset animations for new card
-  const resetAnimations = useCallback(() => {
-    swipeAnim.setValue({ x: 0, y: 0 });
-    rotateAnim.setValue(0);
-    likeOpacity.setValue(0);
-    nopeOpacity.setValue(0);
-    superLikeOpacity.setValue(0);
-    setCurrentPhotoIndex(0);
-    setImageError(false);
-  }, [swipeAnim, rotateAnim, likeOpacity, nopeOpacity, superLikeOpacity]);
+  const profile = profiles[currentIndex];
 
   // Reset animations when profile changes - useLayoutEffect pour éviter le flash
   useLayoutEffect(() => {
@@ -258,18 +257,9 @@ export default function DiscoverScreen() {
 
   // Go to next profile
   const goToNextProfile = useCallback(() => {
-    const filtered = activeTab === 'nearby'
-      ? profiles.filter(p => p.distance !== null && p.distance <= 5)
-      : profiles;
-    const maxIndex = filtered.length - 1;
-
     // Juste changer l'index - les animations sont reinitialisees dans useEffect
-    if (currentIndex < maxIndex) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      setCurrentIndex(currentIndex + 1);
-    }
-  }, [currentIndex, activeTab, profiles]);
+    setCurrentIndex(prev => prev + 1);
+  }, []);
 
   // Go to previous profile (rewind)
   const goToPreviousProfile = useCallback(() => {
@@ -280,7 +270,6 @@ export default function DiscoverScreen() {
 
   // Swipe animation - simplifié sans opacité
   const swipeCard = useCallback((direction: 'left' | 'right' | 'up') => {
-    setIsAnimating(true);
     isAnimatingRef.current = true;
     const x = direction === 'left' ? -SCREEN_WIDTH * 1.5 : direction === 'right' ? SCREEN_WIDTH * 1.5 : 0;
     const y = direction === 'up' ? -SCREEN_HEIGHT : 0;
@@ -290,7 +279,6 @@ export default function DiscoverScreen() {
       duration: SWIPE_OUT_DURATION,
       useNativeDriver: true,
     }).start(() => {
-      setIsAnimating(false);
       isAnimatingRef.current = false;
       goToNextProfile();
     });
@@ -319,32 +307,17 @@ export default function DiscoverScreen() {
     // Incrémenter sur le serveur
     subscriptionsService.incrementLikes(user.id);
 
-    // Animation puis next
-    Animated.sequence([
-      Animated.timing(likeOpacity, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.delay(100),
-    ]).start(() => {
-      swipeCard('right');
-    });
+    // Animation: stamp visible pendant tout le swipe
+    likeOpacity.setValue(1);
+    swipeCard('right');
   }, [likeOpacity, swipeCard, profile, user, likesUsed, likesLimit]);
 
   const handleNope = useCallback(() => {
     if (!profile) return; // Pas de profil à refuser
 
-    Animated.sequence([
-      Animated.timing(nopeOpacity, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.delay(100),
-    ]).start(() => {
-      swipeCard('left');
-    });
+    // Animation: stamp visible pendant tout le swipe
+    nopeOpacity.setValue(1);
+    swipeCard('left');
   }, [nopeOpacity, swipeCard, profile]);
 
   const handleSuperLike = useCallback(async () => {
@@ -366,17 +339,50 @@ export default function DiscoverScreen() {
     // Envoyer l'invitation (super like trackée via incrementSuperLikes)
     await invitationsService.sendInvitation(user.id, profile.id);
 
-    Animated.sequence([
-      Animated.timing(superLikeOpacity, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.delay(100),
-    ]).start(() => {
-      swipeCard('up');
-    });
+    // Animation: stamp visible pendant tout le swipe
+    superLikeOpacity.setValue(1);
+    swipeCard('up');
   }, [superLikeOpacity, swipeCard, profile, user, superLikesUsed, superLikesLimit]);
+
+  // Actions serveur sans animation (appelées depuis le panResponder)
+  const handleLikeAction = useCallback(async () => {
+    if (!profile || !user) return;
+
+    // Vérifier la limite (mais ne pas bloquer l'animation)
+    if (likesLimit !== -1 && likesUsed >= likesLimit) {
+      return;
+    }
+
+    // Envoyer l'invitation
+    invitationsService.sendInvitation(user.id, profile.id);
+
+    // Incrémenter les compteurs
+    setLikesUsed((prev) => prev + 1);
+    subscriptionsService.incrementLikes(user.id);
+  }, [profile, user, likesUsed, likesLimit]);
+
+  const handleSuperLikeAction = useCallback(async () => {
+    if (!profile || !user) return;
+
+    // Vérifier la limite
+    if (superLikesLimit !== -1 && superLikesUsed >= superLikesLimit) {
+      return;
+    }
+
+    // Envoyer l'invitation
+    invitationsService.sendInvitation(user.id, profile.id);
+
+    // Incrémenter les compteurs
+    setSuperLikesUsed((prev) => prev + 1);
+    subscriptionsService.incrementSuperLikes(user.id);
+  }, [profile, user, superLikesUsed, superLikesLimit]);
+
+  // Garder les refs à jour pour le panResponder
+  useEffect(() => {
+    handleLikeActionRef.current = handleLikeAction;
+    handleSuperLikeActionRef.current = handleSuperLikeAction;
+    goToNextProfileRef.current = goToNextProfile;
+  }, [handleLikeAction, handleSuperLikeAction, goToNextProfile]);
 
   const handleRewind = useCallback(() => {
     // Vérifier la limite de rewinds (sauf si illimité = -1)
@@ -486,12 +492,64 @@ export default function DiscoverScreen() {
       onPanResponderRelease: (_, gestureState) => {
         swipeAnim.flattenOffset();
 
+        if (isAnimatingRef.current) return;
+
         if (gestureState.dx > SWIPE_THRESHOLD) {
-          handleLike();
+          // Swipe vers la droite = Like
+          isAnimatingRef.current = true;
+          Animated.parallel([
+            Animated.timing(swipeAnim, {
+              toValue: { x: SCREEN_WIDTH * 1.5, y: gestureState.dy },
+              duration: SWIPE_OUT_DURATION,
+              useNativeDriver: true,
+            }),
+            Animated.timing(likeOpacity, {
+              toValue: 1,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            isAnimatingRef.current = false;
+            handleLikeActionRef.current();
+            goToNextProfileRef.current();
+          });
         } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-          handleNope();
+          // Swipe vers la gauche = Nope
+          isAnimatingRef.current = true;
+          Animated.parallel([
+            Animated.timing(swipeAnim, {
+              toValue: { x: -SCREEN_WIDTH * 1.5, y: gestureState.dy },
+              duration: SWIPE_OUT_DURATION,
+              useNativeDriver: true,
+            }),
+            Animated.timing(nopeOpacity, {
+              toValue: 1,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            isAnimatingRef.current = false;
+            goToNextProfileRef.current();
+          });
         } else if (gestureState.dy < -SWIPE_THRESHOLD) {
-          handleSuperLike();
+          // Swipe vers le haut = Super Like
+          isAnimatingRef.current = true;
+          Animated.parallel([
+            Animated.timing(swipeAnim, {
+              toValue: { x: gestureState.dx, y: -SCREEN_HEIGHT },
+              duration: SWIPE_OUT_DURATION,
+              useNativeDriver: true,
+            }),
+            Animated.timing(superLikeOpacity, {
+              toValue: 1,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            isAnimatingRef.current = false;
+            handleSuperLikeActionRef.current();
+            goToNextProfileRef.current();
+          });
         } else {
           // Reset to center
           Animated.parallel([
@@ -550,35 +608,6 @@ export default function DiscoverScreen() {
       Alert.alert(t('alerts.errorTitle'), result.error || t('errors.somethingWrong'));
     }
   }, [activateMode, t]);
-
-  const handleDeactivateMode = useCallback(async () => {
-    Alert.alert(
-      t('discover.deactivateMode') || 'Désactiver le mode',
-      t('discover.deactivateModeConfirm') || 'Êtes-vous sûr de vouloir désactiver le mode ?',
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.confirm'),
-          style: 'destructive',
-          onPress: async () => {
-            const result = await deactivateMode();
-            if (!result.success) {
-              Alert.alert(t('alerts.errorTitle'), result.error || t('errors.somethingWrong'));
-            }
-          },
-        },
-      ]
-    );
-  }, [deactivateMode, t]);
-
-  const handleOpenModeModal = useCallback(() => {
-    if (!hasRemainingActivations) {
-      setPaywallFeature('mode');
-      setShowPaywallModal(true);
-    } else {
-      setShowModeModal(true);
-    }
-  }, [hasRemainingActivations]);
 
   // Handle travel mode from FilterModal
   const handleActivateTravelMode = useCallback(async (city: TravelLocation, arrivalDate: Date) => {
@@ -651,6 +680,7 @@ export default function DiscoverScreen() {
   if (!profile) {
     return (
       <View style={styles.container}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
         <LinearGradient
           colors={['#1a1a2e', '#16213e', '#0f0f23']}
           style={StyleSheet.absoluteFillObject}
@@ -664,25 +694,6 @@ export default function DiscoverScreen() {
           >
             <Ionicons name="options" size={26} color={colors.white} />
           </TouchableOpacity>
-
-          <View style={styles.tabs}>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'favorites' && styles.tabActive]}
-              onPress={() => setActiveTab('favorites')}
-            >
-              <Text style={[styles.tabText, activeTab === 'favorites' && styles.tabTextActive]}>
-                {t('discover.favorites')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, activeTab === 'nearby' && styles.tabActive]}
-              onPress={() => setActiveTab('nearby')}
-            >
-              <Text style={[styles.tabText, activeTab === 'nearby' && styles.tabTextActive]}>
-                {t('discover.nearby')}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
           <TouchableOpacity
             style={styles.headerButton}
@@ -743,6 +754,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       {/* Background gradient */}
       <LinearGradient
         colors={['#1a1a2e', '#16213e', '#0f0f23']}
@@ -792,32 +804,45 @@ export default function DiscoverScreen() {
 
         {/* LIKE stamp */}
         <Animated.View style={[styles.stampContainer, styles.likeStamp, { opacity: likeOpacity }]}>
-          <Text style={[styles.stampText, styles.likeStampText]}>LIKE</Text>
+          <Text style={[styles.stampText, styles.likeStampText]}>💞</Text>
         </Animated.View>
 
         {/* NOPE stamp */}
         <Animated.View style={[styles.stampContainer, styles.nopeStamp, { opacity: nopeOpacity }]}>
-          <Text style={[styles.stampText, styles.nopeStampText]}>NOPE</Text>
+          <Image
+            source={require('../../assets/nope-x.png')}
+            style={styles.nopeImage}
+          />
         </Animated.View>
 
         {/* SUPER LIKE stamp */}
         <Animated.View style={[styles.stampContainer, styles.superLikeStamp, { opacity: superLikeOpacity }]}>
-          <Text style={[styles.stampText, styles.superLikeStampText]}>SUPER LIKE</Text>
+          <Text style={[styles.stampText, styles.superLikeStampText]}>🫶</Text>
         </Animated.View>
 
-        {/* Photo dots */}
-        <View style={styles.dotsContainer} pointerEvents="none">
-          {profile.photos.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === currentPhotoIndex && styles.dotActive,
-                { width: (SCREEN_WIDTH - 32) / profile.photos.length - 4 }
-              ]}
-            />
-          ))}
-        </View>
+        {/* Photo dots - seulement si plus d'une photo */}
+        {profile.photos.length > 1 && (
+          <View style={styles.dotsContainer} pointerEvents="none">
+            {profile.photos.map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  i === currentPhotoIndex && styles.dotActive,
+                  { width: (SCREEN_WIDTH - 32) / profile.photos.length - 4 }
+                ]}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* City indicator - centré en haut */}
+        {city && (
+          <View style={styles.cityIndicator} pointerEvents="none">
+            <Ionicons name="location" size={14} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.cityText}>{city}</Text>
+          </View>
+        )}
 
         {/* Info profil */}
         <View style={styles.profileInfo} pointerEvents="none">
@@ -883,81 +908,6 @@ export default function DiscoverScreen() {
           <Ionicons name="options" size={26} color={colors.white} />
         </TouchableOpacity>
 
-        {/* Mode indicator or activation button */}
-        {hasActiveMode && activeMode?.modeType ? (
-          <View style={styles.modeIndicatorContainer}>
-            <ActiveModeIndicator
-              modeType={activeMode.modeType}
-              remainingTime={remainingTimeFormatted}
-              isExpiringSoon={isExpiringSoon}
-              onPress={() => setShowModeModal(true)}
-              onDeactivate={handleDeactivateMode}
-            />
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.modeButton}
-            onPress={handleOpenModeModal}
-          >
-            <Ionicons name="flash-outline" size={16} color={colors.primary} />
-            <Text style={styles.modeButtonText}>{t('discover.activateMode') || 'Mode'}</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Location indicator - shows travel mode if active */}
-        <TouchableOpacity
-          style={[
-            styles.locationIndicator,
-            hasActiveTravelMode && styles.locationIndicatorTravel,
-          ]}
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Ionicons
-            name={hasActiveTravelMode ? "airplane" : (locationEnabled ? "location" : "location-outline")}
-            size={14}
-            color={hasActiveTravelMode ? colors.primary : (locationEnabled ? colors.primary : 'rgba(255,255,255,0.5)')}
-          />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {hasActiveTravelMode
-              ? effectiveLocationName
-              : (locationEnabled ? (city || getLocationDisplayName()) : t('discover.locationDisabled'))}
-          </Text>
-          {hasActiveTravelMode && (
-            <View style={styles.travelBadge}>
-              <Text style={styles.travelBadgeText}>Voyage</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'favorites' && styles.tabActive]}
-            onPress={() => {
-              setActiveTab('favorites');
-              // Reinitialiser a tous les profils
-              setCurrentIndex(0);
-              resetAnimations();
-            }}
-          >
-            <Text style={[styles.tabText, activeTab === 'favorites' && styles.tabTextActive]}>
-              {t('discover.favorites')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'nearby' && styles.tabActive]}
-            onPress={() => {
-              setActiveTab('nearby');
-              // Filtrer par proximite (< 5km)
-              setCurrentIndex(0);
-              resetAnimations();
-            }}
-          >
-            <Text style={[styles.tabText, activeTab === 'nearby' && styles.tabTextActive]}>
-              {t('discover.nearby')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         <TouchableOpacity
           style={styles.headerButton}
           onPress={() => setShowBoostModal(true)}
@@ -984,28 +934,25 @@ export default function DiscoverScreen() {
       <View style={styles.actionsContainer} pointerEvents="box-none">
         <ActionButton
           icon="refresh"
-          color={colors.rewind}
+          color="#FFFFFF"
           glowColor={colors.rewindGlow}
-          size={52}
+          size={64}
           onPress={handleRewind}
         />
         <ActionButton
-          icon="close"
-          color={colors.dislike}
+          image={require('../../assets/nope-x.png')}
           glowColor={colors.dislikeGlow}
           size={64}
           onPress={handleNope}
         />
         <ActionButton
-          icon="star"
-          color={colors.superLike}
+          emoji="🫶"
           glowColor={colors.superLikeGlow}
-          size={52}
+          size={64}
           onPress={handleSuperLike}
         />
         <ActionButton
-          icon="heart"
-          color={colors.like}
+          emoji="💞"
           glowColor={colors.likeGlow}
           size={64}
           onPress={handleLike}
@@ -1121,42 +1068,46 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT * 0.55,
   },
 
-  // Stamps
+  // Stamps - Style Tinder: centré, gros, sans bordure
   stampContainer: {
     position: 'absolute',
-    top: 150,
-    padding: 10,
-    borderWidth: 4,
-    borderRadius: 10,
+    top: '35%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stampText: {
-    fontSize: 42,
-    fontWeight: '800',
-    letterSpacing: 2,
+    fontSize: 150,
+    textAlign: 'center',
   },
   likeStamp: {
-    left: 20,
-    borderColor: colors.like,
-    transform: [{ rotate: '-20deg' }],
+    top: 120,
+    left: 30,
+    right: 'auto',
+    alignItems: 'flex-start',
+    transform: [{ rotate: '-15deg' }],
   },
   likeStampText: {
-    color: colors.like,
+    // Emoji seul
   },
   nopeStamp: {
-    right: 20,
-    borderColor: colors.dislike,
-    transform: [{ rotate: '20deg' }],
+    top: 120,
+    right: 30,
+    left: 'auto',
+    alignItems: 'flex-end',
+    transform: [{ rotate: '15deg' }],
   },
-  nopeStampText: {
-    color: colors.dislike,
+  nopeImage: {
+    width: 90,
+    height: 90,
+    resizeMode: 'contain',
   },
   superLikeStamp: {
-    alignSelf: 'center',
-    left: SCREEN_WIDTH / 2 - 100,
-    borderColor: colors.superLike,
+    // Centré
   },
   superLikeStampText: {
-    color: colors.superLike,
+    // Emoji seul
   },
 
   // Header
@@ -1205,96 +1156,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  modeIndicatorContainer: {
-    position: 'absolute',
-    top: 60,
-    left: '50%',
-    transform: [{ translateX: -100 }],
-    width: 200,
-    alignItems: 'center',
-  },
-  modeButton: {
-    position: 'absolute',
-    top: 60,
-    left: '50%',
-    transform: [{ translateX: -45 }],
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.primary + '40',
-  },
-  modeButtonText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  locationIndicator: {
-    position: 'absolute',
-    top: 105,
-    left: '50%',
-    transform: [{ translateX: -75 }],
-    width: 150,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  locationText: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 12,
-    fontWeight: '500',
-    maxWidth: 100,
-  },
-  locationIndicatorTravel: {
-    borderWidth: 1,
-    borderColor: colors.primary + '60',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  travelBadge: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  travelBadgeText: {
-    color: colors.white,
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    borderRadius: 25,
-    padding: 4,
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  tabActive: {
-    backgroundColor: colors.primary,
-  },
-  tabText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    color: colors.white,
-    fontWeight: '700',
-  },
-
   // Photo dots
   dotsContainer: {
     position: 'absolute',
@@ -1312,6 +1173,23 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: colors.white,
+  },
+
+  // City indicator
+  cityIndicator: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  cityText: {
+    color: 'rgba(255,255,255,0.95)',
+    fontSize: 20,
+    fontWeight: '700',
   },
 
   // Profile info - au dessus des boutons d'action
@@ -1391,7 +1269,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Actions - au dessus de la tab bar (85px)
+  // Actions - au dessus de la tab bar
   actionsContainer: {
     position: 'absolute',
     bottom: 110,

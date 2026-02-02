@@ -23,7 +23,8 @@ const REPORT_REASONS: Record<string, string> = {
   harassment: 'Harcèlement',
   fake_profile: 'Faux profil',
   spam: 'Spam',
-  underage: 'Mineur',
+  underage: 'Mineur suspecté',
+  solicitation: 'Sollicitation',
   other: 'Autre',
 };
 
@@ -200,6 +201,7 @@ export default function ReportsScreen() {
       case 'underage':
         return colors.error;
       case 'inappropriate_content':
+      case 'solicitation':
         return '#FF9800';
       case 'fake_profile':
       case 'spam':

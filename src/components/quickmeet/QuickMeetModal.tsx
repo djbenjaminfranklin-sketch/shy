@@ -401,10 +401,35 @@ export function QuickMeetModal({
           maxLength={150}
         />
 
-        {/* Safety info */}
-        <View style={styles.safetyCard}>
-          <Ionicons name="shield-checkmark" size={20} color={colors.success} />
-          <Text style={styles.safetyText}>{t('quickMeet.safetyInfo')}</Text>
+        {/* Safety Tips - Comprehensive */}
+        <View style={styles.safetySection}>
+          <View style={styles.safetyHeader}>
+            <Ionicons name="shield-checkmark" size={24} color={colors.success} />
+            <Text style={styles.safetyTitle}>{t('safetyTips.title')}</Text>
+          </View>
+          <View style={styles.safetyTipsList}>
+            <View style={styles.safetyTip}>
+              <Ionicons name="location" size={18} color={colors.primary} />
+              <View style={styles.safetyTipContent}>
+                <Text style={styles.safetyTipTitle}>{t('safetyTips.tip1Title')}</Text>
+                <Text style={styles.safetyTipDesc}>{t('safetyTips.tip1Desc')}</Text>
+              </View>
+            </View>
+            <View style={styles.safetyTip}>
+              <Ionicons name="people" size={18} color={colors.primary} />
+              <View style={styles.safetyTipContent}>
+                <Text style={styles.safetyTipTitle}>{t('safetyTips.tip2Title')}</Text>
+                <Text style={styles.safetyTipDesc}>{t('safetyTips.tip2Desc')}</Text>
+              </View>
+            </View>
+            <View style={styles.safetyTip}>
+              <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
+              <View style={styles.safetyTipContent}>
+                <Text style={styles.safetyTipTitle}>{t('safetyTips.tip3Title')}</Text>
+                <Text style={styles.safetyTipDesc}>{t('safetyTips.tip3Desc')}</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         <Button
@@ -606,6 +631,48 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text,
     lineHeight: 18,
+  },
+  // Comprehensive safety tips styles
+  safetySection: {
+    backgroundColor: 'rgba(129, 199, 132, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 199, 132, 0.3)',
+  },
+  safetyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  safetyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.success,
+  },
+  safetyTipsList: {
+    gap: 10,
+  },
+  safetyTip: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  safetyTipContent: {
+    flex: 1,
+  },
+  safetyTipTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  safetyTipDesc: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    lineHeight: 16,
   },
   sendButton: {
     marginTop: 20,

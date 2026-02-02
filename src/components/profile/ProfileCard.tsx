@@ -8,6 +8,7 @@ import {
   Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { ProfileWithDistance } from '../../types/profile';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
@@ -51,6 +52,11 @@ export function ProfileCard({ profile, onPress }: ProfileCardProps) {
               <IntentionBadge intention={profile.intention} />
               <AvailabilityBadge availability={profile.availability} />
             </View>
+            {profile.videoUrl && (
+              <View style={styles.videoBadge}>
+                <Ionicons name="videocam" size={16} color={colors.white} />
+              </View>
+            )}
           </View>
 
           <View style={styles.info}>
@@ -126,11 +132,18 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   badges: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  videoBadge: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 12,
+    padding: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   info: {
     gap: spacing.sm,

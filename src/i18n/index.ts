@@ -1,8 +1,8 @@
 import { getLocales } from 'expo-localization';
-import { fr, en, es, it, de, he, TranslationKeys } from './translations';
+import { fr, en, es, it, de, he, pt, TranslationKeys } from './translations';
 
 // Supported languages
-export type SupportedLanguage = 'fr' | 'en' | 'es' | 'it' | 'de' | 'he';
+export type SupportedLanguage = 'fr' | 'en' | 'es' | 'it' | 'de' | 'he' | 'pt';
 
 const translations: Record<SupportedLanguage, TranslationKeys> = {
   fr,
@@ -11,6 +11,7 @@ const translations: Record<SupportedLanguage, TranslationKeys> = {
   it,
   de,
   he,
+  pt,
 };
 
 // Get device language
@@ -96,4 +97,4 @@ export const tWithParams = (path: TranslationPath, params: Record<string, string
 };
 
 // Export translations for direct access
-export { fr, en, es, it, de, he, TranslationKeys };
+export { fr, en, es, it, de, he, pt, TranslationKeys };

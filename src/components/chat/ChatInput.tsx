@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
@@ -17,6 +17,7 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
     if (trimmed && !disabled) {
       onSend(trimmed);
       setMessage('');
+      Keyboard.dismiss();
     }
   };
 
@@ -32,9 +33,11 @@ export function ChatInput({ onSend, disabled = false }: ChatInputProps) {
           onChangeText={setMessage}
           placeholder="Votre message..."
           placeholderTextColor={colors.textTertiary}
-          multiline
           maxLength={1000}
           editable={!disabled}
+          returnKeyType="send"
+          onSubmitEditing={handleSend}
+          blurOnSubmit={true}
         />
         <Pressable
           style={[

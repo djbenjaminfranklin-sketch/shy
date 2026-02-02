@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
   TouchableOpacity,
   Image,
   RefreshControl,
@@ -201,11 +202,60 @@ const EmptyState = ({ t }: { t: (key: string) => string }) => (
   </View>
 );
 
+// Sent invitation card (simpler, no accept/refuse)
+interface SentInvitationCardProps {
+  invitation: Invitation;
+  t: (key: string) => string;
+}
+
+const SentInvitationCard = ({ invitation, t }: SentInvitationCardProps) => {
+  const profile = invitation.receiverProfile;
+  const timeAgo = getTimeAgo(invitation.sentAt, t);
+
+  if (!profile) return null;
+
+  const handleViewProfile = () => {
+    router.push(`/profile/${profile.id}` as never);
+  };
+
+  return (
+    <View style={styles.card}>
+      <TouchableOpacity style={styles.cardContent} onPress={handleViewProfile} activeOpacity={0.7}>
+        {profile.photos && profile.photos[0] ? (
+          <Image source={{ uri: profile.photos[0] }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Text style={styles.avatarPlaceholderText}>
+              {profile.displayName?.charAt(0)?.toUpperCase() || '?'}
+            </Text>
+          </View>
+        )}
+        <View style={styles.info}>
+          <Text style={styles.name} numberOfLines={1}>
+            {profile.displayName}, {profile.age}
+          </Text>
+          <IntentionBadge intention={profile.intention} size="small" />
+          <Text style={styles.timeAgo}>{timeAgo}</Text>
+        </View>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>
+            {invitation.status === 'accepted' ? '✓ Accepté' : '⏳ En attente'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+type TabType = 'received' | 'sent';
+
 // Main screen component
 export default function InvitationsScreen() {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>('received');
+  const [receivedInvitations, setReceivedInvitations] = useState<Invitation[]>([]);
+  const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
@@ -214,15 +264,22 @@ export default function InvitationsScreen() {
     if (!user?.id) return;
 
     try {
-      const { invitations: data, error } = await invitationsService.getReceivedInvitations(user.id);
+      const [received, sent] = await Promise.all([
+        invitationsService.getReceivedInvitations(user.id),
+        invitationsService.getSentInvitations(user.id),
+      ]);
 
-      if (error) {
-        console.error('Error loading invitations:', error);
-        Alert.alert(t('alerts.errorTitle'), t('errors.unableToLoadInvitations'));
-        return;
+      if (received.error) {
+        console.error('Error loading received invitations:', received.error);
+      } else {
+        setReceivedInvitations(received.invitations);
       }
 
-      setInvitations(data);
+      if (sent.error) {
+        console.error('Error loading sent invitations:', sent.error);
+      } else {
+        setSentInvitations(sent.invitations);
+      }
     } catch (error) {
       console.error('Error loading invitations:', error);
       Alert.alert(t('alerts.errorTitle'), t('errors.unableToLoadInvitations'));
@@ -242,13 +299,15 @@ export default function InvitationsScreen() {
   useFocusEffect(
     useCallback(() => {
       if (user?.id) {
-        // Marquer comme vues après un petit délai pour s'assurer que la liste est affichée
+        // Recharger les invitations
+        loadInvitations();
+        // Marquer comme vues après un petit délai
         const timer = setTimeout(() => {
           invitationsService.markInvitationsAsSeen(user.id);
         }, 500);
         return () => clearTimeout(timer);
       }
-    }, [user?.id])
+    }, [user?.id, loadInvitations])
   );
 
   const handleRefresh = useCallback(async () => {
@@ -272,7 +331,7 @@ export default function InvitationsScreen() {
 
         if (conversationId) {
           // Retirer de la liste locale
-          setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+          setReceivedInvitations(prev => prev.filter(inv => inv.id !== invitationId));
           // Naviguer vers le chat
           router.push(`/chat/${conversationId}` as never);
         }
@@ -296,7 +355,7 @@ export default function InvitationsScreen() {
       }
 
       // Retirer l'invitation de la liste locale
-      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      setReceivedInvitations(prev => prev.filter(inv => inv.id !== invitationId));
     } catch (error) {
       console.error('Error refusing invitation:', error);
       Alert.alert(t('alerts.errorTitle'), t('errors.unableToRefuse'));
@@ -308,9 +367,10 @@ export default function InvitationsScreen() {
   }, []);
 
   // Filtrer les invitations supprimées
-  const visibleInvitations = invitations.filter((inv) => !removedIds.has(inv.id));
+  const visibleReceivedInvitations = receivedInvitations.filter((inv) => !removedIds.has(inv.id));
+  const visibleSentInvitations = sentInvitations.filter((inv) => inv.status === 'pending');
 
-  const renderItem = useCallback(
+  const renderReceivedItem = useCallback(
     ({ item }: { item: Invitation }) => (
       <InvitationCard
         invitation={item}
@@ -323,6 +383,13 @@ export default function InvitationsScreen() {
     [handleAccept, handleRefuse, handleRemove, t]
   );
 
+  const renderSentItem = useCallback(
+    ({ item }: { item: Invitation }) => (
+      <SentInvitationCard invitation={item} t={t} />
+    ),
+    [t]
+  );
+
   const renderSkeleton = () => (
     <View style={styles.listContent}>
       <SkeletonCard />
@@ -331,28 +398,62 @@ export default function InvitationsScreen() {
     </View>
   );
 
+  const currentInvitations = activeTab === 'received' ? visibleReceivedInvitations : visibleSentInvitations;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>{t('invitations.title')}</Text>
-        {visibleInvitations.length > 0 && (
+        {visibleReceivedInvitations.length > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{visibleInvitations.length}</Text>
+            <Text style={styles.badgeText}>{visibleReceivedInvitations.length}</Text>
           </View>
         )}
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'received' && styles.tabActive]}
+          onPress={() => setActiveTab('received')}
+        >
+          <Text style={[styles.tabText, activeTab === 'received' && styles.tabTextActive]}>
+            {t('invitations.received')} ({visibleReceivedInvitations.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'sent' && styles.tabActive]}
+          onPress={() => setActiveTab('sent')}
+        >
+          <Text style={[styles.tabText, activeTab === 'sent' && styles.tabTextActive]}>
+            {t('invitations.sent')} ({visibleSentInvitations.length})
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
       {isLoading ? (
         renderSkeleton()
-      ) : visibleInvitations.length === 0 ? (
-        <EmptyState t={t} />
+      ) : currentInvitations.length === 0 ? (
+        <ScrollView
+          contentContainerStyle={styles.emptyScrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          <EmptyState t={t} />
+        </ScrollView>
       ) : (
         <FlatList
-          data={visibleInvitations}
+          data={currentInvitations}
           keyExtractor={(item) => item.id}
-          renderItem={renderItem}
+          renderItem={activeTab === 'received' ? renderReceivedItem : renderSentItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -382,8 +483,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   title: {
     ...typography.h2,
@@ -402,6 +501,45 @@ const styles = StyleSheet.create({
     ...typography.labelSmall,
     color: colors.white,
     fontWeight: '700',
+  },
+
+  // Tabs
+  tabs: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.sm,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+  },
+  tabActive: {
+    backgroundColor: colors.primary,
+  },
+  tabText: {
+    ...typography.bodyMedium,
+    color: colors.textSecondary,
+  },
+  tabTextActive: {
+    color: colors.white,
+  },
+
+  // Status badge for sent invitations
+  statusBadge: {
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+  statusText: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
 
   // List
@@ -508,6 +646,9 @@ const styles = StyleSheet.create({
   },
 
   // Empty state
+  emptyScrollContent: {
+    flexGrow: 1,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -1,7 +1,8 @@
 // Service de traduction pour les messages du chat
-// Utilise l'API MyMemory (gratuite, pas de clé requise)
+// Utilise Google Cloud Translation API
 
-const MYMEMORY_API_URL = 'https://api.mymemory.translated.net/get';
+const GOOGLE_TRANSLATE_API_URL = 'https://translation.googleapis.com/language/translate/v2';
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY || '';
 
 export interface TranslationResult {
   translatedText: string;
@@ -10,7 +11,7 @@ export interface TranslationResult {
 }
 
 /**
- * Traduit un texte vers la langue cible
+ * Traduit un texte vers la langue cible avec Google Cloud Translation
  * @param text - Texte à traduire
  * @param targetLang - Code de la langue cible (fr, en, es, etc.)
  * @param sourceLang - Code de la langue source (optionnel, détection auto si non fourni)
@@ -26,27 +27,52 @@ export async function translateText(
       return { translatedText: text };
     }
 
-    // Construire le paramètre langpair
-    const langPair = sourceLang
-      ? `${sourceLang}|${targetLang}`
-      : `autodetect|${targetLang}`;
+    // Vérifier que l'API est configurée
+    if (!GOOGLE_API_KEY || GOOGLE_API_KEY.length < 10) {
+      console.warn('Google Translation API key not configured');
+      return { translatedText: text, error: 'API non configurée' };
+    }
 
-    const url = `${MYMEMORY_API_URL}?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+    const params: Record<string, string> = {
+      q: text,
+      target: targetLang,
+      key: GOOGLE_API_KEY,
+      format: 'text',
+    };
 
-    const response = await fetch(url);
+    if (sourceLang) {
+      params.source = sourceLang;
+    }
+
+    const response = await fetch(GOOGLE_TRANSLATE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams(params).toString(),
+    });
+
     const data = await response.json();
 
-    if (data.responseStatus === 200 && data.responseData?.translatedText) {
+    if (data.error) {
+      console.error('Google Translation error:', data.error);
       return {
-        translatedText: data.responseData.translatedText,
-        detectedLanguage: data.responseData.detectedLanguage,
+        translatedText: text,
+        error: data.error.message || 'Erreur de traduction',
       };
     }
 
-    // Erreur de l'API
+    if (data.data?.translations?.[0]) {
+      const translation = data.data.translations[0];
+      return {
+        translatedText: translation.translatedText,
+        detectedLanguage: translation.detectedSourceLanguage,
+      };
+    }
+
     return {
       translatedText: text,
-      error: data.responseDetails || 'Erreur de traduction',
+      error: 'Réponse inattendue de l\'API',
     };
   } catch (error) {
     console.error('Translation error:', error);
@@ -67,14 +93,27 @@ export async function detectLanguage(text: string): Promise<string | null> {
       return null;
     }
 
-    // Utiliser l'API avec autodetect vers l'anglais juste pour détecter
-    const url = `${MYMEMORY_API_URL}?q=${encodeURIComponent(text.slice(0, 100))}&langpair=autodetect|en`;
+    if (!GOOGLE_API_KEY || GOOGLE_API_KEY.length < 10) {
+      return null;
+    }
 
-    const response = await fetch(url);
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2/detect?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          q: text.slice(0, 100),
+        }).toString(),
+      }
+    );
+
     const data = await response.json();
 
-    if (data.responseData?.detectedLanguage) {
-      return data.responseData.detectedLanguage;
+    if (data.data?.detections?.[0]?.[0]) {
+      return data.data.detections[0][0].language;
     }
 
     return null;

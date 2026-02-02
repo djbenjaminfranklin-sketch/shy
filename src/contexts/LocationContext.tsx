@@ -5,6 +5,21 @@ import { useAuth } from './AuthContext';
 import { SearchRadius, DEFAULT_SEARCH_RADIUS, MAX_SEARCH_RADIUS, MIN_SEARCH_RADIUS } from '../constants';
 import { googlePlacesService, GeocodingResult } from '../services/google';
 
+/**
+ * Approxime les coordonnées pour la confidentialité
+ * Réduit la précision à environ 500m-1km
+ * Cela empêche la triangulation précise de la position
+ */
+function approximateCoordinates(lat: number, lng: number): { latitude: number; longitude: number } {
+  // Arrondir à 2 décimales (environ 1km de précision)
+  // 0.01 degré = ~1.11km à l'équateur
+  const precision = 100; // 2 décimales
+  return {
+    latitude: Math.round(lat * precision) / precision,
+    longitude: Math.round(lng * precision) / precision,
+  };
+}
+
 interface LocationState {
   latitude: number | null;
   longitude: number | null;
@@ -91,6 +106,30 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     checkPermission();
   }, []);
 
+  // Charger la ville automatiquement si on a des coordonnées mais pas de ville
+  useEffect(() => {
+    const loadCity = async () => {
+      if (state.latitude && state.longitude && !state.city && state.isEnabled) {
+        try {
+          const { result } = await googlePlacesService.reverseGeocode(state.latitude, state.longitude);
+          if (result?.city) {
+            setState((prev) => ({
+              ...prev,
+              city: result.city,
+              neighborhood: result.neighborhood,
+              formattedAddress: result.formattedAddress,
+            }));
+            console.log(`📍 Ville chargée: ${result.city}`);
+          }
+        } catch (error) {
+          console.warn('Erreur chargement ville:', error);
+        }
+      }
+    };
+
+    loadCity();
+  }, [state.latitude, state.longitude, state.isEnabled, state.city]);
+
   // Demander la permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
@@ -129,11 +168,17 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         distanceInterval: 10,
       });
 
-      const { latitude, longitude } = location.coords;
+      // Approximer les coordonnées pour la confidentialité (précision ~1km)
+      const approxCoords = approximateCoordinates(
+        location.coords.latitude,
+        location.coords.longitude
+      );
+      const { latitude, longitude } = approxCoords;
 
-      console.log(`📍 Position GPS: ${latitude}, ${longitude} (précision: ${location.coords.accuracy}m)`);
+      console.log(`📍 Position GPS originale: ${location.coords.latitude}, ${location.coords.longitude}`);
+      console.log(`📍 Position approximée: ${latitude}, ${longitude} (précision: ~1km)`);
 
-      // Mettre a jour le profil
+      // Mettre a jour le profil avec les coordonnées approximées
       const { error } = await profilesService.updateLocation(user.id, latitude, longitude);
 
       if (error) {
@@ -343,17 +388,22 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   // Obtenir un nom d'affichage pour la position actuelle
   const getLocationDisplayName = useCallback((): string => {
-    if (state.neighborhood && state.city) {
-      return `${state.neighborhood}, ${state.city}`;
-    }
     if (state.city) {
       return state.city;
     }
+    if (state.neighborhood) {
+      return state.neighborhood;
+    }
     if (state.formattedAddress) {
+      // Extraire juste la ville de l'adresse formatée
+      const parts = state.formattedAddress.split(',');
+      if (parts.length >= 2) {
+        return parts[parts.length - 2].trim();
+      }
       return state.formattedAddress;
     }
     if (state.latitude && state.longitude) {
-      return `${state.latitude.toFixed(2)}°, ${state.longitude.toFixed(2)}°`;
+      return 'Ma position';
     }
     return 'Position non disponible';
   }, [state.neighborhood, state.city, state.formattedAddress, state.latitude, state.longitude]);

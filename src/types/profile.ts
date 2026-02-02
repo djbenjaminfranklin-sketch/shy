@@ -67,6 +67,7 @@ export interface ProfilePhoto {
 
 export interface ProfileWithDistance extends Profile {
   distance: number | null;
+  isTraveler?: boolean; // Indique si le profil est en mode voyage dans cette zone
 }
 
 export interface ProfileFilters {

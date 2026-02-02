@@ -25,6 +25,7 @@ const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
   { code: 'es', label: 'Español', flag: '🇪🇸' },
   { code: 'it', label: 'Italiano', flag: '🇮🇹' },
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
   { code: 'he', label: 'עברית', flag: '🇮🇱' },
 ];
 
@@ -179,7 +180,7 @@ export default function SettingsScreen() {
         <Text style={styles.headerTitle}>{t('settings.title')}</Text>
         <View style={styles.headerSpacer} />
       </View>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {/* Language Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.languageSection')}</Text>
@@ -443,6 +444,36 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.accountSection')}</Text>
           <Text style={styles.settingHint}>{t('settings.accountHint')}</Text>
+
+          {/* Privacy & Data */}
+          <TouchableOpacity
+            style={styles.legalItem}
+            onPress={() => router.push('/profile/export-data')}
+          >
+            <Ionicons name="download-outline" size={20} color={colors.textSecondary} />
+            <Text style={styles.legalItemText}>Exporter mes données (RGPD)</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+
+          {/* Blocked Users */}
+          <TouchableOpacity
+            style={styles.legalItem}
+            onPress={() => router.push('/profile/blocked-users')}
+          >
+            <Ionicons name="ban-outline" size={20} color={colors.textSecondary} />
+            <Text style={styles.legalItemText}>Utilisateurs bloqués</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+
+          {/* Delete Account - Easy access as required by Apple */}
+          <TouchableOpacity
+            style={[styles.legalItem, styles.deleteAccountItem]}
+            onPress={() => router.push('/profile/delete-account')}
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.error} />
+            <Text style={[styles.legalItemText, styles.deleteAccountText]}>Supprimer mon compte</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.error} />
+          </TouchableOpacity>
         </View>
 
         {/* Legal Section */}
@@ -721,5 +752,12 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.body,
     color: colors.text,
+  },
+  deleteAccountItem: {
+    borderBottomWidth: 0,
+    marginTop: spacing.sm,
+  },
+  deleteAccountText: {
+    color: colors.error,
   },
 });

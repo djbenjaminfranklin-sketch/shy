@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Alert, Pressable } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, Alert, Pressable, Keyboard, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Button } from '../../src/components/ui/Button';
+import { DismissKeyboard } from '../../src/components/ui/DismissKeyboard';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function DeleteAccountScreen() {
   const [confirmation, setConfirmation] = useState('');
   const [reason, setReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const confirmationInputRef = useRef<TextInput>(null);
 
   const canDelete = confirmation.toLowerCase() === 'supprimer';
 
@@ -59,56 +61,71 @@ export default function DeleteAccountScreen() {
         <Text style={styles.headerTitle}>Supprimer le compte</Text>
         <View style={styles.headerSpacer} />
       </View>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>⚠️</Text>
-        </View>
 
-        <Text style={styles.title}>Supprimer votre compte</Text>
+      <DismissKeyboard>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentInner}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.iconContainer}>
+            <Text style={styles.icon}>⚠️</Text>
+          </View>
 
-        <Text style={styles.description}>
-          La suppression de votre compte entraîne :
-        </Text>
+          <Text style={styles.title}>Supprimer votre compte</Text>
 
-        <View style={styles.list}>
-          <Text style={styles.listItem}>• Suppression de votre profil</Text>
-          <Text style={styles.listItem}>• Suppression de tous vos matchs</Text>
-          <Text style={styles.listItem}>• Suppression de toutes vos conversations</Text>
-          <Text style={styles.listItem}>• Suppression de vos photos</Text>
-          <Text style={styles.listItem}>• Effacement de vos données personnelles</Text>
-        </View>
-
-        <Text style={styles.warning}>
-          Cette action est irréversible et sera effective dans un délai de 30 jours.
-        </Text>
-
-        <View style={styles.form}>
-          <Text style={styles.label}>
-            Raison de votre départ (optionnel)
+          <Text style={styles.description}>
+            La suppression de votre compte entraîne :
           </Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={reason}
-            onChangeText={setReason}
-            placeholder="Aidez-nous à nous améliorer..."
-            placeholderTextColor={colors.textTertiary}
-            multiline
-            maxLength={500}
-          />
 
-          <Text style={styles.label}>
-            Tapez "SUPPRIMER" pour confirmer
+          <View style={styles.list}>
+            <Text style={styles.listItem}>• Suppression de votre profil</Text>
+            <Text style={styles.listItem}>• Suppression de tous vos matchs</Text>
+            <Text style={styles.listItem}>• Suppression de toutes vos conversations</Text>
+            <Text style={styles.listItem}>• Suppression de vos photos</Text>
+            <Text style={styles.listItem}>• Effacement de vos données personnelles</Text>
+          </View>
+
+          <Text style={styles.warning}>
+            Cette action est irréversible et sera effective dans un délai de 30 jours.
           </Text>
-          <TextInput
-            style={styles.input}
-            value={confirmation}
-            onChangeText={setConfirmation}
-            placeholder="SUPPRIMER"
-            placeholderTextColor={colors.textTertiary}
-            autoCapitalize="none"
-          />
-        </View>
-      </View>
+
+          <View style={styles.form}>
+            <Text style={styles.label}>
+              Raison de votre départ (optionnel)
+            </Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={reason}
+              onChangeText={setReason}
+              placeholder="Aidez-nous à nous améliorer..."
+              placeholderTextColor={colors.textTertiary}
+              multiline
+              maxLength={500}
+              returnKeyType="next"
+              blurOnSubmit={true}
+              onSubmitEditing={() => confirmationInputRef.current?.focus()}
+            />
+
+            <Text style={styles.label}>
+              Tapez "SUPPRIMER" pour confirmer
+            </Text>
+            <TextInput
+              ref={confirmationInputRef}
+              style={styles.input}
+              value={confirmation}
+              onChangeText={setConfirmation}
+              placeholder="SUPPRIMER"
+              placeholderTextColor={colors.textTertiary}
+              autoCapitalize="none"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
+            />
+          </View>
+        </ScrollView>
+      </DismissKeyboard>
 
       <View style={styles.footer}>
         <Button
@@ -157,6 +174,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentInner: {
     padding: spacing.lg,
   },
   iconContainer: {

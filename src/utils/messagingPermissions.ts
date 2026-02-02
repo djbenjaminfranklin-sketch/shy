@@ -5,34 +5,55 @@ import { GenderId } from '../constants/genders';
  * sans passer par le système d'invitation/match classique.
  *
  * Règles:
- * - Femme → Homme : Message direct autorisé ✅
- * - Non-binaire → Non-binaire : Message direct autorisé ✅
- * - Tous les autres cas : Invitation obligatoire ❌
+ * - Femme → Homme : Message direct autorisé ✅ (elle a le pouvoir d'initier)
+ * - Homme → Femme : Invitation obligatoire ❌ (il doit attendre qu'elle accepte)
+ * - Femme → Femme : Message direct autorisé ✅ (égalité)
+ * - Homme → Homme : Message direct autorisé ✅ (égalité)
+ * - Non-binaire ↔ Tout le monde : Invitation obligatoire ❌ (les deux swipent et attendent)
  */
 export const canSendDirectMessage = (
   senderGender: GenderId,
   receiverGender: GenderId
 ): boolean => {
+  // Non-binaire : toujours invitation obligatoire (des deux côtés)
+  if (senderGender === 'non-binaire' || receiverGender === 'non-binaire') {
+    return false;
+  }
+
   // Femme peut envoyer un message direct à un homme
   if (senderGender === 'femme' && receiverGender === 'homme') {
     return true;
   }
 
-  // Non-binaire peut envoyer un message direct à un autre non-binaire
-  if (senderGender === 'non-binaire' && receiverGender === 'non-binaire') {
+  // Femme → Femme : message direct (égalité)
+  if (senderGender === 'femme' && receiverGender === 'femme') {
     return true;
   }
 
-  // Tous les autres cas : invitation obligatoire
+  // Homme → Homme : message direct (égalité)
+  if (senderGender === 'homme' && receiverGender === 'homme') {
+    return true;
+  }
+
+  // Homme → Femme : invitation obligatoire
   return false;
 };
 
 /**
  * Vérifie si un utilisateur a le privilège d'initier des conversations
- * (peut voir le bouton "Message" sur les profils)
+ * Le bouton "Message" est visible selon le genre de l'utilisateur et du profil consulté
  */
-export const hasDirectMessagePrivilege = (userGender: GenderId): boolean => {
-  return userGender === 'femme' || userGender === 'non-binaire';
+export const hasDirectMessagePrivilege = (
+  userGender: GenderId,
+  targetGender?: GenderId
+): boolean => {
+  // Sans cible spécifiée, on vérifie juste si l'utilisateur peut envoyer des messages directs à quelqu'un
+  if (!targetGender) {
+    // Tout le monde sauf les hommes hétéros peut envoyer des messages directs à quelqu'un
+    return true; // On affine avec canSendDirectMessage quand on a la cible
+  }
+
+  return canSendDirectMessage(userGender, targetGender);
 };
 
 /**
@@ -44,17 +65,18 @@ export const getMessagingExplanation = (
 ): string => {
   if (userGender === 'femme') {
     return language === 'fr'
-      ? 'Vous pouvez envoyer un message directement aux hommes qui vous intéressent.'
-      : 'You can send a message directly to men you\'re interested in.';
+      ? 'Vous pouvez envoyer un message directement aux profils qui vous intéressent.'
+      : 'You can send a message directly to profiles you\'re interested in.';
   }
 
   if (userGender === 'non-binaire') {
     return language === 'fr'
-      ? 'Vous pouvez envoyer un message directement aux personnes non-binaires.'
-      : 'You can send a message directly to non-binary people.';
+      ? 'Envoyez une invitation pour démarrer une conversation.'
+      : 'Send an invitation to start a conversation.';
   }
 
+  // Homme
   return language === 'fr'
-    ? 'Envoyez une invitation pour démarrer une conversation.'
-    : 'Send an invitation to start a conversation.';
+    ? 'Vous pouvez envoyer un message directement aux hommes. Pour les femmes, envoyez une invitation.'
+    : 'You can send a message directly to men. For women, send an invitation.';
 };

@@ -28,33 +28,56 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
   // Auto-translate received messages
   useEffect(() => {
     const autoTranslate = async () => {
+      console.log('[Translation] Starting auto-translate check', {
+        isMine,
+        content: message.content?.substring(0, 30),
+        appLanguage: language,
+        alreadyAttempted: hasAttemptedAutoTranslate.current,
+      });
+
       // Only auto-translate received messages, not our own
-      if (isMine || hasAttemptedAutoTranslate.current) return;
+      if (isMine || hasAttemptedAutoTranslate.current) {
+        console.log('[Translation] Skipping - isMine or already attempted');
+        return;
+      }
 
       // Skip very short messages
-      if (!message.content || message.content.trim().length < 3) return;
+      if (!message.content || message.content.trim().length < 3) {
+        console.log('[Translation] Skipping - message too short');
+        return;
+      }
 
       hasAttemptedAutoTranslate.current = true;
 
       try {
         // First detect the language of the message
+        console.log('[Translation] Detecting language...');
         const detectedLang = await detectLanguage(message.content);
+        console.log('[Translation] Detected language:', detectedLang, 'App language:', language);
 
         // If detected language is same as app language, no need to translate
-        if (detectedLang === language) return;
+        if (detectedLang === language) {
+          console.log('[Translation] Same language, skipping');
+          return;
+        }
 
         // If we couldn't detect or it's different, try to translate
+        console.log('[Translation] Translating to', language);
         setIsTranslating(true);
         const result = await translateText(message.content, language);
         setIsTranslating(false);
+        console.log('[Translation] Result:', result);
 
         // Only show translation if it's different from the original
         if (!result.error && result.translatedText && result.translatedText !== message.content) {
+          console.log('[Translation] Setting translated text');
           setTranslatedText(result.translatedText);
+        } else {
+          console.log('[Translation] Not showing translation - same as original or error');
         }
       } catch (error) {
         setIsTranslating(false);
-        console.error('Auto-translation error:', error);
+        console.error('[Translation] Auto-translation error:', error);
       }
     };
 

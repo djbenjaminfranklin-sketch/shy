@@ -11,12 +11,13 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
@@ -62,6 +63,7 @@ export default function EditProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [videoLoading, setVideoLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   // Pour le modal des prompts
   const [showPromptModal, setShowPromptModal] = useState(false);
@@ -222,30 +224,53 @@ export default function EditProfileScreen() {
 
       // Upload video if changed
       let uploadedVideoUrl: string | null = profile?.videoUrl || null;
+      console.log('[Edit] Video check - videoUri:', videoUri, 'profile.videoUrl:', profile?.videoUrl);
+
       if (videoUri && videoUri !== profile?.videoUrl) {
-        // New video selected, upload it
-        setUploadStatus('Upload de la vidéo... (peut prendre du temps)');
+        console.log('[Edit] New video detected, starting upload...');
+        // New video selected, upload it - show blocking overlay
+        setIsUploadingVideo(true);
+        setUploadStatus('Upload de la vidéo en cours...\nCela peut prendre jusqu\'à 1 minute.\nMerci de patienter.');
+
+        // Attendre que React rende le Modal ET que les animations soient terminées
+        await new Promise<void>(resolve => {
+          InteractionManager.runAfterInteractions(() => {
+            requestAnimationFrame(() => {
+              setTimeout(resolve, 300);
+            });
+          });
+        });
+
+        console.log('[Edit] Calling uploadProfileVideo...');
         const { url, error: videoError } = await storageService.uploadProfileVideo(
           user.id,
           videoUri
         );
+        console.log('[Edit] Upload result - url:', url, 'error:', videoError);
+        setIsUploadingVideo(false);
+
         if (videoError) {
-          console.error('Error uploading video:', videoError);
+          console.error('[Edit] Error uploading video:', videoError);
           Alert.alert(
-            'Attention',
-            'La vidéo n\'a pas pu être uploadée. Le reste de votre profil sera sauvegardé.',
+            'Erreur vidéo',
+            `La vidéo n'a pas pu être uploadée.\n\nDétail: ${videoError}\n\nLe reste de votre profil sera sauvegardé.`,
             [{ text: 'OK' }]
           );
-        } else {
+        } else if (url) {
+          console.log('[Edit] Video uploaded successfully:', url);
           uploadedVideoUrl = url;
         }
       } else if (!videoUri && profile?.videoUrl) {
+        console.log('[Edit] Video removed');
         // Video removed
         uploadedVideoUrl = null;
       }
 
+      console.log('[Edit] Final uploadedVideoUrl:', uploadedVideoUrl);
+
       // Save profile with uploaded photo URLs and video
       setUploadStatus('Enregistrement du profil...');
+      console.log('[Edit] Saving profile with videoUrl:', uploadedVideoUrl);
       const { error } = await profilesService.updateProfile(user.id, {
         displayName,
         bio: bio || null,
@@ -261,10 +286,14 @@ export default function EditProfileScreen() {
         prompts,
       });
 
+      console.log('[Edit] Profile update result - error:', error);
+
       if (error) {
         Alert.alert('Erreur', error);
       } else {
+        console.log('[Edit] Profile saved, refreshing...');
         await refreshProfile();
+        console.log('[Edit] Profile refreshed, navigating to profile tab');
         router.replace('/(tabs)/profile');
       }
     } catch (err) {
@@ -290,13 +319,14 @@ export default function EditProfileScreen() {
         <View style={styles.cancelButton} />
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Photos */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        {/* Photos & Vidéo */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Photos</Text>
+          <Text style={styles.sectionTitle}>Photos & Vidéo</Text>
           <View style={styles.photosGrid}>
+            {/* Photos existantes */}
             {photos.map((photo, index) => (
-              <View key={index} style={styles.photoItem}>
+              <View key={`photo-${index}`} style={styles.photoItem}>
                 <Image
                   source={{ uri: photo }}
                   style={styles.photo}
@@ -312,58 +342,70 @@ export default function EditProfileScreen() {
                 </Pressable>
               </View>
             ))}
-            {photos.length < 6 && (
+
+            {/* Vidéo (si présente) - affichée dans la grille */}
+            {videoUri && (
+              <View key="video" style={styles.photoItem}>
+                {videoUri.startsWith('http') ? (
+                  // Vidéo déjà uploadée - miniature avec icône play
+                  <View style={styles.videoThumbnail}>
+                    <Ionicons name="play-circle" size={40} color={colors.textLight} />
+                    <View style={styles.videoBadgeOverlay}>
+                      <Ionicons name="videocam" size={14} color={colors.textLight} />
+                    </View>
+                  </View>
+                ) : (
+                  // Vidéo locale - preview
+                  <View style={styles.videoThumbnailLocal}>
+                    {videoLoading && (
+                      <View style={styles.videoLoadingSmall}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      </View>
+                    )}
+                    <Video
+                      source={{ uri: videoUri }}
+                      style={[styles.photo, videoLoading && { opacity: 0.3 }]}
+                      resizeMode={ResizeMode.COVER}
+                      shouldPlay={false}
+                      onLoadStart={() => setVideoLoading(true)}
+                      onLoad={() => setVideoLoading(false)}
+                      onError={() => setVideoLoading(false)}
+                    />
+                    <View style={styles.videoBadgeOverlay}>
+                      <Ionicons name="videocam" size={14} color={colors.textLight} />
+                    </View>
+                  </View>
+                )}
+                <Pressable style={styles.removeButton} onPress={handleRemoveVideo}>
+                  <Text style={styles.removeIcon}>✕</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Bouton ajouter photo */}
+            {photos.length < (videoUri ? 5 : 6) && (
               <Pressable style={styles.addPhotoButton} onPress={handleAddPhoto}>
-                <Text style={styles.addPhotoIcon}>+</Text>
+                <Ionicons name="image-outline" size={28} color={colors.textTertiary} />
+              </Pressable>
+            )}
+
+            {/* Bouton ajouter vidéo (si pas de vidéo) */}
+            {!videoUri && photos.length < 6 && (
+              <Pressable style={styles.addPhotoButton} onPress={handlePickVideo}>
+                <Ionicons name="videocam-outline" size={28} color={colors.textTertiary} />
               </Pressable>
             )}
           </View>
-        </View>
 
-        {/* Video */}
-        <View style={styles.section}>
-          <View style={styles.videoHeader}>
-            <Ionicons name="videocam" size={20} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Vidéo de présentation</Text>
-            <Text style={styles.optionalLabel}>Optionnel</Text>
-          </View>
-
-          {videoUri ? (
-            <View style={styles.videoPreviewContainer}>
-              {videoLoading && (
-                <View style={styles.videoLoadingOverlay}>
-                  <ActivityIndicator size="large" color={colors.primary} />
-                  <Text style={styles.videoLoadingText}>Chargement de la vidéo...</Text>
-                </View>
-              )}
-              <Video
-                source={{ uri: videoUri }}
-                style={[styles.videoPreview, videoLoading && { opacity: 0.3 }]}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay={false}
-                isLooping={false}
-                useNativeControls
-                onLoadStart={() => setVideoLoading(true)}
-                onLoad={() => setVideoLoading(false)}
-                onError={() => setVideoLoading(false)}
-              />
-              <Pressable style={styles.removeVideoButton} onPress={handleRemoveVideo}>
-                <Ionicons name="close-circle" size={28} color={colors.error} />
-              </Pressable>
+          {/* Bonus vidéo - affiché seulement si pas de vidéo */}
+          {!videoUri && (
+            <View style={styles.videoBonus}>
+              <Ionicons name="star" size={16} color={colors.secondary} />
+              <Text style={styles.videoBonusText}>
+                Les profils avec vidéo sont 3x plus vus !
+              </Text>
             </View>
-          ) : (
-            <Pressable style={styles.addVideoButton} onPress={handlePickVideo}>
-              <Ionicons name="videocam-outline" size={32} color={colors.textTertiary} />
-              <Text style={styles.addVideoText}>Ajouter une vidéo (max 30s)</Text>
-            </Pressable>
           )}
-
-          <View style={styles.videoBonus}>
-            <Ionicons name="star" size={16} color={colors.secondary} />
-            <Text style={styles.videoBonusText}>
-              Les profils avec vidéo sont 3x plus vus !
-            </Text>
-          </View>
         </View>
 
         {/* Nom */}
@@ -621,6 +663,27 @@ export default function EditProfileScreen() {
         />
       </View>
 
+      {/* Modal overlay pour l'upload vidéo */}
+      <Modal
+        visible={isUploadingVideo}
+        transparent={true}
+        animationType="fade"
+        statusBarTranslucent={true}
+      >
+        <View style={styles.uploadOverlay}>
+          <View style={styles.uploadOverlayContent}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.uploadOverlayTitle}>Upload en cours</Text>
+            <Text style={styles.uploadOverlayText}>
+              {uploadStatus || 'Veuillez patienter...'}
+            </Text>
+            <Text style={styles.uploadOverlayWarning}>
+              Ne quittez pas cette page
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       {/* Modal pour les prompts */}
       <Modal
         visible={showPromptModal}
@@ -781,6 +844,37 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: colors.textTertiary,
   },
+  videoThumbnail: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoThumbnailLocal: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  videoBadgeOverlay: {
+    position: 'absolute',
+    bottom: spacing.xs,
+    right: spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: borderRadius.sm,
+    padding: 4,
+  },
+  videoLoadingSmall: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    zIndex: 10,
+  },
   input: {
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -822,53 +916,7 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.primary,
   },
-  // Video section styles
-  videoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  optionalLabel: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-    marginLeft: 'auto',
-  },
-  videoPreviewContainer: {
-    position: 'relative',
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-  },
-  videoPreview: {
-    height: 200,
-    borderRadius: borderRadius.md,
-  },
-  removeVideoButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.full,
-  },
-  addVideoButton: {
-    height: 150,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  addVideoText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
+  // Video bonus style
   videoBonus: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1098,22 +1146,38 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: spacing.xs,
   },
-  // Video loading styles
-  videoLoadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
+  // Upload overlay styles
+  uploadOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
-    zIndex: 10,
-    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    padding: spacing.xl,
   },
-  videoLoadingText: {
-    ...typography.bodySmall,
+  uploadOverlayContent: {
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 300,
+  },
+  uploadOverlayTitle: {
+    ...typography.h3,
+    color: colors.text,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  uploadOverlayText: {
+    ...typography.body,
     color: colors.textSecondary,
-    marginTop: spacing.sm,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  uploadOverlayWarning: {
+    ...typography.bodySmall,
+    color: colors.error,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

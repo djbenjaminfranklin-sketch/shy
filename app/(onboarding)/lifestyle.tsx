@@ -110,7 +110,7 @@ export default function LifestyleScreen() {
       children,
       prompts,
     });
-    router.push('/(onboarding)/location-consent');
+    router.push('/(onboarding)/notification-consent');
   };
 
   const canContinue = prompts.length >= 1; // Au moins 1 prompt requis
@@ -121,6 +121,8 @@ export default function LifestyleScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={styles.progress}>
           <View style={styles.progressDot} />

@@ -97,6 +97,8 @@ export default function BasicInfoScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={styles.progress}>
           <View style={styles.progressDot} />

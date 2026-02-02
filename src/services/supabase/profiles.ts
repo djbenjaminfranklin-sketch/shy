@@ -80,6 +80,28 @@ export const profilesService = {
         return { profile: null, error: 'Utilisateur non autorisé' };
       }
 
+      // VALIDATION AGE OBLIGATOIRE - Vérifier que l'utilisateur a au moins 18 ans
+      const birthDate = new Date(data.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age < 18) {
+        console.error('[profilesService.createProfile] User is under 18:', age);
+        return { profile: null, error: 'Vous devez avoir au moins 18 ans pour utiliser cette application.' };
+      }
+
+      // Validation de date de naissance réaliste (pas dans le futur, pas trop ancien)
+      if (birthDate > today) {
+        return { profile: null, error: 'Date de naissance invalide.' };
+      }
+      if (age > 120) {
+        return { profile: null, error: 'Date de naissance invalide.' };
+      }
+
       const { data: profile, error } = await supabase
         .from('profiles')
         .upsert({
@@ -251,13 +273,16 @@ export const profilesService = {
    * Récupérer les profils à découvrir
    * Triés par score composite (engagement + proximité)
    * Si activeMode est fourni, ne retourne que les profils avec le même mode actif
+   * Inclut également les voyageurs qui ont leur destination dans la zone de recherche
+   * Si isAdmin est true, ignore le filtre de distance pour voir tous les profils
    */
   async getDiscoverProfiles(
     userId: string,
     filters: ProfileFilters,
     userLat?: number,
     userLng?: number,
-    activeMode?: AvailabilityModeType | null
+    activeMode?: AvailabilityModeType | null,
+    isAdmin?: boolean
   ): Promise<{ profiles: ProfileWithDistance[]; error: string | null }> {
     try {
       // Récupérer le score d'engagement de l'utilisateur courant
@@ -269,10 +294,99 @@ export const profilesService = {
 
       const userEngagementScore = (currentUserProfile?.engagement_score as number) || 50;
 
+      // Exclure les utilisateurs bloqués
+      const { data: blocks } = await supabase
+        .from('blocks')
+        .select('blocked_id')
+        .eq('blocker_id', userId);
+
+      const blockedIds = blocks ? blocks.map((b) => b.blocked_id) : [];
+
+      // Exclure les utilisateurs avec invitation déjà envoyée
+      const { data: invitations } = await supabase
+        .from('invitations')
+        .select('receiver_id')
+        .eq('sender_id', userId);
+
+      const invitedIds = invitations ? invitations.map((i) => i.receiver_id) : [];
+
+      // IDs à exclure
+      const excludedIds = [...blockedIds, ...invitedIds, userId];
+
+      // --- 1. Récupérer les voyageurs dans la zone de recherche ---
+      let travelerProfiles: ProfileWithDistance[] = [];
+      if (userLat && userLng) {
+        // Calcul approximatif du bounding box
+        const radiusKm = filters.searchRadius;
+        const latDelta = radiusKm / 111;
+        const lonDelta = radiusKm / (111 * Math.cos(userLat * (Math.PI / 180)));
+
+        // Récupérer les voyageurs avec destination dans la zone
+        const { data: travelers } = await supabase
+          .from('travel_modes')
+          .select('*')
+          .eq('is_active', true)
+          .gte('latitude', userLat - latDelta)
+          .lte('latitude', userLat + latDelta)
+          .gte('longitude', userLng - lonDelta)
+          .lte('longitude', userLng + lonDelta);
+
+        if (travelers && travelers.length > 0) {
+          // Exclure les voyageurs bloqués/invités et soi-même
+          const travelerIds = travelers
+            .map((t) => t.user_id)
+            .filter((id) => !excludedIds.includes(id));
+
+          if (travelerIds.length > 0) {
+            // Récupérer les profils des voyageurs
+            let travelerQuery = supabase
+              .from('profiles')
+              .select('*')
+              .in('id', travelerIds);
+
+            // Appliquer les filtres
+            if (filters.genders.length > 0) {
+              travelerQuery = travelerQuery.in('gender', filters.genders);
+            }
+            if (filters.intentions.length > 0) {
+              travelerQuery = travelerQuery.in('intention', filters.intentions);
+            }
+
+            const { data: travelerProfilesData } = await travelerQuery;
+
+            if (travelerProfilesData) {
+              // Créer une map des destinations de voyage
+              const travelDestinations = new Map<string, { lat: number; lng: number }>();
+              travelers.forEach((t) => {
+                travelDestinations.set(t.user_id, {
+                  lat: t.latitude,
+                  lng: t.longitude,
+                });
+              });
+
+              // Mapper les profils voyageurs avec distance depuis leur destination
+              travelerProfiles = travelerProfilesData.map((p) => {
+                const profile = mapProfileFromDb(p);
+                const dest = travelDestinations.get(profile.id);
+                let distance: number | null = null;
+
+                if (userLat && userLng && dest) {
+                  // Utiliser la destination du voyage pour calculer la distance
+                  distance = calculateDistance(userLat, userLng, dest.lat, dest.lng);
+                }
+
+                return { ...profile, distance, isTraveler: true } as ProfileWithDistance;
+              });
+            }
+          }
+        }
+      }
+
+      // --- 2. Récupérer les profils locaux (comportement existant) ---
       let query = supabase
         .from('profiles')
         .select('*')
-        .neq('id', userId);
+        .not('id', 'in', `(${excludedIds.join(',')})`);
 
       // Filtrer par genre
       if (filters.genders.length > 0) {
@@ -284,31 +398,7 @@ export const profilesService = {
         query = query.in('intention', filters.intentions);
       }
 
-      // Exclure les utilisateurs bloqués
-      const { data: blocks } = await supabase
-        .from('blocks')
-        .select('blocked_id')
-        .eq('blocker_id', userId);
-
-      if (blocks && blocks.length > 0) {
-        const blockedIds = blocks.map((b) => b.blocked_id);
-        query = query.not('id', 'in', `(${blockedIds.join(',')})`);
-      }
-
-      // Exclure les utilisateurs avec invitation déjà envoyée
-      const { data: invitations } = await supabase
-        .from('invitations')
-        .select('receiver_id')
-        .eq('sender_id', userId);
-
-      if (invitations && invitations.length > 0) {
-        const invitedIds = invitations.map((i) => i.receiver_id);
-        query = query.not('id', 'in', `(${invitedIds.join(',')})`);
-      }
-
       // Filtrer par mode de disponibilité actif
-      // Si l'utilisateur a un mode actif, ne montrer que les profils avec le même mode
-      let modeFilteredIds: string[] | null = null;
       if (activeMode) {
         const { data: sameModeProfiles } = await supabase
           .from('availability_modes')
@@ -318,16 +408,24 @@ export const profilesService = {
           .gt('expires_at', new Date().toISOString());
 
         if (sameModeProfiles && sameModeProfiles.length > 0) {
-          modeFilteredIds = sameModeProfiles.map((p) => p.user_id);
+          const modeFilteredIds = sameModeProfiles.map((p) => p.user_id);
           query = query.in('id', modeFilteredIds);
         } else {
-          // Aucun profil avec ce mode actif -> retourner vide
+          // Aucun profil avec ce mode actif -> retourner seulement les voyageurs
+          if (travelerProfiles.length > 0) {
+            let result = travelerProfiles.filter((p) => p.age >= filters.minAge && p.age <= filters.maxAge);
+            result.sort((a, b) => {
+              const scoreA = calculateCompositeScore(a, userEngagementScore, filters.searchRadius);
+              const scoreB = calculateCompositeScore(b, userEngagementScore, filters.searchRadius);
+              return scoreB - scoreA;
+            });
+            return { profiles: result, error: null };
+          }
           return { profiles: [], error: null };
         }
       }
 
-      // Trier par score d'engagement (les profils "populaires" en premier)
-      // puis limiter à 100 pour le calcul côté client
+      // Trier par score d'engagement puis limiter à 100
       const { data: profiles, error } = await query
         .order('engagement_score', { ascending: false })
         .limit(100);
@@ -336,8 +434,8 @@ export const profilesService = {
         return { profiles: [], error: error.message };
       }
 
-      // Calculer les distances et scores composites
-      let result: ProfileWithDistance[] = (profiles || []).map((p) => {
+      // Calculer les distances pour les profils locaux
+      let localProfiles: ProfileWithDistance[] = (profiles || []).map((p) => {
         const profile = mapProfileFromDb(p);
         let distance: number | null = null;
 
@@ -348,13 +446,30 @@ export const profilesService = {
         return { ...profile, distance };
       });
 
-      // Filtrer par âge (calculé côté client)
+      // --- 3. Fusionner et dédupliquer les résultats ---
+      const profileMap = new Map<string, ProfileWithDistance>();
+
+      // Ajouter les voyageurs d'abord (priorité aux coordonnées de voyage)
+      travelerProfiles.forEach((p) => {
+        profileMap.set(p.id, p);
+      });
+
+      // Ajouter les profils locaux (sans écraser les voyageurs)
+      localProfiles.forEach((p) => {
+        if (!profileMap.has(p.id)) {
+          profileMap.set(p.id, p);
+        }
+      });
+
+      let result = Array.from(profileMap.values());
+
+      // Filtrer par âge
       result = result.filter((p) => p.age >= filters.minAge && p.age <= filters.maxAge);
 
-      // Filtrer par rayon si l'utilisateur a une position
-      if (userLat && userLng) {
+      // Filtrer par rayon si l'utilisateur a une position (sauf pour admin)
+      if (userLat && userLng && !isAdmin) {
         result = result.filter((p) => {
-          if (p.distance === null) return true; // Inclure ceux sans position
+          if (p.distance === null) return true;
           return p.distance <= filters.searchRadius;
         });
       }
@@ -363,11 +478,12 @@ export const profilesService = {
       result.sort((a, b) => {
         const scoreA = calculateCompositeScore(a, userEngagementScore, filters.searchRadius);
         const scoreB = calculateCompositeScore(b, userEngagementScore, filters.searchRadius);
-        return scoreB - scoreA; // Plus haut score en premier
+        return scoreB - scoreA;
       });
 
       return { profiles: result, error: null };
     } catch (err) {
+      console.error('[getDiscoverProfiles] Error:', err);
       return { profiles: [], error: 'Une erreur inattendue est survenue' };
     }
   },

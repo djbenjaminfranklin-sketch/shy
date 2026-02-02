@@ -44,6 +44,8 @@ export default function ChatScreen() {
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
 
+  console.log('[ChatScreen] Opened with conversationId:', conversationId);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [otherUserName, setOtherUserName] = useState('');
@@ -136,8 +138,10 @@ export default function ChatScreen() {
     if (!conversationId) return;
 
     const loadMessages = async () => {
+      console.log('[ChatScreen] Loading messages for:', conversationId);
       setIsLoading(true);
-      const { messages: loadedMessages } = await messagesService.getMessages(conversationId);
+      const { messages: loadedMessages, error } = await messagesService.getMessages(conversationId);
+      console.log('[ChatScreen] Messages loaded:', loadedMessages.length, 'error:', error);
       setMessages(loadedMessages);
       setIsLoading(false);
 
@@ -167,17 +171,28 @@ export default function ChatScreen() {
   // Envoyer un message
   const handleSend = useCallback(
     async (content: string) => {
-      if (!user || !conversationId) return;
+      console.log('[Chat] handleSend called with:', content);
+      console.log('[Chat] user:', user?.id, 'conversationId:', conversationId);
+
+      if (!user || !conversationId) {
+        console.log('[Chat] Missing user or conversationId, aborting');
+        return;
+      }
 
       // Vérifier les limites (sauf si illimité = -1)
+      console.log('[Chat] Checking limits - used:', messagesUsed, 'total:', messagesTotal);
       if (messagesTotal !== -1 && messagesUsed >= messagesTotal) {
+        console.log('[Chat] Limit reached, showing paywall');
         setShowPaywall(true);
         return;
       }
 
-      const { message } = await messagesService.sendMessage(conversationId, user.id, content);
+      console.log('[Chat] Sending message...');
+      const { message, error } = await messagesService.sendMessage(conversationId, user.id, content);
+      console.log('[Chat] Send result - message:', message, 'error:', error);
 
       if (message) {
+        console.log('[Chat] Adding message to state');
         setMessages((prev) => [...prev, message]);
         flatListRef.current?.scrollToEnd({ animated: true });
 
@@ -186,6 +201,8 @@ export default function ChatScreen() {
 
         // Incrémenter sur le serveur
         await subscriptionsService.incrementMessages(user.id);
+      } else {
+        console.log('[Chat] No message returned, error:', error);
       }
     },
     [user, conversationId, messagesUsed, messagesTotal]
@@ -338,6 +355,11 @@ export default function ChatScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
+          headerLeft: () => (
+            <Pressable onPress={() => router.replace('/(tabs)/matches')} style={styles.headerButton}>
+              <Text style={styles.backIcon}>‹</Text>
+            </Pressable>
+          ),
           headerTitle: () => (
             <View style={styles.headerTitle}>
               <Avatar uri={otherUserPhoto} name={otherUserName} size={32} />
@@ -413,6 +435,8 @@ export default function ChatScreen() {
             )}
             contentContainerStyle={styles.messagesList}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           />
         )}
 
@@ -483,6 +507,11 @@ const styles = StyleSheet.create({
   headerIcon: {
     fontSize: 24,
     color: colors.text,
+  },
+  backIcon: {
+    fontSize: 32,
+    color: colors.text,
+    fontWeight: '300',
   },
   loadingContainer: {
     flex: 1,

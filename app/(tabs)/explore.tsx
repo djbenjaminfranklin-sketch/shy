@@ -22,7 +22,9 @@ import { ProfileMapView } from '../../src/components/map';
 import { useLocation } from '../../src/contexts/LocationContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useTravelMode } from '../../src/hooks/useTravelMode';
 import { profilesService } from '../../src/services/supabase/profiles';
+import { adminService } from '../../src/services/supabase/admin';
 import type { ProfileWithDistance } from '../../src/types/profile';
 
 const { width } = Dimensions.get('window');
@@ -206,14 +208,36 @@ export default function ExploreScreen() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { latitude, longitude, searchRadius, isEnabled, city, getLocationDisplayName } = useLocation();
+  const { travelMode, hasActiveTravelMode } = useTravelMode();
   const [viewMode, setViewMode] = useState<ViewMode>('map');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profiles, setProfiles] = useState<ProfileWithDistance[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Position utilisateur (utiliser la vraie position si disponible)
-  const userLocation = (latitude && longitude)
-    ? { latitude, longitude }
+  // Vérifier si l'utilisateur est admin
+  useEffect(() => {
+    if (user) {
+      adminService.isAdmin(user.id).then((admin) => {
+        setIsAdmin(admin);
+      });
+    }
+  }, [user]);
+
+  // Position effective (mode voyage si actif, sinon position réelle)
+  const effectiveLatitude = hasActiveTravelMode && travelMode
+    ? travelMode.destination.latitude
+    : latitude;
+  const effectiveLongitude = hasActiveTravelMode && travelMode
+    ? travelMode.destination.longitude
+    : longitude;
+  const effectiveCity = hasActiveTravelMode && travelMode
+    ? travelMode.destination.city
+    : city;
+
+  // Position utilisateur pour la map
+  const userLocation = (effectiveLatitude && effectiveLongitude)
+    ? { latitude: effectiveLatitude, longitude: effectiveLongitude }
     : null;
 
   // Charger les profils depuis Supabase
@@ -232,10 +256,12 @@ export default function ExploreScreen() {
           hairColors: [],
           languages: [],
           interests: [],
-          searchRadius: searchRadius || 50,
+          searchRadius: isAdmin ? 50000 : (searchRadius || 50), // Admin: rayon mondial
         },
-        latitude ?? undefined,
-        longitude ?? undefined
+        effectiveLatitude ?? undefined,
+        effectiveLongitude ?? undefined,
+        null, // activeMode
+        isAdmin // Permet de voir tous les profils sans limite de distance
       );
 
       if (loadedProfiles) {
@@ -245,7 +271,7 @@ export default function ExploreScreen() {
     };
 
     loadProfiles();
-  }, [user, latitude, longitude, searchRadius]);
+  }, [user, effectiveLatitude, effectiveLongitude, searchRadius, isAdmin]);
 
   // Refresh handler
   const handleRefresh = useCallback(async () => {
@@ -262,17 +288,19 @@ export default function ExploreScreen() {
         hairColors: [],
         languages: [],
         interests: [],
-        searchRadius: searchRadius || 50,
+        searchRadius: isAdmin ? 50000 : (searchRadius || 50),
       },
-      latitude ?? undefined,
-      longitude ?? undefined
+      effectiveLatitude ?? undefined,
+      effectiveLongitude ?? undefined,
+      null,
+      isAdmin
     );
 
     if (loadedProfiles) {
       setProfiles(loadedProfiles);
     }
     setIsRefreshing(false);
-  }, [user, latitude, longitude, searchRadius]);
+  }, [user, effectiveLatitude, effectiveLongitude, searchRadius, isAdmin]);
 
   // Profile press handler
   const handleProfilePress = useCallback(
@@ -318,12 +346,16 @@ export default function ExploreScreen() {
               onPress={() => router.push('/profile/settings' as never)}
             >
               <Ionicons
-                name={isEnabled ? "location" : "location-outline"}
+                name={hasActiveTravelMode ? "airplane" : isEnabled ? "location" : "location-outline"}
                 size={14}
-                color={isEnabled ? colors.primary : colors.textTertiary}
+                color={hasActiveTravelMode ? colors.primary : isEnabled ? colors.primary : colors.textTertiary}
               />
-              <Text style={[styles.subtitle, isEnabled && styles.locationActive]}>
-                {isEnabled ? (city || getLocationDisplayName()) : t('explore.locationDisabled')}
+              <Text style={[styles.subtitle, (isEnabled || hasActiveTravelMode) && styles.locationActive]}>
+                {hasActiveTravelMode
+                  ? `✈️ ${effectiveCity}`
+                  : isEnabled
+                    ? (city || getLocationDisplayName())
+                    : t('explore.locationDisabled')}
               </Text>
               <Ionicons name="chevron-forward" size={12} color={colors.textTertiary} />
             </TouchableOpacity>

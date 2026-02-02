@@ -305,6 +305,11 @@ export const en: TranslationKeys = {
     noConnectionsHint: "When someone accepts your invitation, you'll be able to chat here!",
     discoverProfiles: 'Discover profiles',
     startChatting: 'Start chatting!',
+    messagesTitle: 'Messages',
+    likes: 'Likes',
+    newMatches: 'New Matches',
+    messagesSection: 'Messages',
+    noMessagesYet: 'No messages yet',
   },
 
   // Messages
@@ -630,5 +635,59 @@ export const en: TranslationKeys = {
     packOf: 'Pack of {count}',
     bestValue: 'Best value',
     popular: 'Popular',
+  },
+
+  // Notification Consent (Onboarding)
+  notificationConsent: {
+    title: 'Stay connected',
+    description: 'Enable notifications so you never miss a chance to connect.',
+    newMatches: 'New matches',
+    newMatchesDesc: 'Get notified when someone accepts your invitation.',
+    newMessages: 'Messages',
+    newMessagesDesc: 'Receive messages from your connections in real-time.',
+    invitations: 'Invitations',
+    invitationsDesc: 'Find out when someone is interested in your profile.',
+    privacyNote: 'You can change these preferences anytime in settings.',
+    enable: 'Enable notifications',
+    skip: 'Maybe later',
+  },
+
+  // Data Export (GDPR)
+  dataExport: {
+    title: 'Export my data',
+    description: 'In accordance with GDPR (Article 20), you can download a copy of all your personal data.',
+    whatIncluded: 'Data included',
+    profileInfo: 'Profile information',
+    profileInfoDesc: 'Name, birthdate, bio, preferences',
+    photos: 'Photos',
+    photosDesc: 'Links to your profile photos',
+    messages: 'Messages',
+    messagesDesc: 'History of your conversations',
+    connections: 'Connections',
+    connectionsDesc: 'List of your matches and invitations',
+    activityData: 'Activity data',
+    activityDataDesc: 'Login history, preferences',
+    exportButton: 'Download my data',
+    exporting: 'Preparing export...',
+    exportSuccess: 'Data exported',
+    exportSuccessMessage: 'Your data has been downloaded successfully.',
+    exportError: 'Export error',
+    exportErrorMessage: 'An error occurred. Please try again.',
+    formatNote: 'Data is exported in JSON format, readable by most applications.',
+  },
+
+  // Safety Tips
+  safetyTips: {
+    title: 'Safety tips',
+    beforeMeeting: 'Before meeting',
+    tip1Title: 'Public place',
+    tip1Desc: 'Always choose a cafe, restaurant or busy location.',
+    tip2Title: 'Tell someone',
+    tip2Desc: 'Let someone know about your meeting and expected time.',
+    tip3Title: 'Check the profile',
+    tip3Desc: 'Look for verified profiles with the blue badge.',
+    tip4Title: 'Stay alert',
+    tip4Desc: 'Don\'t hesitate to leave if you feel uncomfortable.',
+    understood: 'I understand',
   },
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +27,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const passwordInputRef = useRef<TextInput>(null);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -62,46 +65,53 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Pressable style={styles.backButton} onPress={() => router.back()}>
-              <Text style={styles.backText}>← {t('common.back')}</Text>
-            </Pressable>
-            <Text style={styles.title}>{t('auth.loginTitle')}</Text>
-            <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
-          </View>
-
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('auth.email')}</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="votre@email.com"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Pressable style={styles.backButton} onPress={() => router.back()}>
+                <Text style={styles.backText}>← {t('common.back')}</Text>
+              </Pressable>
+              <Text style={styles.title}>{t('auth.loginTitle')}</Text>
+              <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('auth.password')}</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor={colors.textTertiary}
-                secureTextEntry
-                autoComplete="password"
-              />
-            </View>
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>{t('auth.email')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="votre@email.com"
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  returnKeyType="next"
+                  onSubmitEditing={() => passwordInputRef.current?.focus()}
+                  blurOnSubmit={false}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>{t('auth.password')}</Text>
+                <TextInput
+                  ref={passwordInputRef}
+                  style={styles.input}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.textTertiary}
+                  secureTextEntry
+                  autoComplete="password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                />
+              </View>
 
             <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
               <Text style={styles.forgotPassword}>{t('auth.forgotPassword')}</Text>
@@ -122,14 +132,15 @@ export default function LoginScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
-            <Pressable onPress={() => router.replace('/(auth)/register')}>
-              <Text style={styles.footerLink}>{t('welcome.createAccount')}</Text>
-            </Pressable>
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
+              <Pressable onPress={() => router.replace('/(auth)/register')}>
+                <Text style={styles.footerLink}>{t('welcome.createAccount')}</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

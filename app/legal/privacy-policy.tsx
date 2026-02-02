@@ -1,81 +1,125 @@
-import { useState, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { WebView } from 'react-native-webview';
 import { colors } from '../../src/theme/colors';
-import { Pressable } from 'react-native';
 
 export default function PrivacyPolicyScreen() {
   const router = useRouter();
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const webViewRef = useRef<WebView>(null);
 
-  const handleRetry = () => {
-    setHasError(false);
-    setIsLoading(true);
-    webViewRef.current?.reload();
+  const handleBack = () => {
+    router.replace('/profile/settings');
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Confidentialité</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {hasError ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={64} color={colors.textTertiary} />
-          <Text style={styles.errorTitle}>Page indisponible</Text>
-          <Text style={styles.errorText}>
-            Impossible de charger la politique de confidentialité.
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-            <Text style={styles.retryText}>Réessayer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>Retour</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          {isLoading && (
-            <View style={styles.loading}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Chargement...</Text>
-            </View>
-          )}
-          <WebView
-            ref={webViewRef}
-            source={{ uri: 'https://shydating.eu/privacy' }}
-            style={[styles.webview, isLoading && { opacity: 0 }]}
-            onLoadStart={() => setIsLoading(true)}
-            onLoadEnd={() => setIsLoading(false)}
-            onError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            onHttpError={() => {
-              setIsLoading(false);
-              setHasError(true);
-            }}
-            javaScriptEnabled={true}
-            domStorageEnabled={true}
-            startInLoadingState={true}
-            scalesPageToFit={true}
-            mixedContentMode="compatibility"
-            allowsInlineMediaPlayback={true}
-            originWhitelist={['*']}
-            cacheEnabled={true}
-          />
-        </>
-      )}
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.lastUpdate}>Dernière mise à jour : 1er février 2026</Text>
+
+        <Text style={styles.sectionTitle}>1. Introduction</Text>
+        <Text style={styles.paragraph}>
+          Chez SHY, nous prenons la protection de vos données personnelles très au sérieux. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos informations conformément au Règlement Général sur la Protection des Données (RGPD).
+        </Text>
+
+        <Text style={styles.sectionTitle}>2. Responsable du traitement</Text>
+        <Text style={styles.paragraph}>
+          SHY Dating{'\n'}
+          Email : privacy@shydating.eu
+        </Text>
+
+        <Text style={styles.sectionTitle}>3. Données collectées</Text>
+        <Text style={styles.paragraph}>
+          Nous collectons les données suivantes :
+        </Text>
+        <Text style={styles.bulletPoint}>• Informations de profil : nom, date de naissance, genre, photos</Text>
+        <Text style={styles.bulletPoint}>• Données de contact : adresse email</Text>
+        <Text style={styles.bulletPoint}>• Préférences : intentions de rencontre, centres d'intérêt</Text>
+        <Text style={styles.bulletPoint}>• Données de localisation : uniquement si vous l'autorisez explicitement</Text>
+        <Text style={styles.bulletPoint}>• Communications : messages échangés avec d'autres utilisateurs</Text>
+        <Text style={styles.bulletPoint}>• Données techniques : type d'appareil, système d'exploitation</Text>
+
+        <Text style={styles.sectionTitle}>4. Finalités du traitement</Text>
+        <Text style={styles.paragraph}>
+          Vos données sont utilisées pour :
+        </Text>
+        <Text style={styles.bulletPoint}>• Fournir et améliorer nos services de mise en relation</Text>
+        <Text style={styles.bulletPoint}>• Personnaliser votre expérience utilisateur</Text>
+        <Text style={styles.bulletPoint}>• Assurer la sécurité de l'Application</Text>
+        <Text style={styles.bulletPoint}>• Communiquer avec vous concernant votre compte</Text>
+        <Text style={styles.bulletPoint}>• Respecter nos obligations légales</Text>
+
+        <Text style={styles.sectionTitle}>5. Base légale</Text>
+        <Text style={styles.paragraph}>
+          Le traitement de vos données est fondé sur :
+        </Text>
+        <Text style={styles.bulletPoint}>• Votre consentement explicite</Text>
+        <Text style={styles.bulletPoint}>• L'exécution du contrat de service</Text>
+        <Text style={styles.bulletPoint}>• Nos intérêts légitimes (sécurité, amélioration du service)</Text>
+        <Text style={styles.bulletPoint}>• Nos obligations légales</Text>
+
+        <Text style={styles.sectionTitle}>6. Partage des données</Text>
+        <Text style={styles.paragraph}>
+          Nous ne vendons jamais vos données personnelles. Nous pouvons partager vos informations avec :
+        </Text>
+        <Text style={styles.bulletPoint}>• D'autres utilisateurs : selon vos paramètres de visibilité</Text>
+        <Text style={styles.bulletPoint}>• Prestataires de services : hébergement, paiement (sous contrat de confidentialité)</Text>
+        <Text style={styles.bulletPoint}>• Autorités : si requis par la loi</Text>
+
+        <Text style={styles.sectionTitle}>7. Conservation des données</Text>
+        <Text style={styles.paragraph}>
+          Vos données sont conservées tant que votre compte est actif. Après suppression de votre compte, vos données sont effacées sous 30 jours, sauf obligation légale de conservation.
+        </Text>
+
+        <Text style={styles.sectionTitle}>8. Vos droits (RGPD)</Text>
+        <Text style={styles.paragraph}>
+          Conformément au RGPD, vous disposez des droits suivants :
+        </Text>
+        <Text style={styles.bulletPoint}>• Droit d'accès : obtenir une copie de vos données</Text>
+        <Text style={styles.bulletPoint}>• Droit de rectification : corriger vos données</Text>
+        <Text style={styles.bulletPoint}>• Droit à l'effacement : supprimer vos données</Text>
+        <Text style={styles.bulletPoint}>• Droit à la portabilité : recevoir vos données dans un format structuré</Text>
+        <Text style={styles.bulletPoint}>• Droit d'opposition : vous opposer à certains traitements</Text>
+        <Text style={styles.bulletPoint}>• Droit de retrait du consentement : à tout moment</Text>
+
+        <Text style={styles.sectionTitle}>9. Sécurité</Text>
+        <Text style={styles.paragraph}>
+          Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles pour protéger vos données : chiffrement, contrôle d'accès, audits réguliers.
+        </Text>
+
+        <Text style={styles.sectionTitle}>10. Géolocalisation</Text>
+        <Text style={styles.paragraph}>
+          La géolocalisation est désactivée par défaut. Si vous l'activez, seule une distance approximative est affichée aux autres utilisateurs, jamais votre position exacte. Vous pouvez désactiver cette fonctionnalité à tout moment.
+        </Text>
+
+        <Text style={styles.sectionTitle}>11. Cookies et traceurs</Text>
+        <Text style={styles.paragraph}>
+          L'Application utilise des technologies de suivi minimales, uniquement nécessaires au fonctionnement du service. Aucun cookie publicitaire n'est utilisé.
+        </Text>
+
+        <Text style={styles.sectionTitle}>12. Modifications</Text>
+        <Text style={styles.paragraph}>
+          Cette politique peut être mise à jour. Nous vous informerons de tout changement significatif via l'Application.
+        </Text>
+
+        <Text style={styles.sectionTitle}>13. Contact</Text>
+        <Text style={styles.paragraph}>
+          Pour exercer vos droits ou pour toute question :{'\n'}
+          Email : privacy@shydating.eu
+        </Text>
+        <Text style={styles.paragraph}>
+          Vous pouvez également contacter l'autorité de contrôle compétente (CNIL en France) si vous estimez que vos droits ne sont pas respectés.
+        </Text>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -105,61 +149,39 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
-  webview: {
+  content: {
     flex: 1,
   },
-  loading: {
-    position: 'absolute',
-    top: 80,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    zIndex: 10,
+  contentContainer: {
+    padding: 20,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  lastUpdate: {
+    fontSize: 12,
+    color: colors.textTertiary,
     marginBottom: 24,
+    fontStyle: 'italic',
   },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  paragraph: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
     marginBottom: 12,
   },
-  retryText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  backLink: {
-    padding: 12,
-  },
-  backLinkText: {
-    color: colors.primary,
+  bulletPoint: {
     fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginLeft: 12,
+    marginBottom: 4,
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

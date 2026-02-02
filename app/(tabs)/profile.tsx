@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Video, ResizeMode } from 'expo-av';
 import { router } from 'expo-router';
 import { colors, spacing, borderRadius } from '../../src/theme';
 import { IntentionBadge, AvailabilityBadge } from '../../src/components/profile';
@@ -33,6 +35,7 @@ export default function ProfileScreen() {
   } = useBoost();
   const [showBoostModal, setShowBoostModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [stats, setStats] = useState({
     invitationsSent: 0,
     invitationsReceived: 0,
@@ -49,38 +52,44 @@ export default function ProfileScreen() {
     checkAdmin();
   }, [user]);
 
-  useEffect(() => {
-    const loadStats = async () => {
-      if (!user) return;
+  const loadStats = useCallback(async () => {
+    if (!user) return;
 
-      // Compter les invitations envoyées
-      const { count: sentCount } = await supabase
-        .from('invitations')
-        .select('*', { count: 'exact', head: true })
-        .eq('sender_id', user.id);
+    // Compter les invitations envoyées
+    const { count: sentCount } = await supabase
+      .from('invitations')
+      .select('*', { count: 'exact', head: true })
+      .eq('sender_id', user.id);
 
-      // Compter les invitations reçues
-      const { count: receivedCount } = await supabase
-        .from('invitations')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', user.id)
-        .eq('status', 'pending');
+    // Compter les invitations reçues
+    const { count: receivedCount } = await supabase
+      .from('invitations')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', user.id)
+      .eq('status', 'pending');
 
-      // Compter les connexions
-      const { count: connectionsCount } = await supabase
-        .from('connections')
-        .select('*', { count: 'exact', head: true })
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+    // Compter les connexions
+    const { count: connectionsCount } = await supabase
+      .from('connections')
+      .select('*', { count: 'exact', head: true })
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
-      setStats({
-        invitationsSent: sentCount || 0,
-        invitationsReceived: receivedCount || 0,
-        connections: connectionsCount || 0,
-      });
-    };
-
-    loadStats();
+    setStats({
+      invitationsSent: sentCount || 0,
+      invitationsReceived: receivedCount || 0,
+      connections: connectionsCount || 0,
+    });
   }, [user]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await Promise.all([loadStats(), refreshBoost()]);
+    setIsRefreshing(false);
+  }, [loadStats, refreshBoost]);
 
   const menuItems = [
     { icon: 'create-outline' as const, label: t('profile.editProfile'), route: '/profile/edit' },
@@ -141,13 +150,19 @@ export default function ProfileScreen() {
   const defaultAvatar = 'https://via.placeholder.com/120x120/FF6B6B/FFFFFF?text=' +
     (profile?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?');
 
-  // Debug: log photo URL
-  console.log('Profile photos:', profile?.photos);
-  console.log('Avatar URL used:', profile?.photos?.[0] || defaultAvatar);
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Header avec photo */}
         <View style={styles.header}>
           {profile ? (
@@ -176,6 +191,20 @@ export default function ProfileScreen() {
 
               {profile.bio && (
                 <Text style={styles.bio}>{profile.bio}</Text>
+              )}
+
+              {/* Vidéo de profil */}
+              {profile.videoUrl && (
+                <View style={styles.videoContainer}>
+                  <Video
+                    source={{ uri: profile.videoUrl }}
+                    style={styles.profileVideo}
+                    resizeMode={ResizeMode.COVER}
+                    shouldPlay={false}
+                    isLooping={false}
+                    useNativeControls
+                  />
+                </View>
               )}
             </>
           ) : (
@@ -410,6 +439,17 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  videoContainer: {
+    width: '100%',
+    marginTop: spacing.lg,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  profileVideo: {
+    width: '100%',
+    height: 200,
+    backgroundColor: colors.surface,
   },
 
   // Stats

@@ -25,8 +25,12 @@ CREATE POLICY "Authenticated users can create connections" ON connections FOR IN
   );
 
 -- Fonction pour créer une connexion instantanée
--- Vérifie que seules les femmes peuvent contacter les hommes directement
--- et que seuls les non-binaires peuvent contacter les non-binaires directement
+-- Règles de messagerie directe:
+-- - Femme → Homme : OK (elle a le pouvoir d'initier)
+-- - Homme → Femme : REFUSÉ (il doit envoyer une invitation)
+-- - Femme → Femme : OK (égalité)
+-- - Homme → Homme : OK (égalité)
+-- - Non-binaire ↔ Tout le monde : REFUSÉ (invitation obligatoire)
 CREATE OR REPLACE FUNCTION create_instant_connection(
   p_from_user_id UUID,
   p_to_user_id UUID
@@ -44,16 +48,21 @@ BEGIN
   SELECT gender INTO v_from_gender FROM profiles WHERE id = p_from_user_id;
   SELECT gender INTO v_to_gender FROM profiles WHERE id = p_to_user_id;
 
-  -- Vérifier les permissions
-  -- Female → Male : OK
-  -- Non-binary → Non-binary : OK
-  -- Autres cas : REFUSÉ
-  IF NOT (
-    (v_from_gender = 'female' AND v_to_gender = 'male') OR
-    (v_from_gender = 'non_binary' AND v_to_gender = 'non_binary')
-  ) THEN
+  -- Vérifier les permissions de messagerie directe
+  -- Non-binaire : toujours invitation obligatoire
+  IF v_from_gender = 'non-binaire' OR v_to_gender = 'non-binaire' THEN
     RAISE EXCEPTION 'Message direct non autorisé entre ces profils';
   END IF;
+
+  -- Homme → Femme : invitation obligatoire
+  IF v_from_gender = 'homme' AND v_to_gender = 'femme' THEN
+    RAISE EXCEPTION 'Message direct non autorisé entre ces profils';
+  END IF;
+
+  -- Tous les autres cas sont autorisés:
+  -- - Femme → Homme : OK
+  -- - Femme → Femme : OK
+  -- - Homme → Homme : OK
 
   -- S'assurer que user1_id < user2_id pour la contrainte UNIQUE
   IF p_from_user_id < p_to_user_id THEN
