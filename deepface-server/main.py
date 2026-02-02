@@ -28,11 +28,11 @@ app.add_middleware(
 )
 
 # Configuration
-# Seuil ajusté pour être plus tolérant aux variations de lumière/angle
-SIMILARITY_THRESHOLD = 0.45  # Seuil de distance (plus haut = plus tolérant)
+# Seuil très tolérant pour accepter les variations de lumière/angle/qualité mobile
+SIMILARITY_THRESHOLD = 0.65  # Seuil de distance très tolérant
 MIN_MATCHING_PHOTOS = 1  # Minimum de photos qui doivent correspondre (1 sur 3)
-MODEL_NAME = "Facenet512"  # Modèle plus tolérant que ArcFace, bon équilibre précision/tolérance
-DETECTOR_BACKEND = "retinaface"  # Détecteur de visage précis
+MODEL_NAME = "VGG-Face"  # Modèle le plus tolérant, bon pour photos mobiles
+DETECTOR_BACKEND = "opencv"  # Détecteur plus rapide et tolérant
 
 # Secret pour sécuriser l'API (à configurer en variable d'environnement)
 API_SECRET = os.getenv("API_SECRET", "shy-verification-secret-change-me")
