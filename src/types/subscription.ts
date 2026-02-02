@@ -18,6 +18,9 @@ export interface UserLimits {
   date: string; // YYYY-MM-DD
   likesUsed: number;
   messagesUsed: number;
+  superLikesUsed: number;
+  rewindsUsed: number;
+  quickMeetProposalsUsed: number;
   lastResetAt: string;
 }
 

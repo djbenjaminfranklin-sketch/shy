@@ -176,7 +176,13 @@ export const en: TranslationKeys = {
     comingSoon: 'Coming soon',
     comingSoonMessage: 'Subscriptions will be available very soon!',
     welcomePremium: 'Welcome to SHY Premium!',
+    welcomePlus: 'Welcome to SHY+!',
     tryFree: 'Try for FREE',
+    promoCode: 'Promo code',
+    promoCodePlaceholder: 'Enter a code',
+    promoCodeApply: 'Apply',
+    promoCodeInvalid: 'Invalid code',
+    promoCodeSuccess: 'Code applied!',
     subscribe: 'Subscribe',
     termsApple: 'Payment will be charged to your iTunes Account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your App Store account settings after purchase.',
     termsOfService: 'Terms of Service',
@@ -313,6 +319,13 @@ export const en: TranslationKeys = {
     sendFirstMessage: 'Send a first message to get to know each other',
   },
 
+  // Chat
+  chat: {
+    seeOriginal: 'See original',
+    seeTranslation: 'See translation',
+    translated: 'Translated',
+  },
+
   // Direct Messaging
   directMessage: {
     sendMessage: 'Send a message',
@@ -353,6 +366,13 @@ export const en: TranslationKeys = {
     cameraPermission: 'Please allow access to the camera in settings.',
     photoError: 'Unable to select photo. Please try again.',
     cameraError: 'Unable to take photo. Please try again.',
+
+    // Profile video
+    addVideo: 'Add a video',
+    optional: 'Optional',
+    selectVideo: 'Select a video',
+    videoBonus: 'Profiles with video get 3x more views and receive more matches!',
+    videoError: 'Unable to select video. Please try again.',
 
     // Face verification
     verifyIdentity: 'Verify your identity',
@@ -495,6 +515,8 @@ export const en: TranslationKeys = {
     trendUp: 'Your connection is improving',
     trendDown: 'Exchange more regularly',
     trendStable: 'Your rhythm is steady',
+    // Premium
+    upgradeForDetails: 'SHY+ to see details',
   },
 
   // Comfort Level
@@ -563,6 +585,11 @@ export const en: TranslationKeys = {
     // Safety
     safetyInfo: 'Always choose a public place. Let someone know about your meeting.',
     safetyTip: 'Meet in a busy public place. Your safety is important.',
+    // Limit reached
+    limitReachedTitle: 'Proposal sent!',
+    limitReachedText: 'You have used your proposal for today ({count}/{limit}). Great job taking action!',
+    upgradeForMore: 'With SHY+, propose unlimited coffee breaks',
+    upgradeToPremium: 'Upgrade to SHY+',
   },
 
   // Engagement Score
@@ -581,5 +608,27 @@ export const en: TranslationKeys = {
     moderate: 'Moderate',
     casual: 'Casual',
     new: 'New',
+    // Premium
+    upgradeForDetails: 'SHY+ to see breakdown',
+  },
+
+  // Boost
+  boost: {
+    title: 'Boost my profile',
+    description: 'Temporarily increase your profile visibility',
+    activate: 'Activate a boost',
+    buy: 'Buy boosts',
+    active: 'Boost active',
+    activeHint: 'Your profile is being highlighted',
+    remaining: '{count} boost(s) remaining',
+    noBoosts: 'No boosts available',
+    duration: '{minutes} minutes of increased visibility',
+    disclaimer: 'Boost increases visibility, results not guaranteed',
+    orBuyMore: 'Or buy more boosts',
+    // Products
+    singleBoost: '1 Boost',
+    packOf: 'Pack of {count}',
+    bestValue: 'Best value',
+    popular: 'Popular',
   },
 };

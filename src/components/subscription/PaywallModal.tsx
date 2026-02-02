@@ -18,7 +18,7 @@ interface PaywallModalProps {
   visible: boolean;
   onClose: () => void;
   onUpgrade?: () => void;
-  feature: 'likes' | 'messages' | 'whoLikedYou' | 'filters' | 'boost' | 'autoReply' | 'availabilityMode';
+  feature: 'likes' | 'superLikes' | 'rewind' | 'messages' | 'whoLikedYou' | 'filters' | 'boost' | 'autoReply' | 'availabilityMode' | 'quickMeet' | 'mode';
   remainingCount?: number;
   currentUsage?: number;
   limit?: number;
@@ -28,8 +28,36 @@ const FEATURE_INFO = {
   likes: {
     icon: '❤️',
     title: 'Plus de likes disponibles',
-    description: 'Vous avez utilisé tous vos likes pour aujourd\'hui.',
-    benefit: 'Passez à SHY+ pour plus de likes et trouver l\'amour plus vite !',
+    description: 'Vous avez utilisé tous vos likes pour aujourd\'hui. Revenez demain ou passez à SHY+ !',
+    benefit: 'Ralentir améliore les rencontres, mais avec SHY+, likez sans limites !',
+    minPlan: 'plus' as PlanType,
+  },
+  superLikes: {
+    icon: '⭐',
+    title: 'Super Like utilisé',
+    description: 'Votre Super Like du jour a été envoyé ! C\'est un signal fort qui montre votre intérêt.',
+    benefit: 'Avec SHY+, envoyez 5 Super Likes par jour pour vous démarquer !',
+    minPlan: 'plus' as PlanType,
+  },
+  rewind: {
+    icon: '↩️',
+    title: 'Rewind utilisé',
+    description: 'Vous avez utilisé votre rewind du jour. Prenez le temps de bien regarder chaque profil !',
+    benefit: 'Avec SHY+, revenez en arrière autant que vous voulez.',
+    minPlan: 'plus' as PlanType,
+  },
+  quickMeet: {
+    icon: '☕',
+    title: 'Proposition Quick Meet utilisée',
+    description: 'Vous avez proposé un Quick Meet aujourd\'hui. C\'est super de passer à l\'action !',
+    benefit: 'Avec SHY+, proposez des rencontres sans limites.',
+    minPlan: 'plus' as PlanType,
+  },
+  mode: {
+    icon: '⚡',
+    title: 'Modes de disponibilité',
+    description: 'Limite hebdomadaire atteinte pour les modes de disponibilité.',
+    benefit: 'Passez à SHY+ pour activer des modes illimités !',
     minPlan: 'plus' as PlanType,
   },
   messages: {

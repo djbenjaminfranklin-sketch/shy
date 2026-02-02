@@ -36,7 +36,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     const loadLanguage = async () => {
       try {
         const savedLang = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
-        if (savedLang && (savedLang === 'fr' || savedLang === 'en')) {
+        if (savedLang && ['fr', 'en', 'es', 'it', 'de', 'he'].includes(savedLang)) {
           setLanguageState(savedLang as SupportedLanguage);
           setGlobalLanguage(savedLang as SupportedLanguage);
           setTranslations(getTranslations());

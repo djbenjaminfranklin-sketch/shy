@@ -31,9 +31,11 @@ import { Avatar } from '../../src/components/ui/Avatar';
 import { PaywallModal } from '../../src/components/subscription/PaywallModal';
 import { LimitIndicator } from '../../src/components/subscription/LimitIndicator';
 import { RhythmScoreCard } from '../../src/components/rhythm/RhythmScoreCard';
+import { EngagementScoreCard } from '../../src/components/engagement/EngagementScoreCard';
 import { ComfortLevelIndicator, ComfortLevelModal } from '../../src/components/comfort';
 import { QuickMeetButton, QuickMeetModal } from '../../src/components/quickmeet';
 import { useQuickMeet } from '../../src/hooks/useQuickMeet';
+import { PlanFeatures, PLAN_FEATURES } from '../../src/constants/subscriptions';
 
 export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
@@ -55,6 +57,9 @@ export default function ChatScreen() {
   const [showRhythmExpanded, setShowRhythmExpanded] = useState(false);
   const [showComfortModal, setShowComfortModal] = useState(false);
   const [showQuickMeetModal, setShowQuickMeetModal] = useState(false);
+
+  // Premium features
+  const [planFeatures, setPlanFeatures] = useState<PlanFeatures>(PLAN_FEATURES.free);
 
   // Quick Meet hook
   const {
@@ -104,7 +109,7 @@ export default function ChatScreen() {
     loadOtherUser();
   }, [conversationId, user]);
 
-  // Charger les limites de messages
+  // Charger les limites de messages et features premium
   useEffect(() => {
     if (!user) return;
 
@@ -114,6 +119,7 @@ export default function ChatScreen() {
         const planId = (subscription?.planId || 'free') as PlanType;
         const plan = SUBSCRIPTION_PLANS_BY_ID[planId];
         setMessagesTotal(plan?.features.dailyMessages ?? -1);
+        setPlanFeatures(plan?.features ?? PLAN_FEATURES.free);
 
         const { limits } = await subscriptionsService.getUserLimits(user.id);
         setMessagesUsed(limits?.messagesUsed || 0);
@@ -353,8 +359,21 @@ export default function ChatScreen() {
             conversationId={conversationId}
             compact={!showRhythmExpanded}
             onPress={() => setShowRhythmExpanded(!showRhythmExpanded)}
+            canSeeDetailedInsights={planFeatures.connectionRhythmDetailedInsights}
+            onUpgrade={handleUpgrade}
           />
         </View>
+
+        {/* Engagement Score Card */}
+        {otherUserId && (
+          <View style={styles.engagementContainer}>
+            <EngagementScoreCard
+              userId={otherUserId}
+              showDetails={planFeatures.engagementScoreDetailedBreakdown}
+              onUpgrade={handleUpgrade}
+            />
+          </View>
+        )}
 
         {/* Comfort Level Indicator */}
         <ComfortLevelIndicator
@@ -506,6 +525,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   rhythmContainer: {
+    paddingHorizontal: spacing.md,
+  },
+  engagementContainer: {
     paddingHorizontal: spacing.md,
   },
   quickMeetContainer: {

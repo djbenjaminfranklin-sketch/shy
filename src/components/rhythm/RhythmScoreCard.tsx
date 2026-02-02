@@ -4,14 +4,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useConnectionRhythm } from '../../hooks/useConnectionRhythm';
 import { colors } from '../../theme/colors';
+import { spacing, borderRadius } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
 
 interface RhythmScoreCardProps {
   conversationId: string;
   compact?: boolean;
   onPress?: () => void;
+  canSeeDetailedInsights?: boolean;
+  onUpgrade?: () => void;
 }
 
-export function RhythmScoreCard({ conversationId, compact = false, onPress }: RhythmScoreCardProps) {
+export function RhythmScoreCard({
+  conversationId,
+  compact = false,
+  onPress,
+  canSeeDetailedInsights = true,
+  onUpgrade,
+}: RhythmScoreCardProps) {
   const { t } = useLanguage();
   const {
     isLoading,
@@ -70,7 +80,14 @@ export function RhythmScoreCard({ conversationId, compact = false, onPress }: Rh
             {display.labelText}
           </Text>
         </View>
-        {trendDisplay && (
+        {/* SHY+ badge for non-premium users */}
+        {!canSeeDetailedInsights && !compact && (
+          <TouchableOpacity style={styles.premiumBadge} onPress={onUpgrade}>
+            <Ionicons name="star" size={12} color={colors.white} />
+            <Text style={styles.premiumBadgeText}>SHY+</Text>
+          </TouchableOpacity>
+        )}
+        {canSeeDetailedInsights && trendDisplay && (
           <View style={styles.trendContainer}>
             <Text style={styles.trendIcon}>{trendDisplay.icon}</Text>
           </View>
@@ -79,7 +96,7 @@ export function RhythmScoreCard({ conversationId, compact = false, onPress }: Rh
 
       {!compact && (
         <>
-          {/* Score circle */}
+          {/* Score circle - always visible */}
           <View style={styles.scoreContainer}>
             <View style={[styles.scoreCircle, { borderColor: display.color }]}>
               <Text style={[styles.scoreValue, { color: display.color }]}>{totalScore}</Text>
@@ -87,27 +104,43 @@ export function RhythmScoreCard({ conversationId, compact = false, onPress }: Rh
             </View>
           </View>
 
-          {/* Description */}
-          <Text style={styles.description}>{display.description}</Text>
+          {/* Details - only for premium users */}
+          {canSeeDetailedInsights ? (
+            <>
+              {/* Description */}
+              <Text style={styles.description}>{display.description}</Text>
 
-          {/* Trend label */}
-          {trendDisplay && (
-            <Text style={styles.trendLabel}>{trendDisplay.label}</Text>
+              {/* Trend label */}
+              {trendDisplay && (
+                <Text style={styles.trendLabel}>{trendDisplay.label}</Text>
+              )}
+
+              {/* Info link */}
+              <TouchableOpacity style={styles.infoLink}>
+                <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
+                <Text style={styles.infoText}>{t('connectionRhythm.howItWorks')}</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            /* Premium upsell for details */
+            <TouchableOpacity style={styles.premiumOverlay} onPress={onUpgrade}>
+              <Ionicons name="lock-closed" size={16} color={colors.primary} />
+              <Text style={styles.premiumOverlayText}>{t('connectionRhythm.upgradeForDetails')}</Text>
+            </TouchableOpacity>
           )}
-
-          {/* Info link */}
-          <TouchableOpacity style={styles.infoLink}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.infoText}>{t('connectionRhythm.howItWorks')}</Text>
-          </TouchableOpacity>
         </>
       )}
 
       {compact && (
         <View style={styles.compactScore}>
           <Text style={[styles.compactScoreValue, { color: display.color }]}>{totalScore}%</Text>
-          {trendDisplay && (
+          {canSeeDetailedInsights && trendDisplay && (
             <Text style={styles.compactTrendIcon}>{trendDisplay.icon}</Text>
+          )}
+          {!canSeeDetailedInsights && (
+            <TouchableOpacity onPress={onUpgrade} style={styles.compactPremiumBadge}>
+              <Ionicons name="star" size={10} color={colors.white} />
+            </TouchableOpacity>
           )}
         </View>
       )}
@@ -281,6 +314,42 @@ const styles = StyleSheet.create({
   compactTrendIcon: {
     fontSize: 14,
     marginLeft: 4,
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+  },
+  premiumBadgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 11,
+  },
+  premiumOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.sm,
+  },
+  premiumOverlayText: {
+    ...typography.bodyMedium,
+    color: colors.primary,
+  },
+  compactPremiumBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+    padding: 4,
+    marginLeft: 6,
   },
 });
 

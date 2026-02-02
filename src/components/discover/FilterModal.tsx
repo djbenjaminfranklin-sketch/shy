@@ -35,6 +35,8 @@ interface FilterModalProps {
   onActivateTravelMode?: (city: TravelLocation, arrivalDate: Date) => Promise<{ success: boolean; error: string | null }>;
   onDeactivateTravelMode?: () => Promise<{ success: boolean; error: string | null }>;
   onUpgradeToPremium?: () => void;
+  // Premium filters
+  canUseAllFilters?: boolean;
 }
 
 export function FilterModal({
@@ -47,6 +49,7 @@ export function FilterModal({
   onActivateTravelMode,
   onDeactivateTravelMode,
   onUpgradeToPremium,
+  canUseAllFilters = false,
 }: FilterModalProps) {
   const [localFilters, setLocalFilters] = useState<ProfileFilters>(filters);
 
@@ -433,36 +436,70 @@ export function FilterModal({
             </View>
           </View>
 
-          {/* Genre */}
+          {/* Genre - Premium */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Genre</Text>
-            <Text style={styles.sectionHint}>Laissez vide pour tout afficher</Text>
-            <View style={styles.chipContainer}>
-              {GENDER_LIST.map((gender) => (
-                <Chip
-                  key={gender.id}
-                  label={gender.label}
-                  selected={localFilters.genders.includes(gender.id)}
-                  onPress={() => toggleGender(gender.id)}
-                />
-              ))}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Genre</Text>
+              {!canUseAllFilters && (
+                <TouchableOpacity style={styles.premiumFilterBadge} onPress={onUpgradeToPremium}>
+                  <Ionicons name="star" size={10} color={colors.white} />
+                  <Text style={styles.premiumFilterBadgeText}>SHY+</Text>
+                </TouchableOpacity>
+              )}
             </View>
+            {canUseAllFilters ? (
+              <>
+                <Text style={styles.sectionHint}>Laissez vide pour tout afficher</Text>
+                <View style={styles.chipContainer}>
+                  {GENDER_LIST.map((gender) => (
+                    <Chip
+                      key={gender.id}
+                      label={gender.label}
+                      selected={localFilters.genders.includes(gender.id)}
+                      onPress={() => toggleGender(gender.id)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : (
+              <TouchableOpacity style={styles.premiumFilterOverlay} onPress={onUpgradeToPremium}>
+                <Ionicons name="lock-closed" size={16} color={colors.primary} />
+                <Text style={styles.premiumFilterOverlayText}>Débloquez avec SHY+</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* Intention */}
+          {/* Intention - Premium */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Intention</Text>
-            <Text style={styles.sectionHint}>Laissez vide pour tout afficher</Text>
-            <View style={styles.chipContainer}>
-              {INTENTION_LIST.map((intention) => (
-                <Chip
-                  key={intention.id}
-                  label={intention.labelShort}
-                  selected={localFilters.intentions.includes(intention.id)}
-                  onPress={() => toggleIntention(intention.id)}
-                />
-              ))}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Intention</Text>
+              {!canUseAllFilters && (
+                <TouchableOpacity style={styles.premiumFilterBadge} onPress={onUpgradeToPremium}>
+                  <Ionicons name="star" size={10} color={colors.white} />
+                  <Text style={styles.premiumFilterBadgeText}>SHY+</Text>
+                </TouchableOpacity>
+              )}
             </View>
+            {canUseAllFilters ? (
+              <>
+                <Text style={styles.sectionHint}>Laissez vide pour tout afficher</Text>
+                <View style={styles.chipContainer}>
+                  {INTENTION_LIST.map((intention) => (
+                    <Chip
+                      key={intention.id}
+                      label={intention.labelShort}
+                      selected={localFilters.intentions.includes(intention.id)}
+                      onPress={() => toggleIntention(intention.id)}
+                    />
+                  ))}
+                </View>
+              </>
+            ) : (
+              <TouchableOpacity style={styles.premiumFilterOverlay} onPress={onUpgradeToPremium}>
+                <Ionicons name="lock-closed" size={16} color={colors.primary} />
+                <Text style={styles.premiumFilterOverlayText}>Débloquez avec SHY+</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
 
@@ -667,6 +704,43 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.error,
     textAlign: 'center',
+  },
+  // Premium filter styles
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  premiumFilterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  premiumFilterBadgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 10,
+  },
+  premiumFilterOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.sm,
+  },
+  premiumFilterOverlayText: {
+    ...typography.bodyMedium,
+    color: colors.primary,
   },
 });
 

@@ -174,7 +174,13 @@ export const fr = {
     comingSoon: 'Bientôt disponible',
     comingSoonMessage: 'Les abonnements seront disponibles très prochainement !',
     welcomePremium: 'Bienvenue dans SHY Premium !',
+    welcomePlus: 'Bienvenue dans SHY+ !',
     tryFree: 'Essayer GRATUITEMENT',
+    promoCode: 'Code promo',
+    promoCodePlaceholder: 'Entrer un code',
+    promoCodeApply: 'Appliquer',
+    promoCodeInvalid: 'Code invalide',
+    promoCodeSuccess: 'Code appliqué !',
     subscribe: "S'abonner",
     termsApple: "Le paiement sera effectué sur votre compte iTunes lors de la confirmation de l'achat. L'abonnement se renouvelle automatiquement sauf s'il est annulé au moins 24 heures avant la fin de la période en cours. Votre compte sera facturé pour le renouvellement dans les 24 heures précédant la fin de la période en cours. Vous pouvez gérer et annuler vos abonnements dans les réglages de votre compte App Store après l'achat.",
     termsOfService: "Conditions d'utilisation",
@@ -311,6 +317,13 @@ export const fr = {
     sendFirstMessage: 'Envoyez un premier message pour faire connaissance',
   },
 
+  // Chat
+  chat: {
+    seeOriginal: 'Voir original',
+    seeTranslation: 'Voir traduction',
+    translated: 'Traduit',
+  },
+
   // Direct Messaging
   directMessage: {
     sendMessage: 'Envoyer un message',
@@ -351,6 +364,13 @@ export const fr = {
     cameraPermission: "Veuillez autoriser l'accès à la caméra dans les paramètres.",
     photoError: 'Impossible de sélectionner la photo. Veuillez réessayer.',
     cameraError: 'Impossible de prendre la photo. Veuillez réessayer.',
+
+    // Profile video
+    addVideo: 'Ajouter une vidéo',
+    optional: 'Optionnel',
+    selectVideo: 'Sélectionner une vidéo',
+    videoBonus: 'Les profils avec vidéo sont 3x plus vus et reçoivent plus de matchs !',
+    videoError: 'Impossible de sélectionner la vidéo. Veuillez réessayer.',
 
     // Face verification
     verifyIdentity: 'Vérifiez votre identité',
@@ -493,6 +513,8 @@ export const fr = {
     trendUp: 'Votre connexion s\'améliore',
     trendDown: 'Échangez plus régulièrement',
     trendStable: 'Votre rythme est constant',
+    // Premium
+    upgradeForDetails: 'SHY+ pour voir les détails',
   },
 
   // Comfort Level
@@ -561,6 +583,11 @@ export const fr = {
     // Safety
     safetyInfo: 'Choisissez toujours un lieu public. Prévenez un proche de votre rendez-vous.',
     safetyTip: 'Rencontrez-vous dans un lieu public fréquenté. Votre sécurité est importante.',
+    // Limit reached
+    limitReachedTitle: 'Proposition envoyée !',
+    limitReachedText: 'Vous avez utilisé votre proposition du jour ({count}/{limit}). C\'est super de passer à l\'action !',
+    upgradeForMore: 'Avec SHY+, proposez des pauses sans limites',
+    upgradeToPremium: 'Passer à SHY+',
   },
 
   // Engagement Score
@@ -579,6 +606,28 @@ export const fr = {
     moderate: 'Modéré',
     casual: 'Occasionnel',
     new: 'Nouveau',
+    // Premium
+    upgradeForDetails: 'SHY+ pour voir la répartition',
+  },
+
+  // Boost
+  boost: {
+    title: 'Booster mon profil',
+    description: 'Augmente temporairement la visibilité de ton profil',
+    activate: 'Activer un boost',
+    buy: 'Acheter des boosts',
+    active: 'Boost actif',
+    activeHint: 'Ton profil est mis en avant',
+    remaining: '{count} boost(s) restant(s)',
+    noBoosts: 'Aucun boost disponible',
+    duration: '{minutes} minutes de visibilité accrue',
+    disclaimer: 'Le boost augmente la visibilité, sans garantie de résultats',
+    orBuyMore: 'Ou acheter plus de boosts',
+    // Products
+    singleBoost: '1 Boost',
+    packOf: 'Pack de {count}',
+    bestValue: 'Meilleure offre',
+    popular: 'Populaire',
   },
 };
 

@@ -33,11 +33,12 @@ export interface PlanFeatures {
   // Core features (internal, not displayed)
   invitationsPerDay: number;
   superLikesPerDay: number;
+  rewindPerDay: number; // -1 = unlimited
   boostsPerWeek: number;
   seeWhoLikedYou: boolean;
   allFilters: boolean;
   invisibleMode: boolean;
-  rewind: boolean;
+  rewind: boolean; // @deprecated - use rewindPerDay
   premiumBadge: boolean;
   prioritySupport: boolean;
   // Availability mode features (KEY SELLING POINT)
@@ -71,12 +72,13 @@ export interface PlanFeatures {
 export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   free: {
     invitationsPerDay: 10,
-    superLikesPerDay: 0,
+    superLikesPerDay: 1, // 1 gratuit/jour - standard du marché
+    rewindPerDay: 1, // 1 gratuit/jour
     boostsPerWeek: 0,
     seeWhoLikedYou: false,
     allFilters: false,
     invisibleMode: false,
-    rewind: false,
+    rewind: false, // @deprecated
     premiumBadge: false,
     prioritySupport: false,
     // Availability mode - LIMITED
@@ -89,7 +91,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     // Comfort Level
     comfortLevelEnabled: true,
     // Quick Meet
-    quickMeetProposalsPerDay: 1,
+    quickMeetProposalsPerDay: 1, // 1 gratuit/jour - levier différenciant
     quickMeetPriority: false,
     // Engagement Score
     engagementScoreVisible: true,
@@ -97,7 +99,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     // Travel Mode
     travelModeEnabled: false,
     // Internal aliases
-    dailyLikes: 10,
+    dailyLikes: 20, // 20/jour gratuits - pas brutal, message doux
     dailyMessages: -1,
     canSeeWhoLikedYou: false,
     canBoostProfile: false,
@@ -107,12 +109,13 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   },
   plus: {
     invitationsPerDay: -1,
-    superLikesPerDay: 0,
+    superLikesPerDay: 5, // 5/jour pour Plus
+    rewindPerDay: -1, // Illimité
     boostsPerWeek: 0,
     seeWhoLikedYou: false,
     allFilters: true,
     invisibleMode: true,
-    rewind: false,
+    rewind: true, // @deprecated
     premiumBadge: false,
     prioritySupport: false,
     // Availability mode - UNLIMITED 24h
@@ -125,7 +128,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     // Comfort Level
     comfortLevelEnabled: true,
     // Quick Meet
-    quickMeetProposalsPerDay: -1,
+    quickMeetProposalsPerDay: -1, // Illimité
     quickMeetPriority: true,
     // Engagement Score
     engagementScoreVisible: true,
@@ -133,7 +136,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     // Travel Mode
     travelModeEnabled: false,
     // Internal aliases
-    dailyLikes: -1,
+    dailyLikes: -1, // Illimité
     dailyMessages: -1,
     canSeeWhoLikedYou: false,
     canBoostProfile: false,
@@ -143,12 +146,13 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   },
   premium: {
     invitationsPerDay: -1,
-    superLikesPerDay: 0,
+    superLikesPerDay: -1, // Illimité pour Premium
+    rewindPerDay: -1, // Illimité
     boostsPerWeek: 0,
     seeWhoLikedYou: false,
     allFilters: true,
     invisibleMode: true,
-    rewind: false,
+    rewind: true, // @deprecated
     premiumBadge: true,
     prioritySupport: true,
     // Availability mode - FULL CONTROL
@@ -161,7 +165,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     // Comfort Level
     comfortLevelEnabled: true,
     // Quick Meet
-    quickMeetProposalsPerDay: -1,
+    quickMeetProposalsPerDay: -1, // Illimité
     quickMeetPriority: true,
     // Engagement Score
     engagementScoreVisible: true,
@@ -169,7 +173,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     // Travel Mode
     travelModeEnabled: true, // PREMIUM ONLY
     // Internal aliases
-    dailyLikes: -1,
+    dailyLikes: -1, // Illimité
     dailyMessages: -1,
     canSeeWhoLikedYou: false,
     canBoostProfile: false,
@@ -219,7 +223,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     prices: [
       { duration: 'week', price: 4.99, productId: 'shy_plus_week' },
       { duration: 'month', price: 9.99, popular: true, productId: 'shy_plus_month' },
-      { duration: '3months', price: 24.99, pricePerMonth: 8.33, savings: 17, productId: 'shy_plus_quarterly' },
+      { duration: '3months', price: 24.99, pricePerMonth: 8.33, savings: 17, productId: 'shy_plus_3months' },
       { duration: '6months', price: 44.99, pricePerMonth: 7.50, savings: 25, productId: 'shy_plus_6months' },
       { duration: 'year', price: 69.99, pricePerMonth: 5.83, savings: 42, bestValue: true, productId: 'shy_plus_year' },
     ],
@@ -259,12 +263,31 @@ export const SUBSCRIPTION_PLANS_BY_ID: Record<PlanType, SubscriptionPlan> = SUBS
 }, {} as Record<PlanType, SubscriptionPlan>);
 
 // Duration labels (multilingual)
-export const DURATION_LABELS: Record<PlanDuration, { fr: string; en: string; short: { fr: string; en: string } }> = {
-  week: { fr: '1 semaine', en: '1 week', short: { fr: '1 sem.', en: '1 wk' } },
-  month: { fr: '1 mois', en: '1 month', short: { fr: '1 mois', en: '1 mo' } },
-  '3months': { fr: '3 mois', en: '3 months', short: { fr: '3 mois', en: '3 mo' } },
-  '6months': { fr: '6 mois', en: '6 months', short: { fr: '6 mois', en: '6 mo' } },
-  year: { fr: '1 an', en: '1 year', short: { fr: '1 an', en: '1 yr' } },
+import { SupportedLanguage } from '../i18n';
+
+type DurationLabelEntry = Record<SupportedLanguage, string> & { short: Record<SupportedLanguage, string> };
+
+export const DURATION_LABELS: Record<PlanDuration, DurationLabelEntry> = {
+  week: {
+    fr: '1 semaine', en: '1 week', es: '1 semana', it: '1 settimana', de: '1 Woche', he: 'שבוע 1',
+    short: { fr: '1 sem.', en: '1 wk', es: '1 sem.', it: '1 sett.', de: '1 Wo.', he: '1 שב.' }
+  },
+  month: {
+    fr: '1 mois', en: '1 month', es: '1 mes', it: '1 mese', de: '1 Monat', he: 'חודש 1',
+    short: { fr: '1 mois', en: '1 mo', es: '1 mes', it: '1 mese', de: '1 Mo.', he: '1 חו.' }
+  },
+  '3months': {
+    fr: '3 mois', en: '3 months', es: '3 meses', it: '3 mesi', de: '3 Monate', he: '3 חודשים',
+    short: { fr: '3 mois', en: '3 mo', es: '3 mes', it: '3 mesi', de: '3 Mo.', he: '3 חו.' }
+  },
+  '6months': {
+    fr: '6 mois', en: '6 months', es: '6 meses', it: '6 mesi', de: '6 Monate', he: '6 חודשים',
+    short: { fr: '6 mois', en: '6 mo', es: '6 mes', it: '6 mesi', de: '6 Mo.', he: '6 חו.' }
+  },
+  year: {
+    fr: '1 an', en: '1 year', es: '1 año', it: '1 anno', de: '1 Jahr', he: 'שנה 1',
+    short: { fr: '1 an', en: '1 yr', es: '1 año', it: '1 anno', de: '1 Jr.', he: '1 שנה' }
+  },
 };
 
 // Helper functions
@@ -309,3 +332,35 @@ export const AUTO_REPLY_TEMPLATES = [
 ] as const;
 
 export type AutoReplyTemplateId = typeof AUTO_REPLY_TEMPLATES[number]['id'];
+
+// ============ BOOST PRODUCTS ============
+
+import { BoostProduct } from '../types/boost';
+
+export const BOOST_DURATION_MINUTES = 30;
+
+export const BOOST_PRODUCTS: BoostProduct[] = [
+  {
+    id: 'boost_1',
+    productId: 'shy_boost_1x',
+    quantity: 1,
+    price: 3.99,
+    priceLabel: '3,99 €',
+  },
+  {
+    id: 'boost_3',
+    productId: 'shy_boost_3x',
+    quantity: 3,
+    price: 8.99,
+    priceLabel: '8,99 €',
+    popular: true,
+  },
+  {
+    id: 'boost_10',
+    productId: 'shy_boost_10x',
+    quantity: 10,
+    price: 24.99,
+    priceLabel: '24,99 €',
+    bestValue: true,
+  },
+];

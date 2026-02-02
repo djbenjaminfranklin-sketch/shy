@@ -1,12 +1,16 @@
 import { getLocales } from 'expo-localization';
-import { fr, en, TranslationKeys } from './translations';
+import { fr, en, es, it, de, he, TranslationKeys } from './translations';
 
 // Supported languages
-export type SupportedLanguage = 'fr' | 'en';
+export type SupportedLanguage = 'fr' | 'en' | 'es' | 'it' | 'de' | 'he';
 
 const translations: Record<SupportedLanguage, TranslationKeys> = {
   fr,
   en,
+  es,
+  it,
+  de,
+  he,
 };
 
 // Get device language
@@ -77,5 +81,19 @@ export const t = (path: TranslationPath): string => {
   return typeof value === 'string' ? value : path;
 };
 
+// Helper function with parameter interpolation
+export const tWithParams = (path: TranslationPath, params: Record<string, string | number>): string => {
+  let text = t(path);
+  // Support named params: {count}, {name}, etc.
+  Object.entries(params).forEach(([key, value]) => {
+    text = text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  });
+  // Support indexed params: {0}, {1}, etc.
+  Object.values(params).forEach((value, index) => {
+    text = text.replace(new RegExp(`\\{${index}\\}`, 'g'), String(value));
+  });
+  return text;
+};
+
 // Export translations for direct access
-export { fr, en, TranslationKeys };
+export { fr, en, es, it, de, he, TranslationKeys };

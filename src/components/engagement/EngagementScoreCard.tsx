@@ -1,18 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useEngagementScore } from '../../hooks/useEngagementScore';
 import { colors } from '../../theme/colors';
+import { spacing, borderRadius } from '../../theme/spacing';
+import { typography } from '../../theme/typography';
 
 interface EngagementScoreCardProps {
   userId?: string;
   showDetails?: boolean;
+  onUpgrade?: () => void;
 }
 
 export function EngagementScoreCard({
   userId,
   showDetails = true,
+  onUpgrade,
 }: EngagementScoreCardProps) {
   const { t } = useLanguage();
   const {
@@ -42,9 +46,17 @@ export function EngagementScoreCard({
         <View style={styles.levelInfo}>
           <Text style={styles.levelIcon}>{levelDisplay.icon}</Text>
           <View>
-            <Text style={[styles.levelLabel, { color: levelDisplay.color }]}>
-              {levelDisplay.label}
-            </Text>
+            <View style={styles.levelLabelRow}>
+              <Text style={[styles.levelLabel, { color: levelDisplay.color }]}>
+                {levelDisplay.label}
+              </Text>
+              {!showDetails && (
+                <TouchableOpacity style={styles.premiumBadge} onPress={onUpgrade}>
+                  <Ionicons name="star" size={10} color={colors.white} />
+                  <Text style={styles.premiumBadgeText}>SHY+</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             <Text style={styles.levelDesc}>{levelDisplay.description}</Text>
           </View>
         </View>
@@ -65,30 +77,37 @@ export function EngagementScoreCard({
         </View>
       )}
 
-      {/* Details */}
-      {showDetails && hasEnoughData && (
-        <View style={styles.detailsContainer}>
-          <ScoreBar
-            label={t('engagementScore.responsiveness')}
-            value={responsivenessScore}
-            color={levelDisplay.color}
-          />
-          <ScoreBar
-            label={t('engagementScore.conversation')}
-            value={conversationScore}
-            color={levelDisplay.color}
-          />
-          <ScoreBar
-            label={t('engagementScore.meetings')}
-            value={meetingScore}
-            color={levelDisplay.color}
-          />
-          <ScoreBar
-            label={t('engagementScore.activity')}
-            value={activityScore}
-            color={levelDisplay.color}
-          />
-        </View>
+      {/* Details - Premium only */}
+      {hasEnoughData && (
+        showDetails ? (
+          <View style={styles.detailsContainer}>
+            <ScoreBar
+              label={t('engagementScore.responsiveness')}
+              value={responsivenessScore}
+              color={levelDisplay.color}
+            />
+            <ScoreBar
+              label={t('engagementScore.conversation')}
+              value={conversationScore}
+              color={levelDisplay.color}
+            />
+            <ScoreBar
+              label={t('engagementScore.meetings')}
+              value={meetingScore}
+              color={levelDisplay.color}
+            />
+            <ScoreBar
+              label={t('engagementScore.activity')}
+              value={activityScore}
+              color={levelDisplay.color}
+            />
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.premiumOverlay} onPress={onUpgrade}>
+            <Ionicons name="lock-closed" size={16} color={colors.primary} />
+            <Text style={styles.premiumOverlayText}>{t('engagementScore.upgradeForDetails')}</Text>
+          </TouchableOpacity>
+        )
       )}
 
       {/* Info for new users */}
@@ -161,6 +180,11 @@ const styles = StyleSheet.create({
   },
   levelIcon: {
     fontSize: 32,
+  },
+  levelLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   levelLabel: {
     fontSize: 18,
@@ -254,6 +278,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     lineHeight: 16,
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  premiumBadgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 10,
+  },
+  premiumOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
+    marginTop: spacing.md,
+  },
+  premiumOverlayText: {
+    ...typography.bodyMedium,
+    color: colors.primary,
   },
 });
 

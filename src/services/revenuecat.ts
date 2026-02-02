@@ -51,6 +51,10 @@ export const PRODUCT_IDS = {
   PREMIUM_3MONTHS: 'shy_premium_3months',
   PREMIUM_6MONTHS: 'shy_premium_6months',
   PREMIUM_YEAR: 'shy_premium_year',
+  // Boosts (consumables)
+  BOOST_1X: 'shy_boost_1x',
+  BOOST_3X: 'shy_boost_3x',
+  BOOST_10X: 'shy_boost_10x',
 } as const;
 
 class RevenueCatService {
@@ -203,6 +207,36 @@ class RevenueCatService {
         console.log('ℹ️ User cancelled purchase');
       } else {
         console.error('❌ Purchase error:', error);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Achète un produit par son identifiant (pour les consumables comme les boosts)
+   */
+  async purchaseProduct(productId: string): Promise<CustomerInfo | null> {
+    if (!this.isAvailable) {
+      console.warn('Purchases not available in Expo Go');
+      throw new Error('Purchases not available in Expo Go');
+    }
+    try {
+      // Get the product from RevenueCat
+      const products = await Purchases.getProducts([productId]);
+
+      if (!products || products.length === 0) {
+        throw new Error(`Product ${productId} not found`);
+      }
+
+      const product = products[0];
+      const { customerInfo } = await Purchases.purchaseStoreProduct(product);
+      console.log('Purchase successful for product:', productId);
+      return customerInfo;
+    } catch (error: any) {
+      if (error.userCancelled) {
+        console.log('User cancelled purchase');
+      } else {
+        console.error('Purchase error:', error);
       }
       throw error;
     }

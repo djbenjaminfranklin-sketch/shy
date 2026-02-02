@@ -6,6 +6,7 @@ export const LANGUAGES = {
   it: { id: 'it', label: 'Italiano', flag: '🇮🇹' },
   pt: { id: 'pt', label: 'Português', flag: '🇵🇹' },
   ar: { id: 'ar', label: 'العربية', flag: '🇸🇦' },
+  he: { id: 'he', label: 'עברית', flag: '🇮🇱' },
   zh: { id: 'zh', label: '中文', flag: '🇨🇳' },
   ja: { id: 'ja', label: '日本語', flag: '🇯🇵' },
   ko: { id: 'ko', label: '한국어', flag: '🇰🇷' },

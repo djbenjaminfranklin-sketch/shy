@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { quickMeetService } from '../services/supabase/quickMeet';
+import { subscriptionsService } from '../services/supabase/subscriptions';
 import {
   generateTimeSlots,
   getPlaceTypeDisplay,
@@ -7,6 +8,7 @@ import {
   MEET_DURATIONS,
   PLACE_TYPES_ORDER,
 } from '../constants/quickMeet';
+import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../constants/subscriptions';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import type {
@@ -28,6 +30,11 @@ interface UseQuickMeetReturn {
   canPropose: boolean;
   isProposer: boolean;
   isRecipient: boolean;
+
+  // Limites
+  proposalsUsedToday: number;
+  proposalsLimit: number;
+  hasReachedLimit: boolean;
 
   // Données pour création
   availableDurations: MeetDuration[];
@@ -63,6 +70,10 @@ export function useQuickMeet(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Limites Quick Meet
+  const [proposalsUsedToday, setProposalsUsedToday] = useState(0);
+  const [proposalsLimit, setProposalsLimit] = useState(1);
+
   // Charger la proposition active
   const loadProposal = useCallback(async () => {
     if (!conversationId) {
@@ -95,6 +106,27 @@ export function useQuickMeet(
     loadProposal();
   }, [loadProposal]);
 
+  // Charger les limites de l'abonnement
+  useEffect(() => {
+    if (!user) return;
+
+    const loadLimits = async () => {
+      try {
+        const { subscription } = await subscriptionsService.getUserSubscription(user.id);
+        const planId = (subscription?.planId || 'free') as PlanType;
+        const plan = SUBSCRIPTION_PLANS_BY_ID[planId];
+        setProposalsLimit(plan?.features.quickMeetProposalsPerDay ?? 1);
+
+        const { limits } = await subscriptionsService.getUserLimits(user.id);
+        setProposalsUsedToday(limits?.quickMeetProposalsUsed || 0);
+      } catch (err) {
+        console.error('Error loading Quick Meet limits:', err);
+      }
+    };
+
+    loadLimits();
+  }, [user]);
+
   // Abonnement temps réel
   useEffect(() => {
     if (!conversationId) return;
@@ -114,7 +146,8 @@ export function useQuickMeet(
   }, [conversationId]);
 
   // Valeurs calculées
-  const canPropose = !activeProposal && !!user && !!otherUserId;
+  const hasReachedLimit = proposalsLimit !== -1 && proposalsUsedToday >= proposalsLimit;
+  const canPropose = !activeProposal && !!user && !!otherUserId && !hasReachedLimit;
   const isProposer = activeProposal?.proposerId === user?.id;
   const isRecipient = activeProposal?.recipientId === user?.id;
 
@@ -127,6 +160,12 @@ export function useQuickMeet(
       message?: string
     ): Promise<boolean> => {
       if (!conversationId || !user || !otherUserId) return false;
+
+      // Vérifier la limite (sauf si illimité = -1)
+      if (proposalsLimit !== -1 && proposalsUsedToday >= proposalsLimit) {
+        setError('Limite de propositions atteinte');
+        return false;
+      }
 
       const { proposal, error: createError } = await quickMeetService.createProposal(
         conversationId,
@@ -143,10 +182,14 @@ export function useQuickMeet(
         return false;
       }
 
+      // Incrémenter le compteur
+      setProposalsUsedToday((prev) => prev + 1);
+      subscriptionsService.incrementQuickMeetProposals(user.id);
+
       setActiveProposal(proposal);
       return true;
     },
-    [conversationId, user, otherUserId]
+    [conversationId, user, otherUserId, proposalsUsedToday, proposalsLimit]
   );
 
   // Accepter une proposition
@@ -223,6 +266,9 @@ export function useQuickMeet(
     canPropose,
     isProposer,
     isRecipient,
+    proposalsUsedToday,
+    proposalsLimit,
+    hasReachedLimit,
     availableDurations: MEET_DURATIONS,
     availableTimeSlots: generateTimeSlots().map((slot, index) => ({
       id: `slot-${index}`,

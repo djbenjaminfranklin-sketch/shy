@@ -151,11 +151,11 @@ export default function SubscriptionScreen() {
   };
 
   const openTermsOfService = () => {
-    Linking.openURL('https://shy.eu/legal/terms');
+    Linking.openURL('https://shydating.eu/terms');
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL('https://shy.eu/legal/privacy');
+    Linking.openURL('https://shydating.eu/privacy');
   };
 
   const openAppleSubscriptionTerms = () => {

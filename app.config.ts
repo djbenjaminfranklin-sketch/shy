@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "SHY",
   slug: "shy",
-  version: "1.0.0",
+  version: "1.0.1",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
@@ -76,7 +76,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-notifications",
       {
         icon: "./assets/notification-icon.png",
-        color: "#FF00FF",
+        color: "#FF6B6B",
         sounds: []
       }
     ],

@@ -15,7 +15,7 @@ export default function PrivacyScreen() {
 
   const handleDataRequest = () => {
     // TODO: Implement data export
-    Linking.openURL('mailto:privacy@shy.app?subject=Demande de données personnelles');
+    Linking.openURL('mailto:contact@shydating.eu?subject=Demande de données personnelles');
   };
 
   return (

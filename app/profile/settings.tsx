@@ -22,6 +22,10 @@ import { TravelModeModal, TravelModeBadge } from '../../src/components/travel';
 const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'he', label: 'עברית', flag: '🇮🇱' },
 ];
 
 export default function SettingsScreen() {

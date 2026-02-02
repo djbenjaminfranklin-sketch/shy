@@ -14,6 +14,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useQuickMeet } from '../../hooks/useQuickMeet';
 import { colors } from '../../theme/colors';
 import { Button } from '../ui/Button';
+import { PaywallModal } from '../subscription/PaywallModal';
 import type { MeetDuration, TimeSlot, SuggestedPlace, PlaceType } from '../../types/quickMeet';
 
 interface QuickMeetModalProps {
@@ -47,7 +48,13 @@ export function QuickMeetModal({
     getDurationLabel,
     getPlaceTypeDisplay,
     isLoading: _isLoading,
+    hasReachedLimit,
+    proposalsUsedToday,
+    proposalsLimit,
   } = useQuickMeet(conversationId, otherUserId);
+
+  // Paywall state
+  const [showPaywall, setShowPaywall] = useState(false);
 
   // État pour la création
   const [selectedDuration, setSelectedDuration] = useState<MeetDuration>(15);
@@ -274,6 +281,31 @@ export function QuickMeetModal({
       );
     }
 
+    // Si limite atteinte, afficher un message avec option d'upgrade
+    if (hasReachedLimit) {
+      return (
+        <View style={styles.limitReachedContainer}>
+          <Text style={styles.limitReachedIcon}>☕</Text>
+          <Text style={styles.limitReachedTitle}>{t('quickMeet.limitReachedTitle')}</Text>
+          <Text style={styles.limitReachedText}>
+            {t('quickMeet.limitReachedText', { count: proposalsUsedToday, limit: proposalsLimit })}
+          </Text>
+          <View style={styles.limitReachedBenefit}>
+            <Text style={styles.benefitIcon}>✨</Text>
+            <Text style={styles.benefitText}>{t('quickMeet.upgradeForMore')}</Text>
+          </View>
+          <Button
+            title={t('quickMeet.upgradeToPremium')}
+            onPress={() => setShowPaywall(true)}
+            style={styles.upgradeButton}
+          />
+          <TouchableOpacity onPress={onClose} style={styles.laterLink}>
+            <Text style={styles.laterText}>{t('common.later')}</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     // Formulaire de création
     return (
       <>
@@ -386,22 +418,32 @@ export function QuickMeetModal({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('quickMeet.title')}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={colors.text} />
-            </TouchableOpacity>
-          </View>
+    <>
+      <Modal visible={visible} animationType="slide" transparent>
+        <View style={styles.overlay}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.title}>{t('quickMeet.title')}</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {renderContent()}
-          </ScrollView>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              {renderContent()}
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        feature="quickMeet"
+        currentUsage={proposalsUsedToday}
+        limit={proposalsLimit}
+      />
+    </>
   );
 }
 
@@ -672,6 +714,60 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     minWidth: 200,
+  },
+  // Limit reached styles
+  limitReachedContainer: {
+    alignItems: 'center',
+    paddingVertical: 30,
+  },
+  limitReachedIcon: {
+    fontSize: 56,
+    marginBottom: 16,
+    opacity: 0.7,
+  },
+  limitReachedTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  limitReachedText: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  limitReachedBenefit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 24,
+    gap: 8,
+  },
+  benefitIcon: {
+    fontSize: 20,
+  },
+  benefitText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  upgradeButton: {
+    minWidth: 200,
+    marginBottom: 12,
+  },
+  laterLink: {
+    padding: 10,
+  },
+  laterText: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 });
 

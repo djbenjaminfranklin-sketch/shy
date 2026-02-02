@@ -98,6 +98,9 @@ export const subscriptionsService = {
             date: newData.date,
             likesUsed: newData.invitations_sent, // invitations_sent = likesUsed pour compatibilité
             messagesUsed: newData.messages_used,
+            superLikesUsed: newData.super_likes_used || 0,
+            rewindsUsed: newData.rewinds_used || 0,
+            quickMeetProposalsUsed: newData.quick_meet_proposals_used || 0,
             lastResetAt: newData.created_at,
           },
           error: null,
@@ -111,6 +114,9 @@ export const subscriptionsService = {
           date: data.date,
           likesUsed: data.invitations_sent, // invitations_sent = likesUsed pour compatibilité
           messagesUsed: data.messages_used,
+          superLikesUsed: data.super_likes_used || 0,
+          rewindsUsed: data.rewinds_used || 0,
+          quickMeetProposalsUsed: data.quick_meet_proposals_used || 0,
           lastResetAt: data.last_reset_at || data.created_at,
         },
         error: null,
@@ -353,6 +359,99 @@ export const subscriptionsService = {
       return { error: null };
     } catch (err) {
       return { error: 'Une erreur inattendue est survenue' };
+    }
+  },
+
+  /**
+   * Incrémenter les super likes utilisés aujourd'hui
+   */
+  async incrementSuperLikes(userId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Upsert avec incrémentation
+      const { data: current } = await supabase
+        .from('user_daily_limits')
+        .select('super_likes_used')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single();
+
+      await supabase
+        .from('user_daily_limits')
+        .upsert({
+          user_id: userId,
+          date: today,
+          super_likes_used: (current?.super_likes_used || 0) + 1,
+        }, {
+          onConflict: 'user_id,date',
+        });
+
+      return { success: true, error: null };
+    } catch (err) {
+      return { success: false, error: 'Une erreur inattendue est survenue' };
+    }
+  },
+
+  /**
+   * Incrémenter les rewinds utilisés aujourd'hui
+   */
+  async incrementRewinds(userId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Upsert avec incrémentation
+      const { data: current } = await supabase
+        .from('user_daily_limits')
+        .select('rewinds_used')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single();
+
+      await supabase
+        .from('user_daily_limits')
+        .upsert({
+          user_id: userId,
+          date: today,
+          rewinds_used: (current?.rewinds_used || 0) + 1,
+        }, {
+          onConflict: 'user_id,date',
+        });
+
+      return { success: true, error: null };
+    } catch (err) {
+      return { success: false, error: 'Une erreur inattendue est survenue' };
+    }
+  },
+
+  /**
+   * Incrémenter les propositions Quick Meet utilisées aujourd'hui
+   */
+  async incrementQuickMeetProposals(userId: string): Promise<{ success: boolean; error: string | null }> {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Upsert avec incrémentation
+      const { data: current } = await supabase
+        .from('user_daily_limits')
+        .select('quick_meet_proposals_used')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .single();
+
+      await supabase
+        .from('user_daily_limits')
+        .upsert({
+          user_id: userId,
+          date: today,
+          quick_meet_proposals_used: (current?.quick_meet_proposals_used || 0) + 1,
+        }, {
+          onConflict: 'user_id,date',
+        });
+
+      return { success: true, error: null };
+    } catch (err) {
+      return { success: false, error: 'Une erreur inattendue est survenue' };
     }
   },
 };
