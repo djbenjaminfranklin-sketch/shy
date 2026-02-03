@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Linking from 'expo-linking';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
@@ -27,62 +26,101 @@ export default function ResetPasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isSessionReady, setIsSessionReady] = useState(false);
 
-  // Extraire les tokens de l'URL et établir la session
+  // Extraire le token de l'URL et vérifier avec Supabase
   useEffect(() => {
     const handleDeepLink = async () => {
       try {
-        // Récupérer l'URL complète
-        const url = await Linking.getInitialURL();
-        console.log('[ResetPassword] Initial URL:', url);
         console.log('[ResetPassword] Params:', params);
 
-        // Essayer de récupérer les tokens depuis les params ou l'URL
-        let accessToken = params.access_token as string;
-        let refreshToken = params.refresh_token as string;
+        // Récupérer le token depuis les query params
+        const token = params.token as string;
+        const tokenHash = params.token_hash as string;
+        const accessToken = params.access_token as string;
+        const type = params.type as string;
 
-        // Si pas dans les params, chercher dans le fragment de l'URL (#...)
-        if ((!accessToken || !refreshToken) && url) {
-          const hashIndex = url.indexOf('#');
-          if (hashIndex !== -1) {
-            const hash = url.substring(hashIndex + 1);
-            const hashParams = new URLSearchParams(hash);
-            accessToken = accessToken || hashParams.get('access_token') || '';
-            refreshToken = refreshToken || hashParams.get('refresh_token') || '';
-            console.log('[ResetPassword] Tokens from hash:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+        console.log('[ResetPassword] Token:', token);
+        console.log('[ResetPassword] TokenHash:', tokenHash);
+        console.log('[ResetPassword] AccessToken:', accessToken);
+        console.log('[ResetPassword] Type:', type);
+
+        // Si on a un token_hash (nouveau format Supabase), l'utiliser
+        if (tokenHash) {
+          console.log('[ResetPassword] Verifying with token_hash...');
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery',
+          });
+
+          if (verifyError) {
+            console.error('[ResetPassword] Verify error:', verifyError);
+            setError('Lien de réinitialisation invalide ou expiré.');
+          } else if (data.session) {
+            console.log('[ResetPassword] Session established via token_hash!');
+            setIsSessionReady(true);
+          }
+          return;
+        }
+
+        // Si on a un token simple, l'utiliser avec verifyOtp
+        if (token) {
+          console.log('[ResetPassword] Verifying with token...');
+          // Pour le token simple, on a besoin de l'email - essayer de récupérer depuis la session ou params
+          const email = params.email as string;
+
+          if (email) {
+            const { data, error: verifyError } = await supabase.auth.verifyOtp({
+              email: email,
+              token: token,
+              type: 'recovery',
+            });
+
+            if (verifyError) {
+              console.error('[ResetPassword] Verify error:', verifyError);
+              setError('Lien de réinitialisation invalide ou expiré.');
+            } else if (data.session) {
+              console.log('[ResetPassword] Session established via token!');
+              setIsSessionReady(true);
+            }
+          } else {
+            setError('Email manquant dans le lien.');
+          }
+          return;
+        }
+
+        // Si on a un access_token direct (ancien format)
+        if (accessToken) {
+          const refreshToken = params.refresh_token as string;
+          if (refreshToken) {
+            const { data, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (sessionError) {
+              console.error('[ResetPassword] Session error:', sessionError);
+              setError('Lien de réinitialisation invalide ou expiré.');
+            } else if (data.session) {
+              console.log('[ResetPassword] Session established via access_token!');
+              setIsSessionReady(true);
+            }
+            return;
           }
         }
 
-        // Si on a les tokens, établir la session
-        if (accessToken && refreshToken) {
-          console.log('[ResetPassword] Setting session with tokens...');
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            console.error('[ResetPassword] Session error:', sessionError);
-            setError('Lien de réinitialisation invalide ou expiré.');
-          } else if (data.session) {
-            console.log('[ResetPassword] Session established!');
-            setIsSessionReady(true);
-          }
+        // Pas de tokens valides trouvés, vérifier si une session existe déjà
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsSessionReady(true);
         } else {
-          // Pas de tokens, vérifier si une session existe déjà
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            setIsSessionReady(true);
-          } else {
-            // Attendre un peu et réessayer (le listener peut recevoir l'event)
-            setTimeout(async () => {
-              const { data: { session: retrySession } } = await supabase.auth.getSession();
-              if (retrySession) {
-                setIsSessionReady(true);
-              } else {
-                setError('Lien de réinitialisation invalide ou expiré. Veuillez réessayer.');
-              }
-            }, 3000);
-          }
+          // Attendre un peu et réessayer
+          setTimeout(async () => {
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+            if (retrySession) {
+              setIsSessionReady(true);
+            } else {
+              setError('Lien de réinitialisation invalide ou expiré. Veuillez réessayer.');
+            }
+          }, 2000);
         }
       } catch (err) {
         console.error('[ResetPassword] Error:', err);
