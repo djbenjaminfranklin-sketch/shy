@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { colors } from '../../src/theme/colors';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLocation } from '../../src/contexts/LocationContext';
@@ -34,9 +34,11 @@ import { useTravelMode } from '../../src/hooks/useTravelMode';
 import { ModeActivationModal } from '../../src/components/availability';
 import { PaywallModal } from '../../src/components/subscription/PaywallModal';
 import { FilterModal } from '../../src/components/discover/FilterModal';
-import { BoostModal } from '../../src/components/boost/BoostModal';
 import { BoostIndicator } from '../../src/components/boost/BoostIndicator';
 import { useBoost } from '../../src/contexts/BoostContext';
+import { IceBreakerModal } from '../../src/components/icebreaker/IceBreakerModal';
+import { IntentionBadge } from '../../src/components/profile/IntentionBadge';
+import { AvailabilityBadge } from '../../src/components/profile/AvailabilityBadge';
 import type { AvailabilityModeType, ModeDuration } from '../../src/types/availabilityMode';
 import type { TravelLocation } from '../../src/types/travelMode';
 import type { ProfileFilters } from '../../src/types/profile';
@@ -92,7 +94,7 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { latitude, longitude, city } = useLocation();
+  const { latitude, longitude, city, isEnabled, refreshLocation } = useLocation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [myProfile, setMyProfile] = useState<Profile | null>(null);
@@ -114,7 +116,7 @@ export default function DiscoverScreen() {
   const [showModeModal, setShowModeModal] = useState(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [showIceBreakerModal, setShowIceBreakerModal] = useState(false);
   const [canUseAllFilters, setCanUseAllFilters] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState<'likes' | 'superLikes' | 'rewind' | 'mode'>('mode');
 
@@ -188,11 +190,23 @@ export default function DiscoverScreen() {
         setSuperLikesUsed(limits?.superLikesUsed || 0);
         setRewindsUsed(limits?.rewindsUsed || 0);
       } catch (error) {
-        console.error('Error loading subscription features:', error);
+        // Error loading subscription features
       }
     };
     loadSubscriptionFeatures();
   }, [user]);
+
+  // Rafraîchir la position GPS quand l'écran Discover gagne le focus
+  // Corrige le bug où la position reste bloquée à l'ancienne localisation
+  useFocusEffect(
+    useCallback(() => {
+      console.log('[Discover] useFocusEffect triggered, isEnabled:', isEnabled);
+      if (isEnabled) {
+        console.log('[Discover] Calling refreshLocation...');
+        refreshLocation();
+      }
+    }, [isEnabled, refreshLocation])
+  );
 
   // Charger les profils depuis Supabase
   useEffect(() => {
@@ -296,10 +310,7 @@ export default function DiscoverScreen() {
     }
 
     // Creer une invitation
-    const { error } = await invitationsService.sendInvitation(user.id, profile.id);
-    if (error) {
-      console.log('Invitation error:', error);
-    }
+    await invitationsService.sendInvitation(user.id, profile.id);
 
     // Incrémenter le compteur local
     setLikesUsed((prev) => prev + 1);
@@ -697,7 +708,7 @@ export default function DiscoverScreen() {
 
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={() => setShowBoostModal(true)}
+            onPress={() => setShowIceBreakerModal(true)}
           >
             <View>
               <Ionicons name="flash" size={26} color={colors.boost} />
@@ -743,10 +754,10 @@ export default function DiscoverScreen() {
           }}
         />
 
-        {/* Boost modal - also available in empty state */}
-        <BoostModal
-          visible={showBoostModal}
-          onClose={() => setShowBoostModal(false)}
+        {/* Ice Breaker modal - also available in empty state */}
+        <IceBreakerModal
+          visible={showIceBreakerModal}
+          onClose={() => setShowIceBreakerModal(false)}
         />
       </View>
     );
@@ -896,6 +907,14 @@ export default function DiscoverScreen() {
           {profile.bio && (
             <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
           )}
+
+          {/* Badges intention et disponibilité */}
+          <View style={styles.badgesRow}>
+            <IntentionBadge intention={profile.intention} size="medium" />
+            {profile.availability && (
+              <AvailabilityBadge availability={profile.availability} size="medium" />
+            )}
+          </View>
         </View>
       </Animated.View>
 
@@ -910,7 +929,7 @@ export default function DiscoverScreen() {
 
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => setShowBoostModal(true)}
+          onPress={() => setShowIceBreakerModal(true)}
         >
           <View>
             <Ionicons name="flash" size={26} color={colors.boost} />
@@ -1027,10 +1046,10 @@ export default function DiscoverScreen() {
         }}
       />
 
-      {/* Boost modal */}
-      <BoostModal
-        visible={showBoostModal}
-        onClose={() => setShowBoostModal(false)}
+      {/* Ice Breaker modal */}
+      <IceBreakerModal
+        visible={showIceBreakerModal}
+        onClose={() => setShowIceBreakerModal(false)}
       />
     </View>
   );
@@ -1267,6 +1286,12 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.85)',
     marginTop: 10,
     lineHeight: 22,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
   },
 
   // Actions - au dessus de la tab bar

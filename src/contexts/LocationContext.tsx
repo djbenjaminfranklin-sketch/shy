@@ -119,16 +119,96 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
               neighborhood: result.neighborhood,
               formattedAddress: result.formattedAddress,
             }));
-            console.log(`📍 Ville chargée: ${result.city}`);
           }
         } catch (error) {
-          console.warn('Erreur chargement ville:', error);
+          // Error loading city
         }
       }
     };
 
     loadCity();
   }, [state.latitude, state.longitude, state.isEnabled, state.city]);
+
+  // Auto-refresh la position au démarrage si la localisation est activée
+  // Corrige le bug où la position reste bloquée à l'ancienne localisation
+  useEffect(() => {
+    // Utiliser un délai pour laisser l'app s'initialiser complètement
+    const timer = setTimeout(async () => {
+      console.log('[GPS] Auto-refresh check:', {
+        isEnabled: state.isEnabled,
+        hasUser: !!user,
+        isLoading: state.isLoading,
+        permissionStatus: state.permissionStatus,
+      });
+
+      if (state.isEnabled && user && !state.isLoading && state.permissionStatus === 'granted') {
+        console.log('[GPS] Auto-refresh: starting GPS update...');
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+
+          console.log('[GPS] Auto-refresh: got position', {
+            lat: location.coords.latitude,
+            lng: location.coords.longitude,
+          });
+
+          // Approximer les coordonnées pour la confidentialité
+          const approxCoords = approximateCoordinates(
+            location.coords.latitude,
+            location.coords.longitude
+          );
+          const { latitude, longitude } = approxCoords;
+
+          console.log('[GPS] Auto-refresh: approximated coords', { latitude, longitude });
+
+          // Mettre à jour seulement si la position a significativement changé (> 500m)
+          if (state.latitude && state.longitude) {
+            const distance = haversineDistance(state.latitude, state.longitude, latitude, longitude);
+            console.log('[GPS] Auto-refresh: distance from previous', distance, 'km');
+            if (distance < 0.5) {
+              console.log('[GPS] Auto-refresh: position unchanged, skipping update');
+              return;
+            }
+          }
+
+          console.log('[GPS] Auto-refresh: updating profile location...');
+          await profilesService.updateLocation(user.id, latitude, longitude);
+
+          // Géocodage inverse pour la nouvelle position
+          let city = null;
+          let neighborhood = null;
+          let formattedAddress = null;
+
+          try {
+            const { result } = await googlePlacesService.reverseGeocode(latitude, longitude);
+            if (result) {
+              city = result.city;
+              neighborhood = result.neighborhood;
+              formattedAddress = result.formattedAddress;
+              console.log('[GPS] Auto-refresh: geocoded to', city);
+            }
+          } catch (geoError) {
+            console.warn('[GPS] Auto-refresh: geocoding failed', geoError);
+          }
+
+          setState((prev) => ({
+            ...prev,
+            latitude,
+            longitude,
+            city,
+            neighborhood,
+            formattedAddress,
+          }));
+          console.log('[GPS] Auto-refresh: state updated successfully');
+        } catch (err) {
+          console.error('[GPS] Auto-refresh: error getting position', err);
+        }
+      }
+    }, 2000); // Délai de 2s pour laisser l'app s'initialiser
+
+    return () => clearTimeout(timer);
+  }, [user?.id, state.permissionStatus]);
 
   // Demander la permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
@@ -175,9 +255,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       );
       const { latitude, longitude } = approxCoords;
 
-      console.log(`📍 Position GPS originale: ${location.coords.latitude}, ${location.coords.longitude}`);
-      console.log(`📍 Position approximée: ${latitude}, ${longitude} (précision: ~1km)`);
-
       // Mettre a jour le profil avec les coordonnées approximées
       const { error } = await profilesService.updateLocation(user.id, latitude, longitude);
 
@@ -197,10 +274,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           city = result.city;
           neighborhood = result.neighborhood;
           formattedAddress = result.formattedAddress;
-          console.log(`📍 Adresse: ${formattedAddress}`);
         }
       } catch (geoError) {
-        console.warn('Géocodage échoué, position GPS uniquement');
+        // Geocoding failed, GPS position only
       }
 
       setState((prev) => ({
@@ -256,24 +332,61 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   // Rafraichir la position
   const refreshLocation = useCallback(async () => {
-    if (!state.isEnabled || !user) return;
+    console.log('[GPS] refreshLocation called, isEnabled:', state.isEnabled, 'user:', !!user);
+    if (!state.isEnabled || !user) {
+      console.log('[GPS] refreshLocation: skipping (not enabled or no user)');
+      return;
+    }
 
     try {
+      console.log('[GPS] refreshLocation: getting current position...');
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
 
-      const { latitude, longitude } = location.coords;
+      console.log('[GPS] refreshLocation: got position', {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      });
 
+      // Approximer les coordonnées pour la confidentialité
+      const approxCoords = approximateCoordinates(
+        location.coords.latitude,
+        location.coords.longitude
+      );
+      const { latitude, longitude } = approxCoords;
+
+      console.log('[GPS] refreshLocation: updating profile...');
       await profilesService.updateLocation(user.id, latitude, longitude);
+
+      // Géocodage inverse pour la nouvelle position
+      let city = null;
+      let neighborhood = null;
+      let formattedAddress = null;
+
+      try {
+        const { result } = await googlePlacesService.reverseGeocode(latitude, longitude);
+        if (result) {
+          city = result.city;
+          neighborhood = result.neighborhood;
+          formattedAddress = result.formattedAddress;
+          console.log('[GPS] refreshLocation: geocoded to', city);
+        }
+      } catch (geoError) {
+        console.warn('[GPS] refreshLocation: geocoding failed', geoError);
+      }
 
       setState((prev) => ({
         ...prev,
         latitude,
         longitude,
+        city,
+        neighborhood,
+        formattedAddress,
       }));
+      console.log('[GPS] refreshLocation: state updated');
     } catch (err) {
-      // Ignorer les erreurs silencieusement
+      console.error('[GPS] refreshLocation: error', err);
     }
   }, [state.isEnabled, user]);
 
@@ -367,7 +480,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       );
 
       if (error || !result) {
-        console.warn('Reverse geocoding failed:', error);
         return null;
       }
 
@@ -381,7 +493,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
       return result;
     } catch (error) {
-      console.error('Error in reverse geocoding:', error);
       return null;
     }
   }, [state.latitude, state.longitude]);

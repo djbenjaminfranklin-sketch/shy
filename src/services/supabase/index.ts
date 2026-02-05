@@ -14,5 +14,4 @@ export { connectionRhythmService } from './connectionRhythm';
 export { comfortLevelsService } from './comfortLevels';
 export { quickMeetService } from './quickMeet';
 export { engagementScoreService } from './engagementScore';
-export { promoCodesService } from './promoCodes';
 export { travelModeService } from './travelMode';
