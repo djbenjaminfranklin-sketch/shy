@@ -18,7 +18,6 @@ export const travelModeService = {
 
       if (error && error.code !== 'PGRST116') {
         // PGRST116 = no rows returned
-        console.error('[travelModeService.getActiveTravelMode] Error:', error);
         return { travelMode: null, error: error.message };
       }
 
@@ -44,7 +43,6 @@ export const travelModeService = {
 
       return { travelMode, error: null };
     } catch (err) {
-      console.error('[travelModeService.getActiveTravelMode] Unexpected error:', err);
       return { travelMode: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -70,14 +68,12 @@ export const travelModeService = {
       });
 
       if (error) {
-        console.error('[travelModeService.activateTravelMode] Error:', error);
         return { travelMode: null, error: error.message };
       }
 
       // Récupérer le mode voyage créé
       return this.getActiveTravelMode(userId);
     } catch (err) {
-      console.error('[travelModeService.activateTravelMode] Unexpected error:', err);
       return { travelMode: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -94,13 +90,11 @@ export const travelModeService = {
       });
 
       if (error) {
-        console.error('[travelModeService.deactivateTravelMode] Error:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, error: null };
     } catch (err) {
-      console.error('[travelModeService.deactivateTravelMode] Unexpected error:', err);
       return { success: false, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -128,7 +122,6 @@ export const travelModeService = {
         .lte('longitude', longitude + lonDelta);
 
       if (error) {
-        console.error('[travelModeService.getTravelersInArea] Error:', error);
         return { travelers: [], error: error.message };
       }
 
@@ -150,7 +143,6 @@ export const travelModeService = {
 
       return { travelers, error: null };
     } catch (err) {
-      console.error('[travelModeService.getTravelersInArea] Unexpected error:', err);
       return { travelers: [], error: 'Une erreur inattendue est survenue' };
     }
   },

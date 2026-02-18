@@ -80,8 +80,6 @@ export const faceVerificationService = {
       // SIMULATION: Pour le developpement, on retourne toujours true
       // A remplacer par un vrai service en production (AWS Rekognition, Azure Face, etc.)
       // Le service compare les photos capturees avec la photo de reference
-      console.log('Comparing faces - reference:', referenceUri);
-      console.log('Comparing faces - captured:', capturedUris.length, 'photos');
 
       return {
         match: true,
@@ -89,7 +87,6 @@ export const faceVerificationService = {
         error: null,
       };
     } catch (err) {
-      console.error('Error comparing faces:', err);
       return {
         match: false,
         confidence: 0,

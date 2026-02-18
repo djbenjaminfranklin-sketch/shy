@@ -176,7 +176,6 @@ export function FaceVerificationCamera({
   const capturePhoto = async () => {
     // Éviter les captures multiples simultanées
     if (!cameraRef.current || isCapturingRef.current) {
-      console.log('Camera not ready or already capturing');
       return;
     }
 
@@ -215,12 +214,10 @@ export function FaceVerificationCamera({
           }
         }, 1200);
       } else {
-        console.warn('Photo capture returned no URI');
         isCapturingRef.current = false;
         setStatus('ready');
       }
     } catch (error) {
-      console.error('Capture error:', error);
       isCapturingRef.current = false;
       setStatus('ready'); // Retry
     }
@@ -287,7 +284,6 @@ export function FaceVerificationCamera({
         }, 2000);
       }
     } catch (error) {
-      console.error('Verification error:', error);
       setStatus('failed');
       setVerificationMessage('Erreur lors de la vérification');
 

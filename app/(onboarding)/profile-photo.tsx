@@ -37,15 +37,11 @@ export default function ProfilePhotoScreen() {
         quality: 0.8,
       });
 
-      console.log('Image picker result:', result);
-
       if (!result.canceled && result.assets && result.assets[0]) {
-        console.log('Photo selected:', result.assets[0].uri);
         setImageLoaded(false);
         updateData({ photoUri: result.assets[0].uri });
       }
     } catch (error) {
-      console.error('Error picking image:', error);
       Alert.alert(t('alerts.errorTitle'), t('onboarding.photoError'));
     }
   };
@@ -64,15 +60,11 @@ export default function ProfilePhotoScreen() {
         quality: 0.8,
       });
 
-      console.log('Camera result:', result);
-
       if (!result.canceled && result.assets && result.assets[0]) {
-        console.log('Photo taken:', result.assets[0].uri);
         setImageLoaded(false);
         updateData({ photoUri: result.assets[0].uri });
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
       Alert.alert(t('alerts.errorTitle'), t('onboarding.cameraError'));
     }
   };
@@ -92,15 +84,11 @@ export default function ProfilePhotoScreen() {
         videoMaxDuration: 30,
       });
 
-      console.log('Video picker result:', result);
-
       if (!result.canceled && result.assets && result.assets[0]) {
-        console.log('Video selected:', result.assets[0].uri);
         setVideoLoading(true);
         updateData({ videoUri: result.assets[0].uri });
       }
     } catch (error) {
-      console.error('Error picking video:', error);
       Alert.alert(t('alerts.errorTitle'), t('onboarding.videoError') || 'Erreur lors de la selection de la video');
     }
   };
@@ -140,11 +128,9 @@ export default function ProfilePhotoScreen() {
                   style={[styles.photo, !imageLoaded && { opacity: 0 }]}
                   resizeMode="cover"
                   onLoad={() => {
-                    console.log('Image loaded successfully:', photo);
                     setImageLoaded(true);
                   }}
-                  onError={(e) => {
-                    console.log('Image load error:', e.nativeEvent.error, 'URI:', photo);
+                  onError={() => {
                     setImageLoaded(false);
                   }}
                 />

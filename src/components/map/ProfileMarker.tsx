@@ -13,6 +13,14 @@ const INTENTION_COLORS: Record<string, string> = {
   local: '#FF9500',
 };
 
+// Labels de disponibilité
+const AVAILABILITY_LABELS: Record<string, string> = {
+  today: '📅 Dispo aujourd\'hui',
+  tonight: '🌙 Dispo ce soir',
+  weekend: '🎉 Dispo ce week-end',
+  coffee: '☕ Dispo pour un café',
+};
+
 export interface MarkerProfile {
   id: string;
   displayName: string;
@@ -23,6 +31,7 @@ export interface MarkerProfile {
   longitude: number;
   distance?: number | null;
   isOnline?: boolean;
+  availability?: string | null;
 }
 
 interface ProfileMarkerProps {
@@ -78,6 +87,13 @@ export function ProfileMarker({ profile, onPress }: ProfileMarkerProps) {
               <View style={styles.calloutRow}>
                 <Ionicons name="location" size={14} color={colors.textSecondary} />
                 <Text style={styles.calloutDistance}>{profile.distance} km</Text>
+              </View>
+            )}
+            {profile.availability && AVAILABILITY_LABELS[profile.availability] && (
+              <View style={styles.availabilityBadge}>
+                <Text style={styles.availabilityText}>
+                  {AVAILABILITY_LABELS[profile.availability]}
+                </Text>
               </View>
             )}
           </View>
@@ -181,6 +197,19 @@ const styles = StyleSheet.create({
   calloutDistance: {
     fontSize: 13,
     color: colors.textSecondary,
+  },
+  availabilityBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+  },
+  availabilityText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.white,
   },
 });
 

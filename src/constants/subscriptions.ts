@@ -333,7 +333,7 @@ export const AUTO_REPLY_TEMPLATES = [
 
 export type AutoReplyTemplateId = typeof AUTO_REPLY_TEMPLATES[number]['id'];
 
-// ============ BOOST PRODUCTS ============
+// ============ BOOST PRODUCTS (Legacy) ============
 
 import { BoostProduct } from '../types/boost';
 
@@ -361,6 +361,39 @@ export const BOOST_PRODUCTS: BoostProduct[] = [
     quantity: 10,
     price: 24.99,
     priceLabel: '24,99 €',
+    bestValue: true,
+  },
+];
+
+// ============ ICE BREAKER PRODUCTS ============
+// Ice Breaker: Envoie automatiquement des messages personnalisés à des profils compatibles
+
+import { IceBreakerProduct } from '../types/icebreaker';
+
+export const ICEBREAKER_PROFILES_PER_USE = 5; // Nombre de profils contactés par Ice Breaker
+
+export const ICEBREAKER_PRODUCTS: IceBreakerProduct[] = [
+  {
+    id: 'icebreaker_1',
+    productId: 'shy_boost_1x',  // Réutilise les IDs Boost existants
+    quantity: 1,
+    price: 4.99,
+    priceLabel: '4,99 €',
+  },
+  {
+    id: 'icebreaker_3',
+    productId: 'shy_boost_3x',
+    quantity: 3,
+    price: 12.99,
+    priceLabel: '12,99 €',
+    popular: true,
+  },
+  {
+    id: 'icebreaker_10',
+    productId: 'shy_boost_10x',
+    quantity: 10,
+    price: 34.99,
+    priceLabel: '34,99 €',
     bestValue: true,
   },
 ];

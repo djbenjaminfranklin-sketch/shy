@@ -113,6 +113,27 @@ export const en: TranslationKeys = {
       successTitle: 'Account deleted',
       successMessage: 'Your deletion request has been registered. Your account will be deleted within 30 days.',
     },
+    // Delete account screen
+    deleteAccountScreen: {
+      headerTitle: 'Delete account',
+      title: 'Delete your account',
+      description: 'Deleting your account will result in:',
+      consequence1: 'Deletion of your profile',
+      consequence2: 'Deletion of all your matches',
+      consequence3: 'Deletion of all your conversations',
+      consequence4: 'Deletion of your photos',
+      consequence5: 'Erasure of your personal data',
+      warning: 'This action is irreversible and will take effect within 30 days.',
+      reasonLabel: 'Reason for leaving (optional)',
+      reasonPlaceholder: 'Help us improve...',
+      typeToConfirm: 'Type "{word}" to confirm',
+      confirmationWord: 'delete',
+      cancelButton: 'Cancel',
+      deleteButton: 'Delete my account',
+      confirmTitle: 'Confirm deletion',
+      confirmMessage: 'This action is irreversible. All your data will be permanently deleted.',
+      errorOccurred: 'An error occurred',
+    },
     adminPanel: 'Admin Panel',
   },
 
@@ -159,6 +180,27 @@ export const en: TranslationKeys = {
     soundVibrationDesc: 'Enable sound and vibration for notifications',
     accountSection: 'Account',
     accountHint: 'To change your email or password, use the "Forgot password" feature on the login screen.',
+    // Travel Mode
+    travelMode: 'Travel Mode',
+    travelModeActivate: 'Activate Travel Mode',
+    travelModeDeactivate: 'Deactivate',
+    travelModeDeactivateTitle: 'Deactivate Travel Mode',
+    travelModeDeactivateMessage: 'Do you want to go back to your real location?',
+    travelModeExplore: 'Explore a city before arriving',
+    travelModeUpgrade: 'Upgrade to Premium to unlock',
+    // Account section items
+    exportData: 'Export my data (GDPR)',
+    blockedUsers: 'Blocked users',
+    deleteAccount: 'Delete my account',
+    // Legal section
+    legalSection: 'Legal',
+    termsOfUse: 'Terms of use',
+    privacyPolicy: 'Privacy policy',
+    legalNotice: 'Legal notice',
+    // Help section
+    helpSection: 'Help',
+    helpCenter: 'Help center',
+    contactUs: 'Contact us',
   },
 
   // Subscription
@@ -178,11 +220,6 @@ export const en: TranslationKeys = {
     welcomePremium: 'Welcome to SHY Premium!',
     welcomePlus: 'Welcome to SHY+!',
     tryFree: 'Try for FREE',
-    promoCode: 'Promo code',
-    promoCodePlaceholder: 'Enter a code',
-    promoCodeApply: 'Apply',
-    promoCodeInvalid: 'Invalid code',
-    promoCodeSuccess: 'Code applied!',
     subscribe: 'Subscribe',
     termsApple: 'Payment will be charged to your iTunes Account at confirmation of purchase. Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage and cancel your subscriptions by going to your App Store account settings after purchase.',
     termsOfService: 'Terms of Service',
@@ -637,6 +674,56 @@ export const en: TranslationKeys = {
     popular: 'Popular',
   },
 
+  // Ice Breaker
+  icebreaker: {
+    title: 'Ice Breaker',
+    description: 'Automatically send personalized messages to compatible profiles',
+    use: 'Use an Ice Breaker',
+    sending: 'Sending...',
+    available: '{count} Ice Breaker(s) available',
+    noIceBreakers: 'No Ice Breakers available',
+    orBuyMore: 'Or buy more Ice Breakers',
+    disclaimer: 'Messages are personalized based on common interests. Results not guaranteed.',
+    // How it works
+    howItWorks: 'How does it work?',
+    step1: 'We find 5 profiles compatible with you',
+    step2: 'You approve the profiles you like',
+    step3: 'We send a personalized message to each one!',
+    // Preview flow
+    previewTitle: 'Choose your profiles',
+    previewDescription: 'Approve or replace profiles before sending',
+    commonInterests: 'Common interests',
+    messagePreview: 'Message to be sent',
+    approve: 'Send',
+    replace: 'Replace',
+    messageSent: 'Sent ✓',
+    sendToCount: 'Send to {count} profile(s)',
+    findingProfiles: 'Finding compatible profiles...',
+    replacementsAvailable: '{count} replacement(s) available',
+    noProfilesFound: 'No compatible profiles found',
+    noApprovedProfiles: 'No profiles selected',
+    // Results
+    sent: 'Messages sent!',
+    sentDescription: '{count} personalized message(s) sent',
+    // Products
+    single: '1 Ice Breaker',
+    pack: 'Pack of {count}',
+    bestValue: 'Best value',
+    popular: 'Popular',
+    // Recipient info (what recipients see)
+    receivedFirst: 'You received an Ice Breaker!',
+    receivedFrom: '{name} sent you a personalized message',
+    whatIsIt: 'What is an Ice Breaker?',
+    infoLine1: 'A premium feature to send personalized messages',
+    infoLine2: 'This person chose you among several compatible profiles',
+    infoLine3: 'The message is based on your common interests',
+    youCanToo: 'You can use Ice Breaker too!',
+    discover: 'Discover',
+    seeMessage: 'See message',
+    messageIceBreaker: 'Ice Breaker message',
+    tapToLearnMore: 'Tap to learn more',
+  },
+
   // Notification Consent (Onboarding)
   notificationConsent: {
     title: 'Stay connected',
@@ -689,5 +776,78 @@ export const en: TranslationKeys = {
     tip4Title: 'Stay alert',
     tip4Desc: 'Don\'t hesitate to leave if you feel uncomfortable.',
     understood: 'I understand',
+  },
+
+  // Age Verification
+  verifyAge: {
+    title: 'Age verification',
+    description: 'SHY is reserved for people aged {minAge} and over.\n\nBy continuing, you confirm that you are at least {minAge} years old and that you accept our terms of use.',
+    iAmOldEnough: 'I am {minAge} or older',
+    iAmTooYoung: 'I am under {minAge}',
+    warning: 'Use of this application by minors is strictly prohibited. Any account suspected of belonging to a minor will be deleted immediately.',
+  },
+
+  // Forgot Password
+  forgotPasswordScreen: {
+    title: 'Forgot password',
+    subtitle: 'Enter your email to receive a reset code',
+    emailLabel: 'Email',
+    emailPlaceholder: 'your@email.com',
+    sendCode: 'Send code',
+    enterEmail: 'Please enter your email',
+    errorOccurred: 'An error occurred. Please try again.',
+    emailSent: 'Email sent!',
+    codeSentTo: 'A verification code has been sent to {email}. Enter this code to reset your password.',
+    enterCode: 'Enter code',
+    backToLogin: 'Back to login',
+    back: '← Back',
+  },
+
+  // Reset Password
+  resetPassword: {
+    title: 'New password',
+    subtitle: 'Enter the code received by email and your new password',
+    codeLabel: 'Verification code',
+    codePlaceholder: 'Enter the 6-digit code',
+    newPasswordLabel: 'New password',
+    newPasswordPlaceholder: 'Minimum 8 characters',
+    confirmPasswordLabel: 'Confirm password',
+    confirmPasswordPlaceholder: 'Re-enter your password',
+    resetButton: 'Reset password',
+    invalidCode: 'Invalid verification code',
+    passwordTooShort: 'Password must be at least 8 characters',
+    passwordMismatch: 'Passwords do not match',
+    fillAllFields: 'Please fill in all fields',
+    success: 'Password reset!',
+    successMessage: 'You can now log in with your new password.',
+    goToLogin: 'Go to login',
+    back: '← Back',
+  },
+
+  // Feature Showcase
+  featureShowcase: {
+    headerSubtitle: 'What makes us unique',
+    // Intentions
+    intentionsTitle: 'Clear intentions',
+    intentionsDesc: 'Every user displays their intention: Social, Dating, Friendship or Local Discovery. No more misunderstandings.',
+    intentionsTag: 'Mandatory transparency',
+    // Availability
+    availabilityTitle: 'Real-time availability',
+    availabilityDesc: 'Signal when you\'re available: today, this afternoon, tonight or this weekend. Connect at the right moment.',
+    availabilityTag: 'Sync your moments',
+    // Ice Breaker
+    icebreakerTitle: 'Ice Breaker',
+    icebreakerDesc: 'No more "Hey". We find compatible profiles and send a personalized message for you.',
+    icebreakerTag: 'Personalized messages',
+    // Map
+    mapTitle: 'Interactive map',
+    mapDesc: 'Explore profiles around you on a map. Approximate distance only — your privacy is protected.',
+    mapTag: 'Privacy-first',
+    // Comfort
+    comfortTitle: 'Comfort levels',
+    comfortDesc: 'Progress at your own pace. Features unlock only when you\'re both ready.',
+    comfortTag: 'Your pace, your rules',
+    // CTA
+    getStarted: 'Let\'s go!',
   },
 };

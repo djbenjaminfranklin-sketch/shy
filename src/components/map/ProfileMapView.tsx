@@ -17,6 +17,7 @@ interface ProfileWithLocation {
   distance?: number | null;
   isOnline?: boolean;
   lastActiveAt?: string | null;
+  availability?: string | null;
 }
 
 interface ValidProfile {
@@ -30,6 +31,7 @@ interface ValidProfile {
   distance?: number | null;
   isOnline?: boolean;
   lastActiveAt?: string | null;
+  availability?: string | null;
 }
 
 interface ProfileMapViewProps {

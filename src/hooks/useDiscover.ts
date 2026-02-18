@@ -47,8 +47,8 @@ export function useDiscover() {
 
       const { limits } = await subscriptionsService.getUserLimits(user.id);
       setLikesUsed(limits?.likesUsed || 0);
-    } catch (err) {
-      console.error('Error loading limits:', err);
+    } catch {
+      // Silent fail - limits will use defaults
     }
   }, [user]);
 
@@ -107,7 +107,6 @@ export function useDiscover() {
       );
 
       if (likeError) {
-        console.error('Error liking profile:', likeError);
         return false;
       }
 
@@ -123,8 +122,7 @@ export function useDiscover() {
 
       setCurrentIndex((prev) => prev + 1);
       return true;
-    } catch (err) {
-      console.error('Error liking profile:', err);
+    } catch {
       return false;
     }
   }, [user, profiles, currentIndex, likesUsed, likesTotal]);
@@ -138,8 +136,8 @@ export function useDiscover() {
     try {
       await matchesService.passProfile(user.id, targetProfile.id);
       setCurrentIndex((prev) => prev + 1);
-    } catch (err) {
-      console.error('Error passing profile:', err);
+    } catch {
+      // Silent fail
     }
   }, [user, profiles, currentIndex]);
 

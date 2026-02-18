@@ -119,8 +119,8 @@ export function useQuickMeet(
 
         const { limits } = await subscriptionsService.getUserLimits(user.id);
         setProposalsUsedToday(limits?.quickMeetProposalsUsed || 0);
-      } catch (err) {
-        console.error('Error loading Quick Meet limits:', err);
+      } catch {
+        // Silent fail - limits will use defaults
       }
     };
 

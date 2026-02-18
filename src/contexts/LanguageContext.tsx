@@ -42,7 +42,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
           setTranslations(getTranslations());
         }
       } catch (error) {
-        console.error('Error loading language preference:', error);
+        // Error loading language preference
       }
     };
     loadLanguage();
@@ -58,7 +58,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
       // Increment version to force re-render of all consumers
       setLanguageVersion(v => v + 1);
     } catch (error) {
-      console.error('Error saving language preference:', error);
+      // Error saving language preference
     }
   }, []);
 

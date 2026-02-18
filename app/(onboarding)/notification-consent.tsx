@@ -31,10 +31,8 @@ export default function NotificationConsentScreen() {
         .from('profiles')
         .update({ push_token: token.data })
         .eq('id', user.id);
-
-      console.log('Push token registered:', token.data);
     } catch (error) {
-      console.log('Error registering push token:', error);
+      // Silently fail - token registration is not critical
     }
   };
 
@@ -56,7 +54,6 @@ export default function NotificationConsentScreen() {
       // Continuer vers l'écran suivant que la permission soit accordée ou non
       router.replace('/(onboarding)/location-consent');
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
       Alert.alert(
         t('alerts.errorTitle'),
         t('errors.somethingWrong'),

@@ -6,9 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Modal,
-  TextInput,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,16 +15,12 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { adminService, AdminStats } from '../../src/services/supabase/admin';
-import { supabase } from '../../src/services/supabase/client';
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [_isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [subscriptionEmail, setSubscriptionEmail] = useState('');
-
   const loadStats = async () => {
     const data = await adminService.getStats();
     setStats(data);
@@ -41,31 +34,6 @@ export default function AdminDashboard() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadStats();
-  };
-
-  const handleGiveSubscription = async (tier: 'plus' | 'premium') => {
-    if (!subscriptionEmail.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un email');
-      return;
-    }
-
-    // Rechercher l'utilisateur par email
-    const { data: user, error } = await supabase
-      .from('profiles')
-      .select('id, display_name')
-      .eq('email', subscriptionEmail.trim().toLowerCase())
-      .single();
-
-    if (error || !user) {
-      Alert.alert('Erreur', 'Utilisateur non trouvé avec cet email');
-      return;
-    }
-
-    await adminService.giveSubscription(user.id, tier);
-    Alert.alert('Succès', `Abonnement ${tier === 'plus' ? 'Plus' : 'Premium'} attribué à ${user.display_name} !`);
-    setShowSubscriptionModal(false);
-    setSubscriptionEmail('');
     loadStats();
   };
 
@@ -91,13 +59,6 @@ export default function AdminDashboard() {
       icon: 'stats-chart',
       color: colors.superLike,
       route: '/admin/stats',
-    },
-    {
-      title: 'Codes Promo',
-      subtitle: 'Gérer les promotions',
-      icon: 'pricetag',
-      color: '#9C27B0',
-      route: '/admin/promo-codes',
     },
   ];
 
@@ -203,81 +164,7 @@ export default function AdminDashboard() {
           </View>
         </View>
 
-        {/* Offrir un abonnement */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Abonnements</Text>
-          <TouchableOpacity
-            style={styles.subscriptionButton}
-            onPress={() => setShowSubscriptionModal(true)}
-          >
-            <LinearGradient
-              colors={[colors.premium, '#FFB800']}
-              style={styles.subscriptionGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              <Ionicons name="gift" size={24} color={colors.white} />
-              <Text style={styles.subscriptionButtonText}>Offrir un abonnement</Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.white} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
-
-      {/* Modal Offrir Abonnement */}
-      <Modal
-        visible={showSubscriptionModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowSubscriptionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Offrir un abonnement</Text>
-              <TouchableOpacity onPress={() => setShowSubscriptionModal(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalLabel}>Email de l'utilisateur</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="email@exemple.com"
-              placeholderTextColor={colors.textTertiary}
-              value={subscriptionEmail}
-              onChangeText={setSubscriptionEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.plusButton]}
-                onPress={() => handleGiveSubscription('plus')}
-              >
-                <Ionicons name="star" size={20} color={colors.white} />
-                <Text style={styles.modalButtonText}>Plus</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.premiumButton]}
-                onPress={() => handleGiveSubscription('premium')}
-              >
-                <Ionicons name="diamond" size={20} color={colors.white} />
-                <Text style={styles.modalButtonText}>Premium</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowSubscriptionModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -410,94 +297,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
-  // Subscription section
-  subscriptionButton: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-  },
-  subscriptionGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
-  subscriptionButtonText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.white,
-  },
-
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: spacing.xl,
-    paddingBottom: spacing.xxl,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  modalLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  modalInput: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: spacing.xl,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  modalButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-  },
-  plusButton: {
-    backgroundColor: colors.primary,
-  },
-  premiumButton: {
-    backgroundColor: colors.premium,
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.white,
-  },
-  cancelButton: {
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
 });

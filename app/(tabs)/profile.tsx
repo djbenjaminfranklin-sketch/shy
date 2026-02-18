@@ -1,28 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Image,
   Alert,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Video, ResizeMode } from 'expo-av';
-import { router } from 'expo-router';
-import { colors, spacing, borderRadius } from '../../src/theme';
-import { IntentionBadge, AvailabilityBadge } from '../../src/components/profile';
+import { colors } from '../../src/theme';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useBoost } from '../../src/contexts/BoostContext';
 import { adminService } from '../../src/services/supabase/admin';
 import { supabase } from '../../src/services/supabase/client';
-import { BoostModal } from '../../src/components/boost/BoostModal';
-import { BoostIndicator } from '../../src/components/boost/BoostIndicator';
+import { IceBreakerModal } from '../../src/components/icebreaker/IceBreakerModal';
+import { ProfileHeader } from '../../src/components/profile/sections/ProfileHeader';
+import { ProfileMenuSection } from '../../src/components/profile/sections/ProfileMenuSection';
 
 export default function ProfileScreen() {
   const { user, profile, signOut, deleteAccount } = useAuth();
@@ -33,7 +25,7 @@ export default function ProfileScreen() {
     activeBoostExpiresAt,
     refresh: refreshBoost,
   } = useBoost();
-  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [showIceBreakerModal, setShowIceBreakerModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stats, setStats] = useState({
@@ -55,13 +47,13 @@ export default function ProfileScreen() {
   const loadStats = useCallback(async () => {
     if (!user) return;
 
-    // Compter les invitations envoyées
+    // Compter les invitations envoyees
     const { count: sentCount } = await supabase
       .from('invitations')
       .select('*', { count: 'exact', head: true })
       .eq('sender_id', user.id);
 
-    // Compter les invitations reçues
+    // Compter les invitations recues
     const { count: receivedCount } = await supabase
       .from('invitations')
       .select('*', { count: 'exact', head: true })
@@ -148,10 +140,6 @@ export default function ProfileScreen() {
     );
   };
 
-  // Avatar par défaut si pas de photo
-  const defaultAvatar = 'https://via.placeholder.com/120x120/FF6B6B/FFFFFF?text=' +
-    (profile?.displayName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || '?');
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -165,198 +153,31 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Header avec photo */}
-        <View style={styles.header}>
-          {profile ? (
-            <>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatarWrapper}>
-                  <Image
-                    source={{ uri: profile.photos?.[0] || defaultAvatar }}
-                    style={styles.avatarImage}
-                    resizeMode="cover"
-                    onError={(e) => console.log('Profile avatar error:', e.nativeEvent.error)}
-                  />
-                </View>
-              </View>
+        <ProfileHeader
+          user={user}
+          profile={profile}
+          stats={stats}
+          t={t}
+        />
 
-              <Text style={styles.name}>
-                {profile.displayName}, {profile.age}
-              </Text>
-
-              <View style={styles.badges}>
-                <IntentionBadge intention={profile.intention} />
-                {profile.availability && (
-                  <AvailabilityBadge availability={profile.availability} />
-                )}
-              </View>
-
-              {profile.bio && (
-                <Text style={styles.bio}>{profile.bio}</Text>
-              )}
-
-              {/* Vidéo de profil */}
-              {profile.videoUrl && (
-                <View style={styles.videoContainer}>
-                  <Video
-                    source={{ uri: profile.videoUrl }}
-                    style={styles.profileVideo}
-                    resizeMode={ResizeMode.COVER}
-                    shouldPlay={false}
-                    isLooping={false}
-                    useNativeControls
-                  />
-                </View>
-              )}
-            </>
-          ) : (
-            <>
-              <View style={styles.avatarContainer}>
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                  <Ionicons name="person" size={60} color={colors.textTertiary} />
-                </View>
-              </View>
-
-              <Text style={styles.name}>
-                {user?.email?.split('@')[0] || t('profile.user')}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.completeProfileButton}
-                onPress={() => router.push('/(onboarding)/profile-photo')}
-              >
-                <Text style={styles.completeProfileText}>
-                  {t('profile.completeProfile')}
-                </Text>
-                <Ionicons name="arrow-forward" size={20} color={colors.primary} />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{stats.invitationsSent}</Text>
-            <Text style={styles.statLabel}>{t('profile.stats.sent')}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{stats.invitationsReceived}</Text>
-            <Text style={styles.statLabel}>{t('profile.stats.received')}</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statNumber}>{stats.connections}</Text>
-            <Text style={styles.statLabel}>{t('profile.stats.connections')}</Text>
-          </View>
-        </View>
-
-        {/* Bouton modifier profil - GROS */}
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => router.push('/profile/edit')}
-        >
-          <LinearGradient
-            colors={[colors.primary, colors.primaryLight]}
-            style={styles.editGradient}
-          >
-            <Ionicons name="create" size={24} color={colors.white} />
-            <Text style={styles.editText}>{t('profile.editProfile')}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Boost button */}
-        <TouchableOpacity
-          style={styles.boostButton}
-          onPress={() => setShowBoostModal(true)}
-        >
-          <LinearGradient
-            colors={[colors.boost, colors.accentLight]}
-            style={styles.boostGradient}
-          >
-            <View style={styles.boostContent}>
-              <Ionicons name="flash" size={24} color={colors.white} />
-              <View style={styles.boostTextContainer}>
-                <Text style={styles.boostText}>{t('boost.title')}</Text>
-                {isBoostActive ? (
-                  <BoostIndicator expiresAt={activeBoostExpiresAt} onExpire={refreshBoost} compact />
-                ) : (
-                  <Text style={styles.boostSubtext}>
-                    {boostsAvailable > 0
-                      ? t('boost.remaining', { count: boostsAvailable })
-                      : t('boost.noBoosts')}
-                  </Text>
-                )}
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.white} />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Menu items - GROS boutons */}
-        <View style={styles.menu}>
-          {menuItems.slice(1).map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={() => router.push(item.route as any)}
-            >
-              <View style={styles.menuIcon}>
-                <Ionicons name={item.icon} size={24} color={colors.primary} />
-              </View>
-              <Text style={styles.menuLabel}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={24} color={colors.textTertiary} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Admin Panel - Only visible for admins */}
-        {isAdmin && (
-          <TouchableOpacity
-            style={styles.adminButton}
-            onPress={() => router.push('/admin')}
-          >
-            <LinearGradient
-              colors={['#1a1a2e', '#16213e']}
-              style={styles.adminGradient}
-            >
-              <Ionicons name="shield" size={24} color="#00d4ff" />
-              <Text style={styles.adminText}>{t('profile.adminPanel')}</Text>
-              <Ionicons name="chevron-forward" size={20} color="#00d4ff" />
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-
-        {/* Actions du compte */}
-        <View style={styles.accountActions}>
-          {/* Deconnexion */}
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={handleSignOut}
-          >
-            <Ionicons name="log-out-outline" size={24} color={colors.text} />
-            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
-          </TouchableOpacity>
-
-          {/* Supprimer le compte - OBLIGATOIRE APPLE */}
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDeleteAccount}
-          >
-            <Ionicons name="trash-outline" size={24} color={colors.error} />
-            <Text style={styles.deleteText}>{t('profile.deleteAccount')}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Version */}
-        <Text style={styles.version}>SHY v1.0.1</Text>
+        <ProfileMenuSection
+          menuItems={menuItems}
+          isAdmin={isAdmin}
+          isBoostActive={isBoostActive}
+          boostsAvailable={boostsAvailable}
+          activeBoostExpiresAt={activeBoostExpiresAt}
+          refreshBoost={refreshBoost}
+          onBoostPress={() => setShowIceBreakerModal(true)}
+          onSignOut={handleSignOut}
+          onDeleteAccount={handleDeleteAccount}
+          t={t}
+        />
       </ScrollView>
 
-      {/* Boost modal */}
-      <BoostModal
-        visible={showBoostModal}
-        onClose={() => setShowBoostModal(false)}
+      {/* Ice Breaker modal */}
+      <IceBreakerModal
+        visible={showIceBreakerModal}
+        onClose={() => setShowIceBreakerModal(false)}
       />
     </SafeAreaView>
   );
@@ -366,273 +187,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-
-  // Header
-  header: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: spacing.md,
-  },
-  avatarWrapper: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: colors.primary,
-    overflow: 'hidden',
-    backgroundColor: colors.surface,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: colors.primary,
-  },
-  avatarPlaceholder: {
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  completeProfileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    marginTop: spacing.md,
-  },
-  completeProfileText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  verifiedBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: colors.card,
-    borderRadius: 14,
-  },
-  name: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  badges: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  bio: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  videoContainer: {
-    width: '100%',
-    marginTop: spacing.lg,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-  },
-  profileVideo: {
-    width: '100%',
-    height: 200,
-    backgroundColor: colors.surface,
-  },
-
-  // Stats
-  statsContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    marginHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    // Shadow
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-  },
-
-  // Edit button - GROS
-  editButton: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  editGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 56,
-    borderRadius: borderRadius.lg,
-    gap: spacing.sm,
-  },
-  editText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-
-  // Boost button
-  boostButton: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  boostGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 70,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.lg,
-  },
-  boostContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  boostTextContainer: {
-    gap: 2,
-  },
-  boostText: {
-    color: colors.white,
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  boostSubtext: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 13,
-  },
-
-  // Menu - GROS items
-  menu: {
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    minHeight: 60, // GROS
-  },
-  menuIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  menuLabel: {
-    flex: 1,
-    fontSize: 17,
-    color: colors.text,
-    fontWeight: '500',
-  },
-
-  // Account actions
-  accountActions: {
-    marginHorizontal: spacing.lg,
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    gap: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    minHeight: 60,
-  },
-  logoutText: {
-    fontSize: 17,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    gap: spacing.md,
-    minHeight: 60,
-  },
-  deleteText: {
-    fontSize: 17,
-    color: colors.error,
-    fontWeight: '500',
-  },
-
-  // Admin button
-  adminButton: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  adminGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 56,
-    borderRadius: borderRadius.lg,
-    gap: spacing.sm,
-  },
-  adminText: {
-    flex: 1,
-    color: '#00d4ff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-
-  // Version
-  version: {
-    textAlign: 'center',
-    color: colors.textTertiary,
-    fontSize: 13,
-    marginVertical: spacing.lg,
   },
 });

@@ -18,7 +18,6 @@ export const connectionRhythmService = {
       });
 
       if (error) {
-        console.error('[connectionRhythmService.getRhythmScore] Error:', error);
         return { score: null, error: error.message };
       }
 
@@ -58,7 +57,6 @@ export const connectionRhythmService = {
 
       return { score, error: null };
     } catch (err) {
-      console.error('[connectionRhythmService.getRhythmScore] Unexpected error:', err);
       return { score: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -75,7 +73,6 @@ export const connectionRhythmService = {
       });
 
       if (error) {
-        console.error('[connectionRhythmService.recalculateScore] Error:', error);
         return { score: null, error: error.message };
       }
 
@@ -103,7 +100,6 @@ export const connectionRhythmService = {
 
       return { score, error: null };
     } catch (err) {
-      console.error('[connectionRhythmService.recalculateScore] Unexpected error:', err);
       return { score: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -125,7 +121,6 @@ export const connectionRhythmService = {
         if (error.code === 'PGRST116') {
           return { score: null, error: null }; // Not found
         }
-        console.error('[connectionRhythmService.getStoredScore] Error:', error);
         return { score: null, error: error.message };
       }
 
@@ -148,7 +143,6 @@ export const connectionRhythmService = {
 
       return { score, error: null };
     } catch (err) {
-      console.error('[connectionRhythmService.getStoredScore] Unexpected error:', err);
       return { score: null, error: 'Une erreur inattendue est survenue' };
     }
   },

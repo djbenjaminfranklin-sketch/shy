@@ -21,7 +21,6 @@ export const comfortLevelsService = {
         .eq('conversation_id', conversationId);
 
       if (error) {
-        console.error('[comfortLevelsService.getComfortState] Error:', error);
         return { state: null, error: error.message };
       }
 
@@ -45,7 +44,6 @@ export const comfortLevelsService = {
 
       return { state, error: null };
     } catch (err) {
-      console.error('[comfortLevelsService.getComfortState] Unexpected error:', err);
       return { state: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -73,7 +71,6 @@ export const comfortLevelsService = {
         );
 
       if (upsertError) {
-        console.error('[comfortLevelsService.updateComfortLevel] Error:', upsertError);
         return {
           success: false,
           newLevel,
@@ -93,7 +90,6 @@ export const comfortLevelsService = {
         isMutual: state?.isMutual || false,
       };
     } catch (err) {
-      console.error('[comfortLevelsService.updateComfortLevel] Unexpected error:', err);
       return {
         success: false,
         newLevel,

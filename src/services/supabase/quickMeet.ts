@@ -43,13 +43,11 @@ export const quickMeetService = {
         .single();
 
       if (error) {
-        console.error('[quickMeetService.createProposal] Error:', error);
         return { proposal: null, error: error.message };
       }
 
       return { proposal: this.mapProposal(data), error: null };
     } catch (err) {
-      console.error('[quickMeetService.createProposal] Unexpected error:', err);
       return { proposal: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -72,13 +70,11 @@ export const quickMeetService = {
         .maybeSingle();
 
       if (error) {
-        console.error('[quickMeetService.getActiveProposal] Error:', error);
         return { proposal: null, error: error.message };
       }
 
       return { proposal: data ? this.mapProposal(data) : null, error: null };
     } catch (err) {
-      console.error('[quickMeetService.getActiveProposal] Unexpected error:', err);
       return { proposal: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -108,13 +104,11 @@ export const quickMeetService = {
         .eq('id', response.proposalId);
 
       if (error) {
-        console.error('[quickMeetService.respondToProposal] Error:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, error: null };
     } catch (err) {
-      console.error('[quickMeetService.respondToProposal] Unexpected error:', err);
       return { success: false, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -137,13 +131,11 @@ export const quickMeetService = {
         .eq('proposer_id', userId);
 
       if (error) {
-        console.error('[quickMeetService.cancelProposal] Error:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, error: null };
     } catch (err) {
-      console.error('[quickMeetService.cancelProposal] Unexpected error:', err);
       return { success: false, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -164,7 +156,6 @@ export const quickMeetService = {
         .limit(limit);
 
       if (error) {
-        console.error('[quickMeetService.getProposalHistory] Error:', error);
         return { proposals: [], error: error.message };
       }
 
@@ -173,7 +164,6 @@ export const quickMeetService = {
         error: null,
       };
     } catch (err) {
-      console.error('[quickMeetService.getProposalHistory] Unexpected error:', err);
       return { proposals: [], error: 'Une erreur inattendue est survenue' };
     }
   },

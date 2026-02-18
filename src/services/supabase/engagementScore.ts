@@ -19,7 +19,6 @@ export const engagementScoreService = {
       });
 
       if (error) {
-        console.error('[engagementScoreService.getEngagementScore] Error:', error);
         return { metrics: null, error: error.message };
       }
 
@@ -50,7 +49,6 @@ export const engagementScoreService = {
 
       return { metrics, error: null };
     } catch (err) {
-      console.error('[engagementScoreService.getEngagementScore] Unexpected error:', err);
       return { metrics: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -67,13 +65,11 @@ export const engagementScoreService = {
       });
 
       if (error) {
-        console.error('[engagementScoreService.recalculateScore] Error:', error);
         return { metrics: null, error: error.message };
       }
 
       return this.getEngagementScore(userId);
     } catch (err) {
-      console.error('[engagementScoreService.recalculateScore] Unexpected error:', err);
       return { metrics: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -92,7 +88,6 @@ export const engagementScoreService = {
         .gt('expires_at', new Date().toISOString());
 
       if (error) {
-        console.error('[engagementScoreService.getActiveBoosts] Error:', error);
         return { boosts: [], error: error.message };
       }
 
@@ -106,7 +101,6 @@ export const engagementScoreService = {
 
       return { boosts, error: null };
     } catch (err) {
-      console.error('[engagementScoreService.getActiveBoosts] Unexpected error:', err);
       return { boosts: [], error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -135,7 +129,6 @@ export const engagementScoreService = {
       });
 
       if (error) {
-        console.error('[engagementScoreService.getRankedProfiles] Error:', error);
         return { profiles: [], error: error.message };
       }
 
@@ -150,7 +143,6 @@ export const engagementScoreService = {
 
       return { profiles, error: null };
     } catch (err) {
-      console.error('[engagementScoreService.getRankedProfiles] Unexpected error:', err);
       return { profiles: [], error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -169,13 +161,11 @@ export const engagementScoreService = {
       });
 
       if (error) {
-        console.error('[engagementScoreService.recordActivity] Error:', error);
         return { success: false, error: error.message };
       }
 
       return { success: true, error: null };
     } catch (err) {
-      console.error('[engagementScoreService.recordActivity] Unexpected error:', err);
       return { success: false, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -190,7 +180,7 @@ export const engagementScoreService = {
         .update({ last_active_at: new Date().toISOString() })
         .eq('id', userId);
     } catch (err) {
-      console.error('[engagementScoreService.updateLastActive] Error:', err);
+      // Silently ignore errors updating last active timestamp
     }
   },
 };

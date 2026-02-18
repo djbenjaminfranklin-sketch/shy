@@ -29,7 +29,6 @@ export async function translateText(
 
     // Vérifier que l'API est configurée
     if (!GOOGLE_API_KEY || GOOGLE_API_KEY.length < 10) {
-      console.warn('Google Translation API key not configured');
       return { translatedText: text, error: 'API non configurée' };
     }
 
@@ -55,7 +54,6 @@ export async function translateText(
     const data = await response.json();
 
     if (data.error) {
-      console.error('Google Translation error:', data.error);
       return {
         translatedText: text,
         error: data.error.message || 'Erreur de traduction',
@@ -75,7 +73,6 @@ export async function translateText(
       error: 'Réponse inattendue de l\'API',
     };
   } catch (error) {
-    console.error('Translation error:', error);
     return {
       translatedText: text,
       error: 'Impossible de traduire le message',
@@ -118,7 +115,6 @@ export async function detectLanguage(text: string): Promise<string | null> {
 
     return null;
   } catch (error) {
-    console.error('Language detection error:', error);
     return null;
   }
 }

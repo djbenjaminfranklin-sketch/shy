@@ -13,8 +13,9 @@ export interface Report {
   reportedId: string;
   reason: ReportReasonId;
   description: string | null;
-  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed' | 'warned' | 'banned';
   createdAt: string;
+  resolvedAt?: string;
 }
 
 export interface AccountDeletion {

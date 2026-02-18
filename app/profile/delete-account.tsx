@@ -7,43 +7,46 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Button } from '../../src/components/ui/Button';
 import { DismissKeyboard } from '../../src/components/ui/DismissKeyboard';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const { deleteAccount } = useAuth();
+  const { t } = useLanguage();
 
   const [confirmation, setConfirmation] = useState('');
   const [reason, setReason] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const confirmationInputRef = useRef<TextInput>(null);
 
-  const canDelete = confirmation.toLowerCase() === 'supprimer';
+  const confirmationWord = t('profile.deleteAccountScreen.confirmationWord');
+  const canDelete = confirmation.toLowerCase() === confirmationWord.toLowerCase();
 
   const handleDelete = async () => {
     if (!canDelete) return;
 
     Alert.alert(
-      'Confirmer la suppression',
-      'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+      t('profile.deleteAccountScreen.confirmTitle'),
+      t('profile.deleteAccountScreen.confirmMessage'),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Supprimer',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             setIsDeleting(true);
             try {
               const { error } = await deleteAccount();
               if (error) {
-                Alert.alert('Erreur', error);
+                Alert.alert(t('common.error'), error);
                 setIsDeleting(false);
               } else {
                 router.replace('/(auth)/welcome');
               }
             } catch (err) {
-              Alert.alert('Erreur', 'Une erreur est survenue');
+              Alert.alert(t('common.error'), t('profile.deleteAccountScreen.errorOccurred'));
               setIsDeleting(false);
             }
           },
@@ -58,7 +61,7 @@ export default function DeleteAccountScreen() {
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>Supprimer le compte</Text>
+        <Text style={styles.headerTitle}>{t('profile.deleteAccountScreen.headerTitle')}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -74,33 +77,33 @@ export default function DeleteAccountScreen() {
             <Text style={styles.icon}>⚠️</Text>
           </View>
 
-          <Text style={styles.title}>Supprimer votre compte</Text>
+          <Text style={styles.title}>{t('profile.deleteAccountScreen.title')}</Text>
 
           <Text style={styles.description}>
-            La suppression de votre compte entraîne :
+            {t('profile.deleteAccountScreen.description')}
           </Text>
 
           <View style={styles.list}>
-            <Text style={styles.listItem}>• Suppression de votre profil</Text>
-            <Text style={styles.listItem}>• Suppression de tous vos matchs</Text>
-            <Text style={styles.listItem}>• Suppression de toutes vos conversations</Text>
-            <Text style={styles.listItem}>• Suppression de vos photos</Text>
-            <Text style={styles.listItem}>• Effacement de vos données personnelles</Text>
+            <Text style={styles.listItem}>• {t('profile.deleteAccountScreen.consequence1')}</Text>
+            <Text style={styles.listItem}>• {t('profile.deleteAccountScreen.consequence2')}</Text>
+            <Text style={styles.listItem}>• {t('profile.deleteAccountScreen.consequence3')}</Text>
+            <Text style={styles.listItem}>• {t('profile.deleteAccountScreen.consequence4')}</Text>
+            <Text style={styles.listItem}>• {t('profile.deleteAccountScreen.consequence5')}</Text>
           </View>
 
           <Text style={styles.warning}>
-            Cette action est irréversible et sera effective dans un délai de 30 jours.
+            {t('profile.deleteAccountScreen.warning')}
           </Text>
 
           <View style={styles.form}>
             <Text style={styles.label}>
-              Raison de votre départ (optionnel)
+              {t('profile.deleteAccountScreen.reasonLabel')}
             </Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={reason}
               onChangeText={setReason}
-              placeholder="Aidez-nous à nous améliorer..."
+              placeholder={t('profile.deleteAccountScreen.reasonPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               multiline
               maxLength={500}
@@ -110,14 +113,14 @@ export default function DeleteAccountScreen() {
             />
 
             <Text style={styles.label}>
-              Tapez "SUPPRIMER" pour confirmer
+              {t('profile.deleteAccountScreen.typeToConfirm').replace('{word}', confirmationWord.toUpperCase())}
             </Text>
             <TextInput
               ref={confirmationInputRef}
               style={styles.input}
               value={confirmation}
               onChangeText={setConfirmation}
-              placeholder="SUPPRIMER"
+              placeholder={confirmationWord.toUpperCase()}
               placeholderTextColor={colors.textTertiary}
               autoCapitalize="none"
               returnKeyType="done"
@@ -129,13 +132,13 @@ export default function DeleteAccountScreen() {
 
       <View style={styles.footer}>
         <Button
-          title="Annuler"
+          title={t('common.cancel')}
           onPress={() => router.back()}
           variant="outline"
           style={styles.button}
         />
         <Button
-          title="Supprimer mon compte"
+          title={t('profile.deleteAccountScreen.deleteButton')}
           onPress={handleDelete}
           variant="danger"
           disabled={!canDelete}

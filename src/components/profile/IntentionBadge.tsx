@@ -6,7 +6,7 @@ import { spacing, borderRadius } from '../../theme/spacing';
 
 interface IntentionBadgeProps {
   intention: IntentionId;
-  size?: 'small' | 'medium';
+  size?: 'small' | 'medium' | 'large';
 }
 
 export function IntentionBadge({ intention, size = 'medium' }: IntentionBadgeProps) {
@@ -14,9 +14,11 @@ export function IntentionBadge({ intention, size = 'medium' }: IntentionBadgePro
 
   if (!config) return null;
 
+  const emojiSize = size === 'large' ? 18 : 14;
+
   return (
     <View style={[styles.container, styles[size], { backgroundColor: config.color + '20' }]}>
-      <Text style={styles.emoji}>
+      <Text style={[styles.emoji, { fontSize: emojiSize }]}>
         {intention === 'social' && '💬'}
         {intention === 'dating' && '❤️'}
         {intention === 'amical' && '🤝'}
@@ -46,6 +48,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
   },
+  large: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
   emoji: {
     fontSize: 14,
   },
@@ -57,6 +64,10 @@ const styles = StyleSheet.create({
   },
   mediumText: {
     ...typography.labelSmall,
+  },
+  largeText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

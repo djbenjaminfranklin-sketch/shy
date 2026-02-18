@@ -63,7 +63,6 @@ class GooglePlacesService {
     }
   ): Promise<{ predictions: PlacePrediction[]; error: string | null }> {
     if (!this.isConfigured()) {
-      console.warn('Google Places API key not configured');
       return { predictions: [], error: 'API non configurée' };
     }
 
@@ -90,7 +89,6 @@ class GooglePlacesService {
       const data = await response.json();
 
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        console.error('Google Places error:', data.status);
         return { predictions: [], error: data.error_message || data.status };
       }
 
@@ -103,7 +101,6 @@ class GooglePlacesService {
 
       return { predictions, error: null };
     } catch (error) {
-      console.error('Error searching places:', error);
       return { predictions: [], error: 'Erreur de recherche' };
     }
   }
@@ -146,7 +143,6 @@ class GooglePlacesService {
 
       return { place, error: null };
     } catch (error) {
-      console.error('Error getting place details:', error);
       return { place: null, error: 'Erreur lors de la récupération des détails' };
     }
   }
@@ -224,7 +220,6 @@ class GooglePlacesService {
 
       return { result: geocodingResult, error: null };
     } catch (error) {
-      console.error('Error reverse geocoding:', error);
       return { result: null, error: 'Erreur de géocodage' };
     }
   }
@@ -269,7 +264,6 @@ class GooglePlacesService {
         error: null,
       };
     } catch (error) {
-      console.error('Error geocoding:', error);
       return { latitude: null, longitude: null, error: 'Erreur de géocodage' };
     }
   }
@@ -327,7 +321,6 @@ class GooglePlacesService {
 
       return { places, error: null };
     } catch (error) {
-      console.error('Error searching nearby:', error);
       return { places: [], error: 'Erreur de recherche' };
     }
   }

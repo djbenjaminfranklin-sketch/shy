@@ -81,40 +81,6 @@ export default function UserDetailScreen() {
     loadUser();
   };
 
-  const handleGiveSubscription = () => {
-    Alert.alert(
-      'Attribuer un abonnement',
-      'Choisissez le niveau d\'abonnement à attribuer gratuitement:',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Free (retirer)',
-          onPress: async () => {
-            await adminService.giveSubscription(userId!, 'free');
-            Alert.alert('Succès', 'Abonnement retiré.');
-            loadUser();
-          },
-        },
-        {
-          text: 'Plus',
-          onPress: async () => {
-            await adminService.giveSubscription(userId!, 'plus');
-            Alert.alert('Succès', 'Abonnement Plus attribué !');
-            loadUser();
-          },
-        },
-        {
-          text: 'Premium',
-          onPress: async () => {
-            await adminService.giveSubscription(userId!, 'premium');
-            Alert.alert('Succès', 'Abonnement Premium attribué !');
-            loadUser();
-          },
-        },
-      ]
-    );
-  };
-
   const handleGiveBoosts = () => {
     Alert.alert(
       `Offrir des boosts à ${user?.displayName}`,
@@ -288,14 +254,6 @@ export default function UserDetailScreen() {
 
       {/* Actions */}
       <View style={styles.actions}>
-        {/* Give Subscription */}
-        <TouchableOpacity style={styles.actionBtn} onPress={handleGiveSubscription}>
-          <Ionicons name="gift" size={20} color={colors.premium} />
-          <Text style={[styles.actionText, { color: colors.premium }]}>
-            Attribuer un abonnement gratuit
-          </Text>
-        </TouchableOpacity>
-
         {/* Give Boosts */}
         <TouchableOpacity style={styles.actionBtn} onPress={handleGiveBoosts}>
           <Ionicons name="rocket" size={20} color={colors.secondary} />

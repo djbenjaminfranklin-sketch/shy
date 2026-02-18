@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,13 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Image,
-  Dimensions,
-  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
-import { spacing, borderRadius } from '../../src/theme/spacing';
-import { IntentionBadge } from '../../src/components/profile/IntentionBadge';
+import { spacing } from '../../src/theme/spacing';
 import { ProfileMapView } from '../../src/components/map';
 import { useLocation } from '../../src/contexts/LocationContext';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -25,183 +20,15 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useTravelMode } from '../../src/hooks/useTravelMode';
 import { profilesService } from '../../src/services/supabase/profiles';
 import { adminService } from '../../src/services/supabase/admin';
+import {
+  ProfileGridCard,
+  ViewToggle,
+  SectionHeader,
+  SkeletonCard,
+  isUserOnline,
+} from '../../src/components/explore';
+import type { ViewMode } from '../../src/components/explore';
 import type { ProfileWithDistance } from '../../src/types/profile';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - spacing.lg * 2 - spacing.sm * 2) / 3;
-const CARD_HEIGHT = CARD_WIDTH * 1.5;
-
-type ViewMode = 'map' | 'grid';
-
-// Skeleton loading card
-const SkeletonCard = () => {
-  const opacity = useRef(new Animated.Value(0.3)).current;
-
-  useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.7,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.3,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [opacity]);
-
-  return (
-    <Animated.View style={[styles.card, styles.skeletonCard, { opacity }]}>
-      <View style={styles.skeletonImage} />
-    </Animated.View>
-  );
-};
-
-// Profile card component
-interface ProfileCardProps {
-  profile: ProfileWithDistance;
-  onPress: () => void;
-}
-
-// Check if user was active in the last 5 minutes
-const isUserOnline = (lastActiveAt: string | null | undefined): boolean => {
-  if (!lastActiveAt) return false;
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  return new Date(lastActiveAt) > fiveMinutesAgo;
-};
-
-const ProfileCard = ({ profile, onPress }: ProfileCardProps) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const photoUrl = profile.photos?.[0] || 'https://via.placeholder.com/300x400';
-  const isOnline = isUserOnline(profile.lastActiveAt);
-
-  return (
-    <Animated.View style={[styles.card, { transform: [{ scale: scaleAnim }] }]}>
-      <TouchableOpacity
-        activeOpacity={0.95}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        style={styles.cardTouchable}
-      >
-        <Image source={{ uri: photoUrl }} style={styles.cardImage} />
-
-        {/* Online indicator */}
-        {isOnline && (
-          <View style={styles.onlineIndicator}>
-            <View style={styles.onlineDot} />
-          </View>
-        )}
-
-        {/* Gradient overlay */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.85)']}
-          style={styles.cardGradient}
-        >
-          <View style={styles.cardInfo}>
-            <Text style={styles.cardName} numberOfLines={1}>
-              {profile.displayName}
-            </Text>
-            <Text style={styles.cardAge}>{profile.age} ans</Text>
-            {profile.distance !== null && (
-              <View style={styles.distanceRow}>
-                <Ionicons name="location" size={10} color={colors.tabBarActive} />
-                <Text style={styles.distanceText}>{profile.distance} km</Text>
-              </View>
-            )}
-          </View>
-        </LinearGradient>
-
-        {/* Intention badge */}
-        <View style={styles.intentionBadgeContainer}>
-          <IntentionBadge intention={profile.intention} size="small" />
-        </View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
-
-// Section header component
-interface SectionHeaderProps {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  count?: number;
-}
-
-const SectionHeader = ({ title, icon, color, count }: SectionHeaderProps) => (
-  <View style={styles.sectionHeader}>
-    <View style={styles.sectionTitleRow}>
-      <Ionicons name={icon} size={20} color={color} />
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {count !== undefined && (
-        <View style={[styles.countBadge, { backgroundColor: color + '20' }]}>
-          <Text style={[styles.countText, { color }]}>{count}</Text>
-        </View>
-      )}
-    </View>
-  </View>
-);
-
-// Toggle button component
-interface ViewToggleProps {
-  mode: ViewMode;
-  onChange: (mode: ViewMode) => void;
-  t: (key: string) => string;
-}
-
-const ViewToggle = ({ mode, onChange, t }: ViewToggleProps) => (
-  <View style={styles.toggleContainer}>
-    <TouchableOpacity
-      style={[styles.toggleButton, mode === 'map' && styles.toggleButtonActive]}
-      onPress={() => onChange('map')}
-    >
-      <Ionicons
-        name="map"
-        size={20}
-        color={mode === 'map' ? colors.white : colors.textSecondary}
-      />
-      <Text style={[styles.toggleText, mode === 'map' && styles.toggleTextActive]}>
-        {t('explore.map')}
-      </Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={[styles.toggleButton, mode === 'grid' && styles.toggleButtonActive]}
-      onPress={() => onChange('grid')}
-    >
-      <Ionicons
-        name="grid"
-        size={20}
-        color={mode === 'grid' ? colors.white : colors.textSecondary}
-      />
-      <Text style={[styles.toggleText, mode === 'grid' && styles.toggleTextActive]}>
-        {t('explore.grid')}
-      </Text>
-    </TouchableOpacity>
-  </View>
-);
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -215,7 +42,7 @@ export default function ExploreScreen() {
   const [profiles, setProfiles] = useState<ProfileWithDistance[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Vérifier si l'utilisateur est admin
+  // Verifier si l'utilisateur est admin
   useEffect(() => {
     if (user) {
       adminService.isAdmin(user.id).then((admin) => {
@@ -224,13 +51,16 @@ export default function ExploreScreen() {
     }
   }, [user]);
 
-  // Position effective (mode voyage si actif, sinon position réelle)
+  // Position effective (mode voyage si actif, sinon position reelle, sinon Paris par defaut)
+  const DEFAULT_LAT = 48.8566; // Paris
+  const DEFAULT_LNG = 2.3522;
+
   const effectiveLatitude = hasActiveTravelMode && travelMode
     ? travelMode.destination.latitude
-    : latitude;
+    : (latitude || DEFAULT_LAT);
   const effectiveLongitude = hasActiveTravelMode && travelMode
     ? travelMode.destination.longitude
-    : longitude;
+    : (longitude || DEFAULT_LNG);
   const effectiveCity = hasActiveTravelMode && travelMode
     ? travelMode.destination.city
     : city;
@@ -240,43 +70,10 @@ export default function ExploreScreen() {
     ? { latitude: effectiveLatitude, longitude: effectiveLongitude }
     : null;
 
-  // Charger les profils depuis Supabase
-  useEffect(() => {
-    const loadProfiles = async () => {
-      if (!user) return;
-      setIsLoading(true);
-
-      const { profiles: loadedProfiles } = await profilesService.getDiscoverProfiles(
-        user.id,
-        {
-          minAge: 18,
-          maxAge: 99,
-          genders: [],
-          intentions: [],
-          hairColors: [],
-          languages: [],
-          interests: [],
-          searchRadius: isAdmin ? 50000 : (searchRadius || 50), // Admin: rayon mondial
-        },
-        effectiveLatitude ?? undefined,
-        effectiveLongitude ?? undefined,
-        null, // activeMode
-        isAdmin // Permet de voir tous les profils sans limite de distance
-      );
-
-      if (loadedProfiles) {
-        setProfiles(loadedProfiles);
-      }
-      setIsLoading(false);
-    };
-
-    loadProfiles();
-  }, [user, effectiveLatitude, effectiveLongitude, searchRadius, isAdmin]);
-
-  // Refresh handler
-  const handleRefresh = useCallback(async () => {
+  // Fonction pour charger les profils
+  const loadProfiles = useCallback(async (showLoading = true) => {
     if (!user) return;
-    setIsRefreshing(true);
+    if (showLoading) setIsLoading(true);
 
     const { profiles: loadedProfiles } = await profilesService.getDiscoverProfiles(
       user.id,
@@ -288,24 +85,44 @@ export default function ExploreScreen() {
         hairColors: [],
         languages: [],
         interests: [],
-        searchRadius: isAdmin ? 50000 : (searchRadius || 50),
+        searchRadius: isAdmin ? 50000 : (searchRadius || 50), // Admin: rayon mondial
       },
       effectiveLatitude ?? undefined,
       effectiveLongitude ?? undefined,
-      null,
-      isAdmin
+      null, // activeMode
+      isAdmin // Permet de voir tous les profils sans limite de distance
     );
 
     if (loadedProfiles) {
       setProfiles(loadedProfiles);
     }
-    setIsRefreshing(false);
+    if (showLoading) setIsLoading(false);
   }, [user, effectiveLatitude, effectiveLongitude, searchRadius, isAdmin]);
+
+  // Charger les profils au demarrage
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
+
+  // Rafraichir quand on revient sur l'ecran (apres envoi d'invitation)
+  useFocusEffect(
+    useCallback(() => {
+      // Rafraichir sans afficher le loading
+      loadProfiles(false);
+    }, [loadProfiles])
+  );
+
+  // Refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadProfiles(false);
+    setIsRefreshing(false);
+  }, [loadProfiles]);
 
   // Profile press handler
   const handleProfilePress = useCallback(
     (profile: ProfileWithDistance | { id: string }) => {
-      router.push(`/profile/${profile.id}` as never);
+      router.push(`/profile/${profile.id}?from=explore` as never);
     },
     [router]
   );
@@ -313,7 +130,7 @@ export default function ExploreScreen() {
   // Render profile card
   const renderProfile = useCallback(
     ({ item }: { item: ProfileWithDistance }) => (
-      <ProfileCard
+      <ProfileGridCard
         profile={item}
         onPress={() => handleProfilePress(item)}
       />
@@ -352,7 +169,7 @@ export default function ExploreScreen() {
               />
               <Text style={[styles.subtitle, (isEnabled || hasActiveTravelMode) && styles.locationActive]}>
                 {hasActiveTravelMode
-                  ? `✈️ ${effectiveCity}`
+                  ? `\u2708\ufe0f ${effectiveCity}`
                   : isEnabled
                     ? (city || getLocationDisplayName())
                     : t('explore.locationDisabled')}
@@ -364,9 +181,7 @@ export default function ExploreScreen() {
         <ViewToggle mode={viewMode} onChange={setViewMode} t={t} />
       </View>
 
-      {isLoading ? (
-        renderSkeletons()
-      ) : viewMode === 'map' ? (
+      {viewMode === 'map' ? (
         // Vue Carte avec fond pour la tab bar
         <View style={styles.mapContainer}>
           <ProfileMapView
@@ -379,6 +194,8 @@ export default function ExploreScreen() {
           {/* Fond pour la tab bar */}
           <View style={styles.mapBottomOverlay} />
         </View>
+      ) : isLoading ? (
+        renderSkeletons()
       ) : (
         // Vue Grille
         <FlatList
@@ -472,61 +289,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
 
-  // Toggle
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: 4,
-  },
-  toggleButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    gap: spacing.xs,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  toggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  toggleTextActive: {
-    color: colors.white,
-  },
-
-  // Section header
-  sectionHeader: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.h4,
-    color: colors.text,
-    flex: 1,
-  },
-  countBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-  },
-  countText: {
-    ...typography.labelSmall,
-    fontWeight: '700',
-  },
-
   // Map container
   mapContainer: {
     flex: 1,
@@ -550,89 +312,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  // Card
-  card: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    backgroundColor: colors.card,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTouchable: {
-    flex: 1,
-  },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.surface,
-  },
-  cardGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  cardInfo: {
-    gap: 1,
-  },
-  cardName: {
-    ...typography.labelSmall,
-    color: colors.textLight,
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  cardAge: {
-    ...typography.caption,
-    color: colors.textLightSecondary,
-    fontSize: 10,
-  },
-  distanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    marginTop: 2,
-  },
-  distanceText: {
-    ...typography.caption,
-    color: colors.tabBarActive,
-    fontSize: 9,
-    fontWeight: '600',
-  },
-
-  // Online indicator
-  onlineIndicator: {
-    position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  onlineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.online,
-  },
-
-  // Intention badge
-  intentionBadgeContainer: {
-    position: 'absolute',
-    top: spacing.xs,
-    left: spacing.xs,
-  },
-
   // Skeleton
   skeletonContainer: {
     flexDirection: 'row',
@@ -640,13 +319,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     gap: spacing.sm,
-  },
-  skeletonCard: {
-    backgroundColor: colors.surface,
-  },
-  skeletonImage: {
-    flex: 1,
-    backgroundColor: colors.border,
   },
 
   // Empty state

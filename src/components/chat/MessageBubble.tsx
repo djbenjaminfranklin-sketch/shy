@@ -7,6 +7,7 @@ import { typography } from '../../theme/typography';
 import { spacing, borderRadius } from '../../theme/spacing';
 import { translateText, detectLanguage } from '../../services/translation';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { IceBreakerBadge } from '../icebreaker/IceBreakerBadge';
 
 interface MessageBubbleProps {
   message: Message;
@@ -28,22 +29,13 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
   // Auto-translate received messages
   useEffect(() => {
     const autoTranslate = async () => {
-      console.log('[Translation] Starting auto-translate check', {
-        isMine,
-        content: message.content?.substring(0, 30),
-        appLanguage: language,
-        alreadyAttempted: hasAttemptedAutoTranslate.current,
-      });
-
       // Only auto-translate received messages, not our own
       if (isMine || hasAttemptedAutoTranslate.current) {
-        console.log('[Translation] Skipping - isMine or already attempted');
         return;
       }
 
       // Skip very short messages
       if (!message.content || message.content.trim().length < 3) {
-        console.log('[Translation] Skipping - message too short');
         return;
       }
 
@@ -51,33 +43,24 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
 
       try {
         // First detect the language of the message
-        console.log('[Translation] Detecting language...');
         const detectedLang = await detectLanguage(message.content);
-        console.log('[Translation] Detected language:', detectedLang, 'App language:', language);
 
         // If detected language is same as app language, no need to translate
         if (detectedLang === language) {
-          console.log('[Translation] Same language, skipping');
           return;
         }
 
         // If we couldn't detect or it's different, try to translate
-        console.log('[Translation] Translating to', language);
         setIsTranslating(true);
         const result = await translateText(message.content, language);
         setIsTranslating(false);
-        console.log('[Translation] Result:', result);
 
         // Only show translation if it's different from the original
         if (!result.error && result.translatedText && result.translatedText !== message.content) {
-          console.log('[Translation] Setting translated text');
           setTranslatedText(result.translatedText);
-        } else {
-          console.log('[Translation] Not showing translation - same as original or error');
         }
       } catch (error) {
         setIsTranslating(false);
-        console.error('[Translation] Auto-translation error:', error);
       }
     };
 
@@ -106,7 +89,17 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
 
   return (
     <View style={[styles.container, isMine && styles.containerMine]}>
-      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
+      {/* Ice Breaker badge for received messages */}
+      {!isMine && message.isIceBreaker && (
+        <View style={styles.iceBreakerBadgeContainer}>
+          <IceBreakerBadge size="small" />
+        </View>
+      )}
+      <View style={[
+        styles.bubble,
+        isMine ? styles.bubbleMine : styles.bubbleOther,
+        !isMine && message.isIceBreaker && styles.bubbleIceBreaker,
+      ]}>
         <Text style={[styles.text, isMine && styles.textMine]}>{displayText}</Text>
 
         {/* Translation button for received messages */}
@@ -156,6 +149,9 @@ const styles = StyleSheet.create({
   containerMine: {
     alignSelf: 'flex-end',
   },
+  iceBreakerBadgeContainer: {
+    marginBottom: 4,
+  },
   bubble: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -168,6 +164,11 @@ const styles = StyleSheet.create({
   bubbleMine: {
     backgroundColor: colors.primary,
     borderBottomRightRadius: borderRadius.xs,
+  },
+  bubbleIceBreaker: {
+    backgroundColor: colors.icebreaker + '15',
+    borderWidth: 1,
+    borderColor: colors.icebreaker + '30',
   },
   text: {
     ...typography.body,

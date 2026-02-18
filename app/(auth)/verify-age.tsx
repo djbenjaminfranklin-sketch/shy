@@ -5,9 +5,11 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { MIN_AGE } from '../../src/constants';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function VerifyAgeScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleConfirm = () => {
     router.replace('/(onboarding)/profile-photo');
@@ -24,31 +26,27 @@ export default function VerifyAgeScreen() {
           <Text style={styles.icon}>18+</Text>
         </View>
 
-        <Text style={styles.title}>Vérification d'âge</Text>
+        <Text style={styles.title}>{t('verifyAge.title')}</Text>
         <Text style={styles.description}>
-          SHY est réservé aux personnes âgées de {MIN_AGE} ans et plus.
-          {'\n\n'}
-          En continuant, vous confirmez que vous avez au moins {MIN_AGE} ans et que
-          vous acceptez nos conditions d'utilisation.
+          {t('verifyAge.description').replace(/{minAge}/g, String(MIN_AGE))}
         </Text>
 
         <View style={styles.buttons}>
           <Pressable style={styles.primaryButton} onPress={handleConfirm}>
             <Text style={styles.primaryButtonText}>
-              J'ai {MIN_AGE} ans ou plus
+              {t('verifyAge.iAmOldEnough').replace('{minAge}', String(MIN_AGE))}
             </Text>
           </Pressable>
 
           <Pressable style={styles.secondaryButton} onPress={handleDecline}>
             <Text style={styles.secondaryButtonText}>
-              J'ai moins de {MIN_AGE} ans
+              {t('verifyAge.iAmTooYoung').replace('{minAge}', String(MIN_AGE))}
             </Text>
           </Pressable>
         </View>
 
         <Text style={styles.warning}>
-          L'utilisation de cette application par des mineurs est strictement interdite.
-          Tout compte suspecté d'appartenir à un mineur sera supprimé immédiatement.
+          {t('verifyAge.warning')}
         </Text>
       </View>
     </SafeAreaView>

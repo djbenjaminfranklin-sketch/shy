@@ -48,10 +48,7 @@ export function ProfileCard({ profile, onPress }: ProfileCardProps) {
 
         <View style={styles.content}>
           <View style={styles.header}>
-            <View style={styles.badges}>
-              <IntentionBadge intention={profile.intention} />
-              <AvailabilityBadge availability={profile.availability} />
-            </View>
+            <IntentionBadge intention={profile.intention} />
             {profile.videoUrl && (
               <View style={styles.videoBadge}>
                 <Ionicons name="videocam" size={16} color={colors.white} />
@@ -64,6 +61,9 @@ export function ProfileCard({ profile, onPress }: ProfileCardProps) {
               <Text style={styles.name}>
                 {profile.displayName}, {profile.age}
               </Text>
+              {profile.availability && (
+                <AvailabilityBadge availability={profile.availability} />
+              )}
             </View>
 
             <DistanceIndicator distance={profile.distance} />
@@ -135,10 +135,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  badges: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
   videoBadge: {
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 12,
@@ -151,6 +147,7 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   name: {

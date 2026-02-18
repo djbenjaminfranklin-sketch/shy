@@ -57,7 +57,7 @@ export default function AutoReplyScreen() {
         setSettings(loadedSettings);
       }
     } catch (error) {
-      console.error('Error loading auto-reply settings:', error);
+      // Error loading auto-reply settings
     } finally {
       setIsLoading(false);
     }

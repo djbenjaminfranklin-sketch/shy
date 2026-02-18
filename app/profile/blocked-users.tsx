@@ -49,7 +49,7 @@ export default function BlockedUsersScreen() {
 
       setBlockedUsers(blockedWithProfiles);
     } catch (error) {
-      console.error('Error loading blocked users:', error);
+      // Error loading blocked users
     } finally {
       setIsLoading(false);
     }

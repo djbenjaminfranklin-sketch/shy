@@ -20,6 +20,7 @@ export default function ProfileLayout() {
       <Stack.Screen name="delete-account" options={{ headerShown: false }} />
       <Stack.Screen name="subscription" options={{ headerShown: false }} />
       <Stack.Screen name="auto-reply" options={{ headerShown: false }} />
+      <Stack.Screen name="export-data" options={{ headerShown: false }} />
     </Stack>
   );
 }

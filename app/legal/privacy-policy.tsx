@@ -8,7 +8,7 @@ export default function PrivacyPolicyScreen() {
   const router = useRouter();
 
   const handleBack = () => {
-    router.replace('/profile/settings');
+    router.back();
   };
 
   return (

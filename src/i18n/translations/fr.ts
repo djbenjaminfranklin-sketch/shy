@@ -111,6 +111,27 @@ export const fr = {
       successTitle: 'Compte supprimé',
       successMessage: 'Votre demande de suppression a été enregistrée. Votre compte sera supprimé sous 30 jours.',
     },
+    // Delete account screen
+    deleteAccountScreen: {
+      headerTitle: 'Supprimer le compte',
+      title: 'Supprimer votre compte',
+      description: 'La suppression de votre compte entraîne :',
+      consequence1: 'Suppression de votre profil',
+      consequence2: 'Suppression de tous vos matchs',
+      consequence3: 'Suppression de toutes vos conversations',
+      consequence4: 'Suppression de vos photos',
+      consequence5: 'Effacement de vos données personnelles',
+      warning: 'Cette action est irréversible et sera effective dans un délai de 30 jours.',
+      reasonLabel: 'Raison de votre départ (optionnel)',
+      reasonPlaceholder: 'Aidez-nous à nous améliorer...',
+      typeToConfirm: 'Tapez "{word}" pour confirmer',
+      confirmationWord: 'supprimer',
+      cancelButton: 'Annuler',
+      deleteButton: 'Supprimer mon compte',
+      confirmTitle: 'Confirmer la suppression',
+      confirmMessage: 'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+      errorOccurred: 'Une erreur est survenue',
+    },
     adminPanel: 'Admin Panel',
   },
 
@@ -157,6 +178,27 @@ export const fr = {
     soundVibrationDesc: 'Activer le son et la vibration pour les notifications',
     accountSection: 'Compte',
     accountHint: 'Pour modifier votre email ou mot de passe, utilisez la fonction "Mot de passe oublié" sur l\'écran de connexion.',
+    // Travel Mode
+    travelMode: 'Mode Voyage',
+    travelModeActivate: 'Activer le Mode Voyage',
+    travelModeDeactivate: 'Désactiver',
+    travelModeDeactivateTitle: 'Désactiver le Mode Voyage',
+    travelModeDeactivateMessage: 'Voulez-vous revenir à votre localisation réelle ?',
+    travelModeExplore: 'Explorez une ville avant d\'y arriver',
+    travelModeUpgrade: 'Passez à Premium pour débloquer',
+    // Account section items
+    exportData: 'Exporter mes données (RGPD)',
+    blockedUsers: 'Utilisateurs bloqués',
+    deleteAccount: 'Supprimer mon compte',
+    // Legal section
+    legalSection: 'Légal',
+    termsOfUse: 'Conditions d\'utilisation',
+    privacyPolicy: 'Politique de confidentialité',
+    legalNotice: 'Mentions légales',
+    // Help section
+    helpSection: 'Aide',
+    helpCenter: 'Centre d\'aide',
+    contactUs: 'Nous contacter',
   },
 
   // Subscription
@@ -176,11 +218,6 @@ export const fr = {
     welcomePremium: 'Bienvenue dans SHY Premium !',
     welcomePlus: 'Bienvenue dans SHY+ !',
     tryFree: 'Essayer GRATUITEMENT',
-    promoCode: 'Code promo',
-    promoCodePlaceholder: 'Entrer un code',
-    promoCodeApply: 'Appliquer',
-    promoCodeInvalid: 'Code invalide',
-    promoCodeSuccess: 'Code appliqué !',
     subscribe: "S'abonner",
     termsApple: "Le paiement sera effectué sur votre compte iTunes lors de la confirmation de l'achat. L'abonnement se renouvelle automatiquement sauf s'il est annulé au moins 24 heures avant la fin de la période en cours. Votre compte sera facturé pour le renouvellement dans les 24 heures précédant la fin de la période en cours. Vous pouvez gérer et annuler vos abonnements dans les réglages de votre compte App Store après l'achat.",
     termsOfService: "Conditions d'utilisation",
@@ -615,7 +652,7 @@ export const fr = {
     upgradeForDetails: 'SHY+ pour voir la répartition',
   },
 
-  // Boost
+  // Boost (Legacy)
   boost: {
     title: 'Booster mon profil',
     description: 'Augmente temporairement la visibilité de ton profil',
@@ -633,6 +670,56 @@ export const fr = {
     packOf: 'Pack de {count}',
     bestValue: 'Meilleure offre',
     popular: 'Populaire',
+  },
+
+  // Ice Breaker
+  icebreaker: {
+    title: 'Ice Breaker',
+    description: 'Envoie automatiquement des messages personnalisés à des profils compatibles',
+    use: 'Lancer un Ice Breaker',
+    sending: 'Envoi en cours...',
+    available: '{count} Ice Breaker(s) disponible(s)',
+    noIceBreakers: 'Aucun Ice Breaker disponible',
+    orBuyMore: 'Ou acheter plus d\'Ice Breakers',
+    disclaimer: 'Les messages sont personnalisés selon vos intérêts communs. Résultats non garantis.',
+    // How it works
+    howItWorks: 'Comment ça marche ?',
+    step1: 'On trouve 5 profils compatibles avec toi',
+    step2: 'Tu valides les profils qui t\'intéressent',
+    step3: 'On envoie un message personnalisé à chacun !',
+    // Preview flow
+    previewTitle: 'Choisis tes profils',
+    previewDescription: 'Valide ou remplace les profils avant l\'envoi',
+    commonInterests: 'Intérêts en commun',
+    messagePreview: 'Message qui sera envoyé',
+    approve: 'Envoyer',
+    replace: 'Remplacer',
+    messageSent: 'Envoyé ✓',
+    sendToCount: 'Envoyer à {count} profil(s)',
+    findingProfiles: 'Recherche de profils compatibles...',
+    replacementsAvailable: '{count} profil(s) de remplacement disponible(s)',
+    noProfilesFound: 'Aucun profil compatible trouvé',
+    noApprovedProfiles: 'Aucun profil sélectionné',
+    // Results
+    sent: 'Messages envoyés !',
+    sentDescription: '{count} message(s) personnalisé(s) envoyé(s)',
+    // Products
+    single: '1 Ice Breaker',
+    pack: 'Pack de {count}',
+    bestValue: 'Meilleure offre',
+    popular: 'Populaire',
+    // Recipient info (what recipients see)
+    receivedFirst: 'Tu as reçu un Ice Breaker !',
+    receivedFrom: '{name} t\'a envoyé un message personnalisé',
+    whatIsIt: 'Qu\'est-ce qu\'un Ice Breaker ?',
+    infoLine1: 'Une fonctionnalité premium pour envoyer des messages personnalisés',
+    infoLine2: 'Cette personne t\'a choisi parmi plusieurs profils compatibles',
+    infoLine3: 'Le message est basé sur vos intérêts communs',
+    youCanToo: 'Toi aussi tu peux utiliser Ice Breaker !',
+    discover: 'Découvrir',
+    seeMessage: 'Voir le message',
+    messageIceBreaker: 'Message Ice Breaker',
+    tapToLearnMore: 'Appuie pour en savoir plus',
   },
 
   // Notification Consent (Onboarding)
@@ -687,6 +774,79 @@ export const fr = {
     tip4Title: 'Restez vigilant',
     tip4Desc: 'N\'hésitez pas à partir si vous ne vous sentez pas à l\'aise.',
     understood: 'J\'ai compris',
+  },
+
+  // Age Verification
+  verifyAge: {
+    title: 'Vérification d\'âge',
+    description: 'SHY est réservé aux personnes âgées de {minAge} ans et plus.\n\nEn continuant, vous confirmez que vous avez au moins {minAge} ans et que vous acceptez nos conditions d\'utilisation.',
+    iAmOldEnough: 'J\'ai {minAge} ans ou plus',
+    iAmTooYoung: 'J\'ai moins de {minAge} ans',
+    warning: 'L\'utilisation de cette application par des mineurs est strictement interdite. Tout compte suspecté d\'appartenir à un mineur sera supprimé immédiatement.',
+  },
+
+  // Forgot Password
+  forgotPasswordScreen: {
+    title: 'Mot de passe oublié',
+    subtitle: 'Entrez votre email pour recevoir un code de réinitialisation',
+    emailLabel: 'Email',
+    emailPlaceholder: 'votre@email.com',
+    sendCode: 'Envoyer le code',
+    enterEmail: 'Veuillez entrer votre email',
+    errorOccurred: 'Une erreur est survenue. Veuillez réessayer.',
+    emailSent: 'Email envoyé !',
+    codeSentTo: 'Un code de vérification a été envoyé à {email}. Entrez ce code pour réinitialiser votre mot de passe.',
+    enterCode: 'Entrer le code',
+    backToLogin: 'Retour à la connexion',
+    back: '← Retour',
+  },
+
+  // Reset Password
+  resetPassword: {
+    title: 'Nouveau mot de passe',
+    subtitle: 'Entrez le code reçu par email et votre nouveau mot de passe',
+    codeLabel: 'Code de vérification',
+    codePlaceholder: 'Entrez le code à 6 chiffres',
+    newPasswordLabel: 'Nouveau mot de passe',
+    newPasswordPlaceholder: 'Minimum 8 caractères',
+    confirmPasswordLabel: 'Confirmer le mot de passe',
+    confirmPasswordPlaceholder: 'Retapez votre mot de passe',
+    resetButton: 'Réinitialiser le mot de passe',
+    invalidCode: 'Code de vérification invalide',
+    passwordTooShort: 'Le mot de passe doit contenir au moins 8 caractères',
+    passwordMismatch: 'Les mots de passe ne correspondent pas',
+    fillAllFields: 'Veuillez remplir tous les champs',
+    success: 'Mot de passe réinitialisé !',
+    successMessage: 'Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.',
+    goToLogin: 'Aller à la connexion',
+    back: '← Retour',
+  },
+
+  // Feature Showcase
+  featureShowcase: {
+    headerSubtitle: 'Ce qui nous rend uniques',
+    // Intentions
+    intentionsTitle: 'Intentions claires',
+    intentionsDesc: 'Chaque utilisateur affiche son intention : Social, Dating, Amical ou Découverte locale. Fini les malentendus.',
+    intentionsTag: 'Transparence obligatoire',
+    // Availability
+    availabilityTitle: 'Disponibilité en temps réel',
+    availabilityDesc: 'Indiquez quand vous êtes disponible : aujourd\'hui, cet après-midi, ce soir ou ce week-end. Connectez-vous au bon moment.',
+    availabilityTag: 'Synchronisez vos moments',
+    // Ice Breaker
+    icebreakerTitle: 'Ice Breaker',
+    icebreakerDesc: 'Plus de "Salut ça va". On trouve les profils compatibles et on envoie un message personnalisé pour vous.',
+    icebreakerTag: 'Messages personnalisés',
+    // Map
+    mapTitle: 'Carte interactive',
+    mapDesc: 'Explorez les profils autour de vous sur une carte. Distance approximative uniquement — votre vie privée est protégée.',
+    mapTag: 'Privacy-first',
+    // Comfort
+    comfortTitle: 'Niveaux de confort',
+    comfortDesc: 'Progressez à votre rythme. Les fonctionnalités se débloquent quand vous êtes tous les deux prêts.',
+    comfortTag: 'Votre rythme, vos règles',
+    // CTA
+    getStarted: 'C\'est parti !',
   },
 };
 

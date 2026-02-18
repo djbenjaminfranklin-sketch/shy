@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Linking,
   Pressable,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,8 +20,6 @@ import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useSubscription } from '../../src/contexts/SubscriptionContext';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { promoCodesService } from '../../src/services/supabase/promoCodes';
 import {
   SUBSCRIPTION_PLANS,
   DURATION_LABELS,
@@ -49,13 +46,6 @@ export default function SubscriptionScreen() {
   const [selectedDuration, setSelectedDuration] = useState<PlanDuration>('month');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // Promo code state
-  const [promoCode, setPromoCode] = useState('');
-  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
-  const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null);
-  const [promoError, setPromoError] = useState<string | null>(null);
-  const { user } = useAuth();
-
   const plusPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'plus')!;
   const premiumPlan = SUBSCRIPTION_PLANS.find(p => p.id === 'premium')!;
 
@@ -73,52 +63,6 @@ export default function SubscriptionScreen() {
     return currentOffering.availablePackages.find(
       pkg => pkg.product.identifier === productId
     );
-  };
-
-  // Valider un code promo
-  const handleValidatePromo = async () => {
-    if (!promoCode.trim()) {
-      setPromoError('Veuillez entrer un code promo');
-      return;
-    }
-
-    if (!user?.id) {
-      setPromoError('Vous devez être connecté');
-      return;
-    }
-
-    setIsValidatingPromo(true);
-    setPromoError(null);
-
-    const result = await promoCodesService.validateCode(
-      promoCode.trim(),
-      user.id,
-      selectedPlan,
-      selectedDuration
-    );
-
-    if (result.isValid) {
-      setAppliedDiscount(result.discountPercent);
-      setPromoError(null);
-    } else {
-      setAppliedDiscount(null);
-      setPromoError(result.errorMessage || 'Code invalide');
-    }
-
-    setIsValidatingPromo(false);
-  };
-
-  // Supprimer le code promo
-  const handleRemovePromo = () => {
-    setPromoCode('');
-    setAppliedDiscount(null);
-    setPromoError(null);
-  };
-
-  // Calculer le prix avec réduction
-  const calculateDiscountedPrice = (originalPrice: number): number => {
-    if (!appliedDiscount) return originalPrice;
-    return originalPrice * (1 - appliedDiscount / 100);
   };
 
   const handleSubscribe = async () => {
@@ -322,53 +266,6 @@ export default function SubscriptionScreen() {
           </View>
         </View>
 
-        {/* Promo Code */}
-        <View style={styles.promoSection}>
-          <Text style={styles.sectionTitle}>Code promo</Text>
-          <View style={styles.promoInputContainer}>
-            <TextInput
-              style={[styles.promoInput, appliedDiscount !== null && styles.promoInputSuccess]}
-              placeholder="Entrez votre code"
-              placeholderTextColor={colors.textTertiary}
-              value={promoCode}
-              onChangeText={(text) => {
-                setPromoCode(text.toUpperCase());
-                setPromoError(null);
-              }}
-              autoCapitalize="characters"
-              editable={!appliedDiscount}
-            />
-            {appliedDiscount ? (
-              <TouchableOpacity style={styles.promoRemoveButton} onPress={handleRemovePromo}>
-                <Ionicons name="close-circle" size={24} color={colors.error} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.promoValidateButton, isValidatingPromo && styles.promoButtonDisabled]}
-                onPress={handleValidatePromo}
-                disabled={isValidatingPromo}
-              >
-                {isValidatingPromo ? (
-                  <ActivityIndicator size="small" color={colors.white} />
-                ) : (
-                  <Text style={styles.promoValidateText}>Valider</Text>
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-          {promoError && (
-            <Text style={styles.promoError}>{promoError}</Text>
-          )}
-          {appliedDiscount && (
-            <View style={styles.promoSuccess}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={styles.promoSuccessText}>
-                -{appliedDiscount}% de réduction appliqué !
-              </Text>
-            </View>
-          )}
-        </View>
-
         {/* Restore */}
         <TouchableOpacity style={styles.restoreButton} onPress={handleRestore}>
           <Text style={styles.restoreText}>{t('subscription.restorePurchases')}</Text>
@@ -396,20 +293,6 @@ export default function SubscriptionScreen() {
 
       {/* Subscribe Button */}
       <View style={styles.footer}>
-        {appliedDiscount && selectedPrice && (
-          <View style={styles.discountPreview}>
-            <Text style={styles.originalPrice}>
-              {formatPrice(selectedPrice.price)}
-            </Text>
-            <Ionicons name="arrow-forward" size={16} color={colors.success} />
-            <Text style={styles.discountedPrice}>
-              {formatPrice(calculateDiscountedPrice(selectedPrice.price))}
-            </Text>
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountBadgeText}>-{appliedDiscount}%</Text>
-            </View>
-          </View>
-        )}
         <TouchableOpacity
           onPress={handleSubscribe}
           activeOpacity={0.8}
@@ -429,10 +312,7 @@ export default function SubscriptionScreen() {
                   {FREE_TRIAL.enabled ? t('subscription.tryFree') : t('subscription.subscribe')}
                 </Text>
                 <Text style={styles.subscribeButtonPrice}>
-                  {appliedDiscount && selectedPrice
-                    ? formatPrice(calculateDiscountedPrice(selectedPrice.price))
-                    : (selectedPrice ? formatPrice(selectedPrice.price) : '')
-                  } / {DURATION_LABELS[selectedDuration].short[language]}
+                  {selectedPrice ? formatPrice(selectedPrice.price) : ''} / {DURATION_LABELS[selectedDuration].short[language]}
                 </Text>
               </>
             )}
@@ -683,71 +563,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.sm,
   },
 
-  // Promo code
-  promoSection: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  promoInputContainer: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  promoInput: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 1,
-    color: colors.text,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  promoInputSuccess: {
-    borderColor: colors.success,
-    backgroundColor: colors.success + '10',
-  },
-  promoValidateButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  promoButtonDisabled: {
-    opacity: 0.7,
-  },
-  promoValidateText: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  promoRemoveButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  promoError: {
-    color: colors.error,
-    fontSize: 12,
-    marginTop: spacing.xs,
-  },
-  promoSuccess: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-    backgroundColor: colors.success + '15',
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
-  promoSuccessText: {
-    color: colors.success,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-
   // Restore
   restoreButton: {
     alignItems: 'center',
@@ -793,37 +608,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-  },
-  discountPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    backgroundColor: colors.success + '15',
-    padding: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
-  originalPrice: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textDecorationLine: 'line-through',
-  },
-  discountedPrice: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.success,
-  },
-  discountBadge: {
-    backgroundColor: colors.success,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-  },
-  discountBadgeText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
   },
   subscribeButton: {
     borderRadius: borderRadius.lg,

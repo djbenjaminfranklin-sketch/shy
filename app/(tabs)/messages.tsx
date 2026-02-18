@@ -25,7 +25,7 @@ export default function MessagesScreen() {
       const { conversations: loaded } = await messagesService.getConversations(user.id);
       setConversations(loaded);
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      // Error loading conversations
     }
   }, [user]);
 

@@ -12,6 +12,7 @@ export interface Message {
   content: string;
   isRead: boolean;
   createdAt: string;
+  isIceBreaker?: boolean;
 }
 
 export interface ConversationWithDetails extends Conversation {

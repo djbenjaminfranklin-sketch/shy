@@ -24,7 +24,6 @@ export const availabilityModesService = {
       });
 
       if (error) {
-        console.error('[availabilityModesService.canActivateMode] Error:', error);
         return { result: null, error: error.message };
       }
 
@@ -40,7 +39,6 @@ export const availabilityModesService = {
 
       return { result, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.canActivateMode] Unexpected error:', err);
       return { result: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -61,7 +59,6 @@ export const availabilityModesService = {
       });
 
       if (error) {
-        console.error('[availabilityModesService.activateMode] Error:', error);
         return { result: null, error: error.message };
       }
 
@@ -78,7 +75,6 @@ export const availabilityModesService = {
 
       return { result, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.activateMode] Unexpected error:', err);
       return { result: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -95,7 +91,6 @@ export const availabilityModesService = {
       });
 
       if (error) {
-        console.error('[availabilityModesService.deactivateMode] Error:', error);
         return { result: null, error: error.message };
       }
 
@@ -108,7 +103,6 @@ export const availabilityModesService = {
 
       return { result, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.deactivateMode] Unexpected error:', err);
       return { result: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -125,7 +119,6 @@ export const availabilityModesService = {
       });
 
       if (error) {
-        console.error('[availabilityModesService.getActiveMode] Error:', error);
         return { mode: null, error: error.message };
       }
 
@@ -142,7 +135,6 @@ export const availabilityModesService = {
 
       return { mode, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.getActiveMode] Unexpected error:', err);
       return { mode: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -161,14 +153,12 @@ export const availabilityModesService = {
       });
 
       if (error) {
-        console.error('[availabilityModesService.getProfilesWithSameMode] Error:', error);
         return { profileIds: [], error: error.message };
       }
 
       const profileIds = (data || []).map((row: { profile_id: string }) => row.profile_id);
       return { profileIds, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.getProfilesWithSameMode] Unexpected error:', err);
       return { profileIds: [], error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -193,7 +183,6 @@ export const availabilityModesService = {
           // Pas de mode actif trouvé
           return { mode: { hasActiveMode: false }, error: null };
         }
-        console.error('[availabilityModesService.getUserActiveMode] Error:', error);
         return { mode: null, error: error.message };
       }
 
@@ -214,7 +203,6 @@ export const availabilityModesService = {
 
       return { mode, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.getUserActiveMode] Unexpected error:', err);
       return { mode: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -236,13 +224,11 @@ export const availabilityModesService = {
         .gte('activated_at', sevenDaysAgo.toISOString());
 
       if (error) {
-        console.error('[availabilityModesService.getWeeklyActivationsCount] Error:', error);
         return { count: 0, error: error.message };
       }
 
       return { count: count || 0, error: null };
     } catch (err) {
-      console.error('[availabilityModesService.getWeeklyActivationsCount] Unexpected error:', err);
       return { count: 0, error: 'Une erreur inattendue est survenue' };
     }
   },

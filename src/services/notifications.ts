@@ -39,7 +39,6 @@ export const notificationService = {
    */
   async registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
-      console.log('Push notifications need a physical device');
       return null;
     }
 
@@ -128,7 +127,7 @@ export const notificationService = {
           onConflict: 'user_id',
         });
     } catch (err) {
-      console.error('Error saving push token:', err);
+      // Silently ignore errors saving push token
     }
   },
 
@@ -146,7 +145,6 @@ export const notificationService = {
       await this.savePushToken(userId, token);
       return { token, error: null };
     } catch (err) {
-      console.error('Error registering for push notifications:', err);
       return { token: null, error: 'Erreur lors de l\'enregistrement des notifications' };
     }
   },
@@ -161,7 +159,7 @@ export const notificationService = {
         .delete()
         .eq('user_id', userId);
     } catch (err) {
-      console.error('Error removing push token:', err);
+      // Silently ignore errors removing push token
     }
   },
 
@@ -314,7 +312,6 @@ export const notificationService = {
 
       return identifier;
     } catch (err) {
-      console.error('Error scheduling mode expiration notification:', err);
       return null;
     }
   },
@@ -326,7 +323,7 @@ export const notificationService = {
     try {
       await Notifications.cancelScheduledNotificationAsync(identifier);
     } catch (err) {
-      console.error('Error canceling scheduled notification:', err);
+      // Silently ignore errors canceling notification
     }
   },
 

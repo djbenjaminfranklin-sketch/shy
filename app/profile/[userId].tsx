@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Dimensions,
   Alert,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,10 +39,23 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const profileCache: Record<string, { profile: Profile | null; myProfile: Profile | null }> = {};
 
 export default function ProfileViewScreen() {
-  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const { userId, from } = useLocalSearchParams<{ userId: string; from?: string }>();
   const router = useRouter();
   const { user } = useAuth();
   const { language } = useLanguage();
+
+  // Navigation back to the correct screen
+  const handleGoBack = () => {
+    if (from === 'explore') {
+      router.replace('/(tabs)/explore' as never);
+    } else if (from === 'likes') {
+      router.replace('/(tabs)/likes' as never);
+    } else if (from === 'matches') {
+      router.replace('/(tabs)/matches' as never);
+    } else {
+      router.back();
+    }
+  };
 
   // Initialiser avec le cache si disponible
   const cached = userId ? profileCache[userId] : null;
@@ -50,6 +65,8 @@ export default function ProfileViewScreen() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isSendingInvitation, setIsSendingInvitation] = useState(false);
+  const [hasExistingInvitation, setHasExistingInvitation] = useState(false);
+  const [showFriendlyMessage, setShowFriendlyMessage] = useState(false);
 
   // Charger les profils si pas en cache
   useEffect(() => {
@@ -68,13 +85,10 @@ export default function ProfileViewScreen() {
       }
 
       try {
-        console.log('[ProfileView] Loading profiles for:', userId);
         const [targetProfile, ownProfile] = await Promise.all([
           profilesService.getProfile(userId),
           profilesService.getProfile(user.id),
         ]);
-
-        console.log('[ProfileView] Profiles loaded successfully');
 
         // Mettre en cache
         profileCache[userId] = {
@@ -84,8 +98,12 @@ export default function ProfileViewScreen() {
 
         setProfile(targetProfile.profile);
         setMyProfile(ownProfile.profile);
+
+        // Vérifier si une invitation existe déjà
+        const { exists } = await invitationsService.checkExistingInvitation(user.id, userId);
+        setHasExistingInvitation(exists);
       } catch (error) {
-        console.error('[ProfileView] Error loading profile:', error);
+        // Error loading profile
       } finally {
         setIsLoading(false);
       }
@@ -143,10 +161,42 @@ export default function ProfileViewScreen() {
     }
   };
 
-  const handleBlock = async () => {
-    if (!user || !userId) return;
-    await moderationService.blockUser(user.id, userId);
-    router.back();
+  const handleBlock = () => {
+    if (!user || !userId || !profile) return;
+
+    Alert.alert(
+      language === 'fr' ? 'Bloquer cet utilisateur ?' : 'Block this user?',
+      language === 'fr'
+        ? `${profile.displayName} ne pourra plus vous voir ni vous contacter.`
+        : `${profile.displayName} will no longer be able to see or contact you.`,
+      [
+        {
+          text: language === 'fr' ? 'Annuler' : 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: language === 'fr' ? 'Bloquer' : 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await moderationService.blockUser(user.id, userId);
+              Alert.alert(
+                language === 'fr' ? 'Utilisateur bloqué' : 'User blocked',
+                language === 'fr'
+                  ? `${profile.displayName} a été bloqué. Vous ne verrez plus ce profil.`
+                  : `${profile.displayName} has been blocked. You won't see this profile anymore.`,
+                [{ text: 'OK', onPress: () => handleGoBack() }]
+              );
+            } catch (err) {
+              Alert.alert(
+                language === 'fr' ? 'Erreur' : 'Error',
+                language === 'fr' ? 'Une erreur est survenue' : 'An error occurred'
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Envoyer un message direct (crée une connexion instantanée)
@@ -188,22 +238,35 @@ export default function ProfileViewScreen() {
   const handleSendInvitation = async () => {
     if (!user || !profile) return;
 
+    // Si une invitation existe déjà, afficher un message sympa
+    if (hasExistingInvitation) {
+      setShowFriendlyMessage(true);
+      return;
+    }
+
     setIsSendingInvitation(true);
     try {
       const { error } = await invitationsService.sendInvitation(user.id, profile.id);
 
       if (error) {
-        Alert.alert(
-          language === 'fr' ? 'Erreur' : 'Error',
-          error
-        );
+        // Vérifier si c'est une erreur d'invitation existante
+        if (error.includes('existe deja') || error.includes('already exists')) {
+          setHasExistingInvitation(true);
+          setShowFriendlyMessage(true);
+        } else {
+          Alert.alert(
+            language === 'fr' ? 'Erreur' : 'Error',
+            error
+          );
+        }
       } else {
+        setHasExistingInvitation(true);
         Alert.alert(
-          language === 'fr' ? 'Invitation envoyée' : 'Invitation sent',
+          language === 'fr' ? 'Invitation envoyée 💌' : 'Invitation sent 💌',
           language === 'fr'
-            ? `Votre invitation a été envoyée à ${profile.displayName}. Vous serez notifié(e) si elle est acceptée.`
-            : `Your invitation has been sent to ${profile.displayName}. You will be notified if it is accepted.`,
-          [{ text: 'OK' }]
+            ? `Votre invitation a été envoyée à ${profile.displayName}. Vous serez notifié(e) si elle est acceptée !`
+            : `Your invitation has been sent to ${profile.displayName}. You will be notified if it is accepted!`,
+          [{ text: 'OK', onPress: () => handleGoBack() }]
         );
       }
     } catch (err) {
@@ -299,7 +362,7 @@ export default function ProfileViewScreen() {
         )}
 
         {/* Close button */}
-        <Pressable style={styles.closeButton} onPress={() => router.back()}>
+        <Pressable style={styles.closeButton} onPress={handleGoBack}>
           <Text style={styles.closeIcon}>✕</Text>
         </Pressable>
 
@@ -316,8 +379,8 @@ export default function ProfileViewScreen() {
             {profile.displayName}, {profile.age}
           </Text>
           <View style={styles.badges}>
-            <IntentionBadge intention={profile.intention} />
-            <AvailabilityBadge availability={profile.availability} />
+            <IntentionBadge intention={profile.intention} size="large" />
+            <AvailabilityBadge availability={profile.availability} size="large" />
             <EngagementBadge
               userId={profile.id}
               size="medium"
@@ -364,6 +427,13 @@ export default function ProfileViewScreen() {
               variant="primary"
               loading={isSendingMessage}
             />
+          ) : hasExistingInvitation ? (
+            <Button
+              title={language === 'fr' ? '💫 Invitation en attente' : '💫 Invitation pending'}
+              onPress={handleSendInvitation}
+              variant="secondary"
+              disabled={false}
+            />
           ) : (
             <Button
               title={language === 'fr' ? '💌 Envoyer une invitation' : '💌 Send an invitation'}
@@ -397,6 +467,40 @@ export default function ProfileViewScreen() {
           />
         </View>
       </ScrollView>
+
+      {/* Modal message sympa de SHY */}
+      <Modal
+        visible={showFriendlyMessage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFriendlyMessage(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowFriendlyMessage(false)}
+        >
+          <View style={styles.friendlyMessageContainer}>
+            <Text style={styles.friendlyEmoji}>💫</Text>
+            <Text style={styles.friendlyTitle}>
+              {language === 'fr' ? 'Patience !' : 'Patience!'}
+            </Text>
+            <Text style={styles.friendlyText}>
+              {language === 'fr'
+                ? `Tu as déjà envoyé une invitation à ${profile?.displayName}. On croise les doigts pour toi ! 🤞`
+                : `You've already sent an invitation to ${profile?.displayName}. Fingers crossed for you! 🤞`}
+            </Text>
+            <TouchableOpacity
+              style={styles.friendlyButton}
+              onPress={() => setShowFriendlyMessage(false)}
+            >
+              <Text style={styles.friendlyButtonText}>
+                {language === 'fr' ? "D'accord !" : 'Got it!'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -555,5 +659,53 @@ const styles = StyleSheet.create({
   actions: {
     marginTop: spacing.md,
     marginBottom: spacing.xl,
+  },
+  // Modal message sympa
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  friendlyMessageContainer: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    maxWidth: 320,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  friendlyEmoji: {
+    fontSize: 48,
+    marginBottom: spacing.md,
+  },
+  friendlyTitle: {
+    ...typography.h2,
+    color: colors.text,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  friendlyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+  friendlyButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.full,
+  },
+  friendlyButtonText: {
+    ...typography.label,
+    color: colors.white,
+    fontWeight: '600',
   },
 });

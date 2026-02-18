@@ -1,23 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Pressable, Alert, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
 import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
-import { useLocation } from '../../src/contexts/LocationContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { useAuth } from '../../src/contexts/AuthContext';
 import { SupportedLanguage } from '../../src/i18n';
-import { Chip } from '../../src/components/ui/Chip';
-import { profilesService } from '../../src/services/supabase/profiles';
-import { GENDER_LIST, GenderId } from '../../src/constants/genders';
-import { MIN_AGE, MAX_AGE } from '../../src/constants';
-import { useSubscription } from '../../src/contexts/SubscriptionContext';
-import { useTravelMode } from '../../src/hooks/useTravelMode';
-import { TravelModeModal, TravelModeBadge } from '../../src/components/travel';
+import {
+  SettingsSection,
+  LocationSettings,
+  PreferencesSettings,
+  NotificationSettings,
+} from '../../src/components/settings';
 
 const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
@@ -31,144 +27,11 @@ const LANGUAGES: { code: SupportedLanguage; label: string; flag: string }[] = [
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { isEnabled: locationEnabled, enableLocation, disableLocation, isLoading } = useLocation();
   const { language, setLanguage, t } = useLanguage();
-  const { user, profile, refreshProfile } = useAuth();
-  useSubscription(); // Pour vérifier l'accès aux features
-  const {
-    travelMode,
-    canUseTravelMode,
-    hasActiveTravelMode,
-    isCurrentlyTraveling,
-    activateTravelMode,
-    deactivateTravelMode,
-    searchCities,
-  } = useTravelMode();
   const [showTravelModal, setShowTravelModal] = useState(false);
-
-  // Filter states
-  const [searchRadius, setSearchRadius] = useState<number>(profile?.searchRadius || 25);
-  const [minAge, setMinAge] = useState(profile?.minAgeFilter || MIN_AGE);
-  const [maxAge, setMaxAge] = useState(profile?.maxAgeFilter || MAX_AGE);
-  const [genderFilter, setGenderFilter] = useState<GenderId[]>(profile?.genderFilter || []);
-  const [isSaving, setIsSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-
-  // Notification states (local pour l'instant - à connecter au backend plus tard)
-  const [notifInvitations, setNotifInvitations] = useState(true);
-  const [notifMessages, setNotifMessages] = useState(true);
-  const [notifSound, setNotifSound] = useState(true);
-
-  // Update state when profile loads
-  useEffect(() => {
-    if (profile) {
-      setSearchRadius(profile.searchRadius || 25);
-      setMinAge(profile.minAgeFilter || MIN_AGE);
-      setMaxAge(profile.maxAgeFilter || MAX_AGE);
-      setGenderFilter(profile.genderFilter || []);
-      // Load notification preferences from profile
-      setNotifInvitations(profile.notificationInvitations ?? true);
-      setNotifMessages(profile.notificationMessages ?? true);
-      setNotifSound(profile.notificationSound ?? true);
-    }
-  }, [profile]);
-
-  // Track changes
-  useEffect(() => {
-    if (profile) {
-      const changed =
-        searchRadius !== profile.searchRadius ||
-        minAge !== profile.minAgeFilter ||
-        maxAge !== profile.maxAgeFilter ||
-        JSON.stringify(genderFilter.sort()) !== JSON.stringify((profile.genderFilter || []).sort());
-      setHasChanges(changed);
-    }
-  }, [searchRadius, minAge, maxAge, genderFilter, profile]);
-
-  const handleLocationToggle = async (value: boolean) => {
-    try {
-      if (value) {
-        const { error } = await enableLocation();
-        if (error) {
-          Alert.alert(t('alerts.errorTitle'), error);
-          return;
-        }
-      } else {
-        const { error } = await disableLocation();
-        if (error) {
-          Alert.alert(t('alerts.errorTitle'), error);
-          return;
-        }
-      }
-      // Refresh profile to ensure sync between contexts
-      await refreshProfile();
-    } catch (err) {
-      Alert.alert(t('alerts.errorTitle'), t('errors.somethingWrong'));
-    }
-  };
 
   const handleLanguageChange = (langCode: SupportedLanguage) => {
     setLanguage(langCode);
-  };
-
-  const toggleGender = (gender: GenderId) => {
-    setGenderFilter((prev) =>
-      prev.includes(gender) ? prev.filter((g) => g !== gender) : [...prev, gender]
-    );
-  };
-
-  // Notification handlers - save immediately to database
-  const handleNotifInvitationsChange = async (value: boolean) => {
-    setNotifInvitations(value);
-    if (user) {
-      await profilesService.updateProfile(user.id, {
-        notificationInvitations: value,
-      });
-    }
-  };
-
-  const handleNotifMessagesChange = async (value: boolean) => {
-    setNotifMessages(value);
-    if (user) {
-      await profilesService.updateProfile(user.id, {
-        notificationMessages: value,
-      });
-    }
-  };
-
-  const handleNotifSoundChange = async (value: boolean) => {
-    setNotifSound(value);
-    if (user) {
-      await profilesService.updateProfile(user.id, {
-        notificationSound: value,
-      });
-    }
-  };
-
-  const savePreferences = async () => {
-    if (!user || !hasChanges) return;
-
-    setIsSaving(true);
-    try {
-      const { error } = await profilesService.updateProfile(user.id, {
-        searchRadius,
-        minAgeFilter: minAge,
-        maxAgeFilter: maxAge,
-        genderFilter,
-      });
-
-      if (error) {
-        Alert.alert(t('alerts.errorTitle'), error);
-      } else {
-        await refreshProfile();
-        setHasChanges(false);
-        Alert.alert(t('alerts.successTitle'), t('settings.preferencesSaved'));
-      }
-    } catch (err) {
-      Alert.alert(t('alerts.errorTitle'), t('errors.somethingWrong'));
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   return (
@@ -182,8 +45,7 @@ export default function SettingsScreen() {
       </View>
       <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {/* Language Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.languageSection')}</Text>
+        <SettingsSection title={t('settings.languageSection')}>
           <View style={styles.languageOptions}>
             {LANGUAGES.map((lang) => (
               <TouchableOpacity
@@ -209,240 +71,22 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </SettingsSection>
 
-        {/* Location Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.locationSection')}</Text>
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>{t('settings.enableLocation')}</Text>
-              <Text style={styles.settingDescription}>{t('settings.locationDescription')}</Text>
-            </View>
-            <Switch
-              value={locationEnabled}
-              onValueChange={handleLocationToggle}
-              disabled={isLoading}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={locationEnabled ? colors.white : '#F4F4F4'}
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-          <Text style={styles.settingHint}>{t('settings.locationHint')}</Text>
-        </View>
+        {/* Location & Travel Mode */}
+        <LocationSettings
+          showTravelModal={showTravelModal}
+          setShowTravelModal={setShowTravelModal}
+        />
 
-        {/* Travel Mode Section (Premium) */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mode Voyage</Text>
-            {!canUseTravelMode && (
-              <View style={styles.premiumBadge}>
-                <Ionicons name="diamond" size={12} color={colors.white} />
-                <Text style={styles.premiumBadgeText}>Premium</Text>
-              </View>
-            )}
-          </View>
+        {/* Search Preferences */}
+        <PreferencesSettings />
 
-          {hasActiveTravelMode && travelMode ? (
-            <View style={styles.travelActiveContainer}>
-              <TravelModeBadge
-                city={travelMode.destination.city}
-                arrivalDate={travelMode.arrivalDate}
-                isCurrentlyTraveling={isCurrentlyTraveling}
-              />
-              <TouchableOpacity
-                style={styles.deactivateButton}
-                onPress={() => {
-                  Alert.alert(
-                    'Désactiver le Mode Voyage',
-                    'Voulez-vous revenir à votre localisation réelle ?',
-                    [
-                      { text: 'Annuler', style: 'cancel' },
-                      { text: 'Désactiver', style: 'destructive', onPress: deactivateTravelMode },
-                    ]
-                  );
-                }}
-              >
-                <Text style={styles.deactivateText}>Désactiver</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={[styles.travelButton, !canUseTravelMode && styles.travelButtonDisabled]}
-              onPress={() => {
-                if (canUseTravelMode) {
-                  setShowTravelModal(true);
-                } else {
-                  router.push('/profile/subscription');
-                }
-              }}
-            >
-              <Ionicons name="airplane" size={20} color={canUseTravelMode ? colors.primary : colors.textSecondary} />
-              <View style={styles.travelButtonContent}>
-                <Text style={[styles.travelButtonTitle, !canUseTravelMode && styles.travelButtonTitleDisabled]}>
-                  Activer le Mode Voyage
-                </Text>
-                <Text style={styles.travelButtonSubtitle}>
-                  {canUseTravelMode
-                    ? 'Explorez une ville avant d\'y arriver'
-                    : 'Passez à Premium pour débloquer'}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Search Preferences Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.searchPreferences')}</Text>
-
-          {/* Distance Slider */}
-          <View style={styles.filterItem}>
-            <Text style={styles.filterLabel}>
-              {t('settings.maxDistance')}: {searchRadius} km
-            </Text>
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderValue}>5 km</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={5}
-                maximumValue={100}
-                value={searchRadius}
-                step={1}
-                onValueChange={(value) => setSearchRadius(Math.round(value))}
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.border}
-                thumbTintColor={colors.primary}
-              />
-              <Text style={styles.sliderValue}>100 km</Text>
-            </View>
-          </View>
-
-          {/* Age Range */}
-          <View style={styles.filterItem}>
-            <Text style={styles.filterLabel}>
-              {t('settings.ageRange')}: {minAge} - {maxAge} {t('common.years')}
-            </Text>
-            <Text style={styles.filterHint}>{t('settings.minAge')}</Text>
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderValue}>{MIN_AGE}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={MIN_AGE}
-                maximumValue={MAX_AGE}
-                value={minAge}
-                step={1}
-                onValueChange={(value) => {
-                  const newMin = Math.round(value);
-                  setMinAge(newMin);
-                  if (newMin > maxAge) setMaxAge(newMin);
-                }}
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.border}
-                thumbTintColor={colors.primary}
-              />
-              <Text style={styles.sliderValue}>{MAX_AGE}</Text>
-            </View>
-            <Text style={styles.filterHint}>{t('settings.maxAge')}</Text>
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderValue}>{MIN_AGE}</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={MIN_AGE}
-                maximumValue={MAX_AGE}
-                value={maxAge}
-                step={1}
-                onValueChange={(value) => {
-                  const newMax = Math.round(value);
-                  setMaxAge(newMax);
-                  if (newMax < minAge) setMinAge(newMax);
-                }}
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.border}
-                thumbTintColor={colors.primary}
-              />
-              <Text style={styles.sliderValue}>{MAX_AGE}</Text>
-            </View>
-          </View>
-
-          {/* Gender Filter */}
-          <View style={styles.filterItem}>
-            <Text style={styles.filterLabel}>{t('settings.lookingFor')}</Text>
-            <Text style={styles.filterHint}>{t('settings.lookingForHint')}</Text>
-            <View style={styles.chipContainer}>
-              {GENDER_LIST.map((gender) => (
-                <Chip
-                  key={gender.id}
-                  label={gender.label}
-                  selected={genderFilter.includes(gender.id)}
-                  onPress={() => toggleGender(gender.id)}
-                />
-              ))}
-            </View>
-          </View>
-
-          {/* Save Button */}
-          {hasChanges && (
-            <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={savePreferences}
-              disabled={isSaving}
-            >
-              <Text style={styles.saveButtonText}>
-                {isSaving ? t('settings.saving') : t('settings.savePreferences')}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Notifications Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>{t('settings.newInvitations')}</Text>
-              <Text style={styles.settingDescription}>{t('settings.newInvitationsDesc')}</Text>
-            </View>
-            <Switch
-              value={notifInvitations}
-              onValueChange={handleNotifInvitationsChange}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.white}
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>{t('settings.messagesNotif')}</Text>
-              <Text style={styles.settingDescription}>{t('settings.messagesNotifDesc')}</Text>
-            </View>
-            <Switch
-              value={notifMessages}
-              onValueChange={handleNotifMessagesChange}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.white}
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>{t('settings.soundVibration')}</Text>
-              <Text style={styles.settingDescription}>{t('settings.soundVibrationDesc')}</Text>
-            </View>
-            <Switch
-              value={notifSound}
-              onValueChange={handleNotifSoundChange}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.white}
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-        </View>
+        {/* Notifications */}
+        <NotificationSettings />
 
         {/* Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.accountSection')}</Text>
+        <SettingsSection title={t('settings.accountSection')}>
           <Text style={styles.settingHint}>{t('settings.accountHint')}</Text>
 
           {/* Privacy & Data */}
@@ -451,7 +95,7 @@ export default function SettingsScreen() {
             onPress={() => router.push('/profile/export-data')}
           >
             <Ionicons name="download-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Exporter mes données (RGPD)</Text>
+            <Text style={styles.legalItemText}>{t('settings.exportData')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
 
@@ -461,7 +105,7 @@ export default function SettingsScreen() {
             onPress={() => router.push('/profile/blocked-users')}
           >
             <Ionicons name="ban-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Utilisateurs bloqués</Text>
+            <Text style={styles.legalItemText}>{t('settings.blockedUsers')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
 
@@ -471,20 +115,19 @@ export default function SettingsScreen() {
             onPress={() => router.push('/profile/delete-account')}
           >
             <Ionicons name="trash-outline" size={20} color={colors.error} />
-            <Text style={[styles.legalItemText, styles.deleteAccountText]}>Supprimer mon compte</Text>
+            <Text style={[styles.legalItemText, styles.deleteAccountText]}>{t('settings.deleteAccount')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.error} />
           </TouchableOpacity>
-        </View>
+        </SettingsSection>
 
         {/* Legal Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Légal</Text>
+        <SettingsSection title={t('settings.legalSection')}>
           <TouchableOpacity
             style={styles.legalItem}
             onPress={() => router.push('/legal/terms')}
           >
             <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Conditions d'utilisation</Text>
+            <Text style={styles.legalItemText}>{t('settings.termsOfUse')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <TouchableOpacity
@@ -492,7 +135,7 @@ export default function SettingsScreen() {
             onPress={() => router.push('/legal/privacy-policy')}
           >
             <Ionicons name="shield-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Politique de confidentialité</Text>
+            <Text style={styles.legalItemText}>{t('settings.privacyPolicy')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <TouchableOpacity
@@ -500,20 +143,19 @@ export default function SettingsScreen() {
             onPress={() => router.push('/legal/disclaimer')}
           >
             <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Mentions légales</Text>
+            <Text style={styles.legalItemText}>{t('settings.legalNotice')}</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
-        </View>
+        </SettingsSection>
 
         {/* Help Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Aide</Text>
+        <SettingsSection title={t('settings.helpSection')}>
           <TouchableOpacity
             style={styles.legalItem}
             onPress={() => Linking.openURL('https://shydating.eu/help')}
           >
             <Ionicons name="help-circle-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Centre d'aide</Text>
+            <Text style={styles.legalItemText}>{t('settings.helpCenter')}</Text>
             <Ionicons name="open-outline" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
           <TouchableOpacity
@@ -521,19 +163,11 @@ export default function SettingsScreen() {
             onPress={() => Linking.openURL('mailto:contact@shydating.eu')}
           >
             <Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.legalItemText}>Nous contacter</Text>
+            <Text style={styles.legalItemText}>{t('settings.contactUs')}</Text>
             <Ionicons name="open-outline" size={20} color={colors.textTertiary} />
           </TouchableOpacity>
-        </View>
+        </SettingsSection>
       </ScrollView>
-
-      {/* Travel Mode Modal */}
-      <TravelModeModal
-        visible={showTravelModal}
-        onClose={() => setShowTravelModal(false)}
-        onActivate={activateTravelMode}
-        searchCities={searchCities}
-      />
     </SafeAreaView>
   );
 }
@@ -564,35 +198,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  section: {
-    padding: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sectionTitle: {
-    ...typography.h4,
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  settingLabel: {
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  settingDescription: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: 2,
   },
   settingHint: {
     ...typography.caption,
@@ -632,113 +237,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Filter styles
-  filterItem: {
-    marginBottom: spacing.lg,
-  },
-  filterLabel: {
-    ...typography.bodyMedium,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  filterHint: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginBottom: spacing.sm,
-  },
-  sliderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sliderValue: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    width: 60,
-  },
-  slider: {
-    flex: 1,
-    height: 40,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    ...typography.bodyMedium,
-    color: colors.white,
-    fontWeight: '600',
-  },
-  // Travel Mode styles
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  premiumBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.full,
-  },
-  premiumBadgeText: {
-    ...typography.caption,
-    color: colors.white,
-    fontWeight: '600',
-    fontSize: 10,
-  },
-  travelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.card,
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
-  },
-  travelButtonDisabled: {
-    opacity: 0.7,
-  },
-  travelButtonContent: {
-    flex: 1,
-  },
-  travelButtonTitle: {
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  travelButtonTitleDisabled: {
-    color: colors.textSecondary,
-  },
-  travelButtonSubtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  travelActiveContainer: {
-    gap: spacing.md,
-  },
-  deactivateButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.sm,
-  },
-  deactivateText: {
-    ...typography.body,
-    color: colors.error,
-  },
   // Legal items
   legalItem: {
     flexDirection: 'row',

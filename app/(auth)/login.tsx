@@ -39,9 +39,7 @@ export default function LoginScreen() {
     setError(null);
 
     try {
-      console.log('[Login] Attempting signIn...');
       const { error: signInError, hasCompletedOnboarding } = await signIn(email, password);
-      console.log('[Login] signIn result:', { signInError, hasCompletedOnboarding });
 
       if (signInError) {
         setError(signInError);
@@ -49,14 +47,12 @@ export default function LoginScreen() {
       }
 
       // Rediriger selon l'etat de l'onboarding
-      console.log('[Login] Redirecting, hasCompletedOnboarding:', hasCompletedOnboarding);
       if (hasCompletedOnboarding) {
         router.replace('/(tabs)/discover');
       } else {
         router.replace('/(onboarding)/profile-photo');
       }
     } catch (err) {
-      console.error('[Login] Unexpected error:', err);
       setError(t('auth.incorrectCredentials'));
     } finally {
       setIsLoading(false);

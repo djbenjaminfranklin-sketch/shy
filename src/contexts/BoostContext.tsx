@@ -57,13 +57,12 @@ export const BoostProvider: React.FC<BoostProviderProps> = ({ children }) => {
       const { state, error } = await boostsService.getUserBoostState(user.id);
 
       if (error) {
-        console.error('Error refreshing boost state:', error);
         return;
       }
 
       setBoostState(state);
     } catch (err) {
-      console.error('Error refreshing boost state:', err);
+      // Error refreshing boost state
     }
   }, [user?.id]);
 
@@ -204,7 +203,6 @@ export const BoostProvider: React.FC<BoostProviderProps> = ({ children }) => {
 
       return true;
     } catch (err) {
-      console.error('Error activating boost:', err);
       Alert.alert('Erreur', 'Une erreur est survenue.');
       return false;
     } finally {

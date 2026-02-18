@@ -104,9 +104,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           data.photoUri,
           0
         );
-        if (uploadError) {
-          console.error('Error uploading photo:', uploadError);
-        } else {
+        if (!uploadError) {
           photoUrl = url;
         }
       }
@@ -118,9 +116,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           user.id,
           data.videoUri
         );
-        if (uploadError) {
-          console.error('Error uploading video:', uploadError);
-        } else {
+        if (!uploadError) {
           videoUrl = url;
         }
       }
@@ -155,7 +151,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
       return { success: true, error: null };
     } catch (err) {
-      console.error('Error completing onboarding:', err);
       return { success: false, error: 'Une erreur est survenue' };
     } finally {
       setIsSubmitting(false);

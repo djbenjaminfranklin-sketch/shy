@@ -61,7 +61,6 @@ export default function LocationConsentScreen() {
         await finishOnboarding(false);
       }
     } catch (error) {
-      console.error('Error getting location:', error);
       // Continue without location on error
       await finishOnboarding(false);
     } finally {

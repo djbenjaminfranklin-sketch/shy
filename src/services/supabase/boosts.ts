@@ -45,7 +45,6 @@ export const boostsService = {
         error: null,
       };
     } catch (err) {
-      console.error('Error getting boost state:', err);
       return { state: this.getDefaultState(), error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -80,7 +79,6 @@ export const boostsService = {
         });
 
       if (upsertError) {
-        console.error('Error upserting boost balance:', upsertError);
         return { success: false, error: upsertError.message };
       }
 
@@ -96,13 +94,11 @@ export const boostsService = {
         });
 
       if (purchaseError) {
-        console.error('Error recording boost purchase:', purchaseError);
         // Don't fail the whole operation if purchase record fails
       }
 
       return { success: true, error: null };
     } catch (err) {
-      console.error('Error purchasing boosts:', err);
       return { success: false, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -147,13 +143,11 @@ export const boostsService = {
         });
 
       if (updateError) {
-        console.error('Error activating boost:', updateError);
         return { success: false, expiresAt: null, error: updateError.message };
       }
 
       return { success: true, expiresAt: expiresAt.toISOString(), error: null };
     } catch (err) {
-      console.error('Error activating boost:', err);
       return { success: false, expiresAt: null, error: 'Une erreur inattendue est survenue' };
     }
   },
@@ -199,7 +193,6 @@ export const boostsService = {
 
       return { wasExpired: false, error: null };
     } catch (err) {
-      console.error('Error checking boost expiration:', err);
       return { wasExpired: false, error: 'Une erreur inattendue est survenue' };
     }
   },

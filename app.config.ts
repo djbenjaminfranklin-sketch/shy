@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "SHY",
   slug: "shy",
-  version: "1.0.1",
+  version: "1.0.3",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
@@ -28,7 +28,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSPhotoLibraryUsageDescription: "SHY a besoin d'accéder à vos photos pour votre profil.",
       NSCameraUsageDescription: "SHY a besoin d'accéder à votre caméra pour prendre des photos de profil et la vérification faciale.",
       NSFaceIDUsageDescription: "SHY utilise la reconnaissance faciale pour vérifier votre identité.",
-      NSUserTrackingUsageDescription: "SHY utilise ces données pour améliorer votre expérience et vous proposer des profils pertinents.",
       ITSAppUsesNonExemptEncryption: false
     }
   },
@@ -80,7 +79,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         sounds: []
       }
     ],
-    "expo-localization"
+    "expo-localization",
+    [
+      "@sentry/react-native/expo",
+      {
+        organization: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+      }
+    ]
   ],
   extra: {
     eas: {

@@ -5,10 +5,6 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Pressable,
-  Alert,
-  ActionSheetIOS,
-  Platform,
 } from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,22 +16,22 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { messagesService } from '../../src/services/supabase/messages';
 import { subscriptionsService } from '../../src/services/supabase/subscriptions';
 import { profilesService } from '../../src/services/supabase/profiles';
-import { moderationService } from '../../src/services/supabase/moderation';
 import { supabase } from '../../src/services/supabase/client';
-import { SUBSCRIPTION_PLANS_BY_ID, PlanType } from '../../src/constants/subscriptions';
-import { REPORT_REASONS, ReportReasonId } from '../../src/constants/moderation';
+import { SUBSCRIPTION_PLANS_BY_ID, PlanType, PlanFeatures, PLAN_FEATURES } from '../../src/constants/subscriptions';
 import { Message } from '../../src/types/message';
 import { MessageBubble } from '../../src/components/chat/MessageBubble';
 import { ChatInput } from '../../src/components/chat/ChatInput';
-import { Avatar } from '../../src/components/ui/Avatar';
+import { ChatHeaderLeft, ChatHeaderTitle, ChatHeaderRight } from '../../src/components/chat/ChatHeader';
+import { EmptyChat } from '../../src/components/chat/EmptyChat';
+import { ChatFeatureCards } from '../../src/components/chat/ChatFeatureCards';
 import { PaywallModal } from '../../src/components/subscription/PaywallModal';
 import { LimitIndicator } from '../../src/components/subscription/LimitIndicator';
-import { RhythmScoreCard } from '../../src/components/rhythm/RhythmScoreCard';
-import { EngagementScoreCard } from '../../src/components/engagement/EngagementScoreCard';
-import { ComfortLevelIndicator, ComfortLevelModal } from '../../src/components/comfort';
-import { QuickMeetButton, QuickMeetModal } from '../../src/components/quickmeet';
+import { ComfortLevelModal } from '../../src/components/comfort';
+import { QuickMeetModal } from '../../src/components/quickmeet';
 import { useQuickMeet } from '../../src/hooks/useQuickMeet';
-import { PlanFeatures, PLAN_FEATURES } from '../../src/constants/subscriptions';
+import { useChatModeration } from '../../src/hooks/useChatModeration';
+import { IceBreakerInfoModal } from '../../src/components/icebreaker/IceBreakerInfoModal';
+import { iceBreakerService } from '../../src/services/supabase/icebreaker';
 
 export default function ChatScreen() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
@@ -44,37 +40,32 @@ export default function ChatScreen() {
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
 
-  console.log('[ChatScreen] Opened with conversationId:', conversationId);
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [otherUserName, setOtherUserName] = useState('');
   const [otherUserPhoto, setOtherUserPhoto] = useState<string | null>(null);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
 
-  // Message limits
   const [messagesUsed, setMessagesUsed] = useState(0);
   const [messagesTotal, setMessagesTotal] = useState(5);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showRhythmExpanded, setShowRhythmExpanded] = useState(false);
   const [showComfortModal, setShowComfortModal] = useState(false);
   const [showQuickMeetModal, setShowQuickMeetModal] = useState(false);
-
-  // Premium features
   const [planFeatures, setPlanFeatures] = useState<PlanFeatures>(PLAN_FEATURES.free);
+  const [hasIceBreakerMessages, setHasIceBreakerMessages] = useState(false);
+  const [showIceBreakerBanner, setShowIceBreakerBanner] = useState(false);
+  const [showIceBreakerInfo, setShowIceBreakerInfo] = useState(false);
+  const [isFirstIceBreakerView, setIsFirstIceBreakerView] = useState(true);
 
-  // Quick Meet hook
-  const {
-    activeProposal,
-    isRecipient: isQuickMeetRecipient,
-  } = useQuickMeet(conversationId, otherUserId);
+  const { activeProposal, isRecipient: isQuickMeetRecipient } = useQuickMeet(conversationId, otherUserId);
+  const { handleMorePress } = useChatModeration({ otherUserId, otherUserName });
 
-  // Charger les infos de l'autre utilisateur
+  // Charger les infos de l'autre utilisateur et les limites
   useEffect(() => {
     const loadOtherUser = async () => {
       if (!conversationId || !user) return;
 
-      // Recuperer la conversation pour avoir le connection_id
       const { data: conversation } = await supabase
         .from('conversations')
         .select('connection_id')
@@ -83,7 +74,6 @@ export default function ChatScreen() {
 
       if (!conversation) return;
 
-      // Recuperer la connexion pour avoir les user IDs
       const { data: connection } = await supabase
         .from('connections')
         .select('user1_id, user2_id')
@@ -92,16 +82,13 @@ export default function ChatScreen() {
 
       if (!connection) return;
 
-      // Determiner l'autre utilisateur
       const theOtherUserId = connection.user1_id === user.id
         ? connection.user2_id
         : connection.user1_id;
 
       setOtherUserId(theOtherUserId);
 
-      // Charger le profil de l'autre utilisateur
       const { profile: otherProfile } = await profilesService.getProfile(theOtherUserId);
-
       if (otherProfile) {
         setOtherUserName(otherProfile.displayName);
         setOtherUserPhoto(otherProfile.photos?.[0] || null);
@@ -111,7 +98,6 @@ export default function ChatScreen() {
     loadOtherUser();
   }, [conversationId, user]);
 
-  // Charger les limites de messages et features premium
   useEffect(() => {
     if (!user) return;
 
@@ -126,7 +112,7 @@ export default function ChatScreen() {
         const { limits } = await subscriptionsService.getUserLimits(user.id);
         setMessagesUsed(limits?.messagesUsed || 0);
       } catch (error) {
-        console.error('Error loading message limits:', error);
+        // Error loading message limits
       }
     };
 
@@ -138,12 +124,29 @@ export default function ChatScreen() {
     if (!conversationId) return;
 
     const loadMessages = async () => {
-      console.log('[ChatScreen] Loading messages for:', conversationId);
       setIsLoading(true);
-      const { messages: loadedMessages, error } = await messagesService.getMessages(conversationId);
-      console.log('[ChatScreen] Messages loaded:', loadedMessages.length, 'error:', error);
+      const { messages: loadedMessages } = await messagesService.getMessages(conversationId);
       setMessages(loadedMessages);
       setIsLoading(false);
+
+      // Check for Ice Breaker messages (received, not sent by current user)
+      const iceBreakerMsgs = loadedMessages.filter(
+        (m) => m.isIceBreaker && m.senderId !== user?.id
+      );
+      if (iceBreakerMsgs.length > 0) {
+        setHasIceBreakerMessages(true);
+        setShowIceBreakerBanner(true);
+
+        if (user) {
+          const { seen } = await iceBreakerService.hasSeenInfoPopup(user.id);
+          if (!seen) {
+            setIsFirstIceBreakerView(true);
+            setShowIceBreakerInfo(true);
+          } else {
+            setIsFirstIceBreakerView(false);
+          }
+        }
+      }
 
       // Marquer comme lus
       if (user) {
@@ -156,8 +159,6 @@ export default function ChatScreen() {
     // S'abonner aux nouveaux messages
     messagesService.subscribeToMessages(conversationId, (newMessage) => {
       setMessages((prev) => [...prev, newMessage]);
-
-      // Marquer comme lu si ce n'est pas notre message
       if (user && newMessage.senderId !== user.id) {
         messagesService.markAsRead(conversationId, user.id);
       }
@@ -171,176 +172,30 @@ export default function ChatScreen() {
   // Envoyer un message
   const handleSend = useCallback(
     async (content: string) => {
-      console.log('[Chat] handleSend called with:', content);
-      console.log('[Chat] user:', user?.id, 'conversationId:', conversationId);
+      if (!user || !conversationId) return;
 
-      if (!user || !conversationId) {
-        console.log('[Chat] Missing user or conversationId, aborting');
-        return;
-      }
-
-      // Vérifier les limites (sauf si illimité = -1)
-      console.log('[Chat] Checking limits - used:', messagesUsed, 'total:', messagesTotal);
       if (messagesTotal !== -1 && messagesUsed >= messagesTotal) {
-        console.log('[Chat] Limit reached, showing paywall');
         setShowPaywall(true);
         return;
       }
 
-      console.log('[Chat] Sending message...');
-      const { message, error } = await messagesService.sendMessage(conversationId, user.id, content);
-      console.log('[Chat] Send result - message:', message, 'error:', error);
-
+      const { message } = await messagesService.sendMessage(conversationId, user.id, content);
       if (message) {
-        console.log('[Chat] Adding message to state');
         setMessages((prev) => [...prev, message]);
         flatListRef.current?.scrollToEnd({ animated: true });
-
-        // Incrémenter le compteur local
         setMessagesUsed((prev) => prev + 1);
-
-        // Incrémenter sur le serveur
         await subscriptionsService.incrementMessages(user.id);
-      } else {
-        console.log('[Chat] No message returned, error:', error);
       }
     },
     [user, conversationId, messagesUsed, messagesTotal]
   );
 
-  // Fermer le paywall
-  const handleClosePaywall = useCallback(() => {
-    setShowPaywall(false);
-  }, []);
+  const handleClosePaywall = useCallback(() => setShowPaywall(false), []);
 
-  // Upgrade
   const handleUpgrade = useCallback(() => {
     setShowPaywall(false);
-    router.push('/profile/subscription' as any);
+    router.push('/profile/subscription' as never);
   }, [router]);
-
-  // Bloquer l'utilisateur
-  const handleBlock = useCallback(async () => {
-    if (!user || !otherUserId) return;
-
-    const confirmMessage = t('moderation.blockConfirmation').replace(
-      '{name}',
-      otherUserName || t('moderation.thisUser')
-    );
-
-    Alert.alert(
-      t('moderation.blockUser'),
-      confirmMessage,
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('moderation.block'),
-          style: 'destructive',
-          onPress: async () => {
-            const { error } = await moderationService.blockUser(user.id, otherUserId);
-            if (error) {
-              Alert.alert(t('common.error'), error);
-            } else {
-              Alert.alert(
-                t('moderation.userBlocked'),
-                t('moderation.userBlockedMessage'),
-                [{ text: 'OK', onPress: () => router.replace('/(tabs)/matches') }]
-              );
-            }
-          },
-        },
-      ]
-    );
-  }, [user, otherUserId, otherUserName, t, router]);
-
-  // Signaler l'utilisateur
-  const handleReport = useCallback(() => {
-    if (!user || !otherUserId) return;
-
-    const reasons = Object.values(REPORT_REASONS);
-    const options = [...reasons.map((r) => r.label), t('common.cancel')];
-    const cancelButtonIndex = options.length - 1;
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex,
-          title: t('moderation.reportReason'),
-        },
-        async (buttonIndex) => {
-          if (buttonIndex !== cancelButtonIndex) {
-            const reason = reasons[buttonIndex].id as ReportReasonId;
-            const { error } = await moderationService.reportUser(user.id, otherUserId, reason);
-            if (error) {
-              Alert.alert(t('common.error'), error);
-            } else {
-              Alert.alert(t('moderation.reportSent'), t('moderation.reportSentMessage'));
-            }
-          }
-        }
-      );
-    } else {
-      // Android: Use Alert with buttons
-      Alert.alert(
-        t('moderation.reportReason'),
-        undefined,
-        [
-          ...reasons.map((reason) => ({
-            text: reason.label,
-            onPress: async () => {
-              const { error } = await moderationService.reportUser(user.id, otherUserId, reason.id as ReportReasonId);
-              if (error) {
-                Alert.alert(t('common.error'), error);
-              } else {
-                Alert.alert(t('moderation.reportSent'), t('moderation.reportSentMessage'));
-              }
-            },
-          })),
-          { text: t('common.cancel'), style: 'cancel' },
-        ]
-      );
-    }
-  }, [user, otherUserId, t]);
-
-  // Menu de modération
-  const handleMorePress = useCallback(() => {
-    const options = [
-      t('moderation.blockUser'),
-      t('moderation.reportUser'),
-      t('common.cancel'),
-    ];
-    const destructiveButtonIndex = 0;
-    const cancelButtonIndex = 2;
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          destructiveButtonIndex,
-          cancelButtonIndex,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 0) {
-            handleBlock();
-          } else if (buttonIndex === 1) {
-            handleReport();
-          }
-        }
-      );
-    } else {
-      // Android: Use Alert
-      Alert.alert(
-        otherUserName || 'Options',
-        undefined,
-        [
-          { text: t('moderation.blockUser'), style: 'destructive', onPress: handleBlock },
-          { text: t('moderation.reportUser'), onPress: handleReport },
-          { text: t('common.cancel'), style: 'cancel' },
-        ]
-      );
-    }
-  }, [t, otherUserName, handleBlock, handleReport]);
 
   if (!conversationId) {
     return (
@@ -356,75 +211,42 @@ export default function ChatScreen() {
         options={{
           headerShown: true,
           headerLeft: () => (
-            <Pressable onPress={() => router.replace('/(tabs)/matches')} style={styles.headerButton}>
-              <Text style={styles.backIcon}>‹</Text>
-            </Pressable>
+            <ChatHeaderLeft onPress={() => router.replace('/(tabs)/matches')} />
           ),
           headerTitle: () => (
-            <View style={styles.headerTitle}>
-              <Avatar uri={otherUserPhoto} name={otherUserName} size={32} />
-              <Text style={styles.headerName}>{otherUserName || 'Chat'}</Text>
-            </View>
+            <ChatHeaderTitle photo={otherUserPhoto} name={otherUserName} />
           ),
           headerRight: () => (
-            <Pressable onPress={handleMorePress} style={styles.headerButton}>
-              <Text style={styles.headerIcon}>⋯</Text>
-            </Pressable>
+            <ChatHeaderRight onPress={handleMorePress} />
           ),
         }}
       />
 
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        {/* Rhythm Score Card */}
-        <View style={styles.rhythmContainer}>
-          <RhythmScoreCard
-            conversationId={conversationId}
-            compact={!showRhythmExpanded}
-            onPress={() => setShowRhythmExpanded(!showRhythmExpanded)}
-            canSeeDetailedInsights={planFeatures.connectionRhythmDetailedInsights}
-            onUpgrade={handleUpgrade}
-          />
-        </View>
-
-        {/* Engagement Score Card */}
-        {otherUserId && (
-          <View style={styles.engagementContainer}>
-            <EngagementScoreCard
-              userId={otherUserId}
-              showDetails={planFeatures.engagementScoreDetailedBreakdown}
-              onUpgrade={handleUpgrade}
-            />
-          </View>
-        )}
-
-        {/* Comfort Level Indicator */}
-        <ComfortLevelIndicator
+        <ChatFeatureCards
           conversationId={conversationId}
-          onPress={() => setShowComfortModal(true)}
-          compact
+          otherUserId={otherUserId}
+          otherUserName={otherUserName}
+          showRhythmExpanded={showRhythmExpanded}
+          onToggleRhythm={() => setShowRhythmExpanded(!showRhythmExpanded)}
+          planFeatures={planFeatures}
+          onUpgrade={handleUpgrade}
+          onComfortPress={() => setShowComfortModal(true)}
+          onQuickMeetPress={() => setShowQuickMeetModal(true)}
+          hasActiveProposal={!!activeProposal}
+          isQuickMeetRecipient={isQuickMeetRecipient}
+          hasIceBreakerMessages={hasIceBreakerMessages}
+          showIceBreakerBanner={showIceBreakerBanner}
+          onDismissIceBreakerBanner={() => setShowIceBreakerBanner(false)}
+          onDiscoverIceBreaker={() => router.push('/profile/subscription' as never)}
         />
-
-        {/* Quick Meet Button */}
-        {otherUserId && (
-          <View style={styles.quickMeetContainer}>
-            <QuickMeetButton
-              onPress={() => setShowQuickMeetModal(true)}
-              hasActiveProposal={!!activeProposal}
-              isRecipient={isQuickMeetRecipient}
-            />
-          </View>
-        )}
 
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : messages.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>💬</Text>
-            <Text style={styles.emptyTitle}>{t('messages.startConversationHint')}</Text>
-            <Text style={styles.emptyText}>{t('messages.sendFirstMessage')}</Text>
-          </View>
+          <EmptyChat t={t} />
         ) : (
           <FlatList
             ref={flatListRef}
@@ -447,14 +269,13 @@ export default function ChatScreen() {
               type="messages"
               used={messagesUsed}
               total={messagesTotal}
-              onPress={() => router.push('/profile/subscription' as any)}
+              onPress={() => router.push('/profile/subscription' as never)}
             />
           </View>
         )}
 
         <ChatInput onSend={handleSend} />
 
-        {/* Paywall Modal */}
         <PaywallModal
           visible={showPaywall}
           onClose={handleClosePaywall}
@@ -464,7 +285,6 @@ export default function ChatScreen() {
           limit={messagesTotal}
         />
 
-        {/* Comfort Level Modal */}
         <ComfortLevelModal
           visible={showComfortModal}
           onClose={() => setShowComfortModal(false)}
@@ -472,7 +292,6 @@ export default function ChatScreen() {
           otherUserName={otherUserName}
         />
 
-        {/* Quick Meet Modal */}
         {otherUserId && (
           <QuickMeetModal
             visible={showQuickMeetModal}
@@ -482,6 +301,22 @@ export default function ChatScreen() {
             otherUserName={otherUserName}
           />
         )}
+
+        <IceBreakerInfoModal
+          visible={showIceBreakerInfo}
+          onClose={async () => {
+            setShowIceBreakerInfo(false);
+            if (user) {
+              await iceBreakerService.markInfoPopupSeen(user.id);
+            }
+          }}
+          onDiscover={() => {
+            setShowIceBreakerInfo(false);
+            router.push('/profile/subscription' as never);
+          }}
+          senderName={otherUserName}
+          isFirstTime={isFirstIceBreakerView}
+        />
       </SafeAreaView>
     </>
   );
@@ -492,51 +327,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerTitle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  headerName: {
-    ...typography.bodyMedium,
-    color: colors.text,
-  },
-  headerButton: {
-    padding: spacing.sm,
-  },
-  headerIcon: {
-    fontSize: 24,
-    color: colors.text,
-  },
-  backIcon: {
-    fontSize: 32,
-    color: colors.text,
-    fontWeight: '300',
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: spacing.md,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
   },
   errorText: {
     ...typography.body,
@@ -552,15 +346,5 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-  },
-  rhythmContainer: {
-    paddingHorizontal: spacing.md,
-  },
-  engagementContainer: {
-    paddingHorizontal: spacing.md,
-  },
-  quickMeetContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
   },
 });

@@ -24,6 +24,7 @@ export interface MatchWithProfile extends Match {
   lastMessage?: string;
   lastMessageAt?: string;
   unreadCount: number;
+  hasIceBreakerMessages?: boolean;
 }
 
 // =====================================================

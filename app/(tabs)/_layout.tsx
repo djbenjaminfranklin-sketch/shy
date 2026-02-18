@@ -1,13 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../../src/theme';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { supabase } from '../../src/services/supabase/client';
 import { invitationsService } from '../../src/services/supabase/invitations';
+import { FeatureShowcase } from '../../src/components/showcase/FeatureShowcase';
+
+const SHOWCASE_SEEN_KEY = '@shy_feature_showcase_seen';
 
 // Badge component pour notifications
 const TabBadge = ({ count }: { count: number }) => {
@@ -39,6 +43,35 @@ export default function TabLayout() {
   const router = useRouter();
   const [likesCount, setLikesCount] = useState(0);
   const [messagesCount, setMessagesCount] = useState(0);
+  const [showShowcase, setShowShowcase] = useState(false);
+  const [showcaseChecked, setShowcaseChecked] = useState(false);
+
+  // Vérifier si le Feature Showcase a déjà été vu
+  useEffect(() => {
+    const checkShowcase = async () => {
+      try {
+        const seen = await AsyncStorage.getItem(SHOWCASE_SEEN_KEY);
+        if (!seen) {
+          setShowShowcase(true);
+        }
+      } catch {
+        // En cas d'erreur, ne pas bloquer l'app
+      }
+      setShowcaseChecked(true);
+    };
+    if (isAuthenticated) {
+      checkShowcase();
+    }
+  }, [isAuthenticated]);
+
+  const handleShowcaseComplete = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(SHOWCASE_SEEN_KEY, 'true');
+    } catch {
+      // Ignorer l'erreur
+    }
+    setShowShowcase(false);
+  }, []);
 
   // Rediriger vers login si non authentifié
   useEffect(() => {
@@ -110,6 +143,11 @@ export default function TabLayout() {
   // Si pas authentifié, ne rien afficher (redirection en cours)
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Afficher le Feature Showcase si pas encore vu
+  if (showShowcase && showcaseChecked) {
+    return <FeatureShowcase onComplete={handleShowcaseComplete} />;
   }
 
   return (

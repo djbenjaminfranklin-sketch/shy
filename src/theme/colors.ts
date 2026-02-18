@@ -16,8 +16,11 @@ export const colors = {
   superLike: '#00D4FF',   // Bleu electrique - etoile
   superLikeGlow: 'rgba(0, 212, 255, 0.3)',
 
-  boost: '#8B5CF6',       // Violet - eclair
+  boost: '#8B5CF6',       // Violet - eclair (legacy)
   boostGlow: 'rgba(139, 92, 246, 0.3)',
+
+  icebreaker: '#00D4FF',  // Bleu electrique - ice breaker
+  icebreakerGlow: 'rgba(0, 212, 255, 0.3)',
 
   // Premium / Subscription
   premium: '#FFD700',     // Or - premium

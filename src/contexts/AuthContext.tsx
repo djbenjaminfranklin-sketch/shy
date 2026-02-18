@@ -51,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
 
       if (existingStatus !== 'granted') {
-        console.log('Push notification permission not yet granted - will be requested during onboarding');
         return;
       }
 
@@ -64,10 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .update({ push_token: token.data })
         .eq('id', userId);
-
-      console.log('Push token registered:', token.data);
     } catch (error) {
-      console.log('Error registering push token:', error);
+      // Error registering push token
     }
   }, []);
 
@@ -144,19 +141,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Connexion
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      console.log('[AuthContext] signIn: Attempting login...');
       const { user, error } = await authService.signIn({ email, password });
 
       if (error) {
-        console.log('[AuthContext] signIn: Auth error:', error.message);
         return { error: error.message, hasCompletedOnboarding: false };
       }
 
       if (user) {
-        console.log('[AuthContext] signIn: User authenticated, loading profile...');
         const profile = await loadProfile(user.id);
         const completed = !!profile?.intention;
-        console.log('[AuthContext] signIn: Profile loaded, hasCompletedOnboarding:', completed);
 
         setState((prev) => ({
           ...prev,
@@ -169,10 +162,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: null, hasCompletedOnboarding: completed };
       }
 
-      console.log('[AuthContext] signIn: No user returned');
       return { error: null, hasCompletedOnboarding: false };
     } catch (err) {
-      console.error('[AuthContext] signIn: Unexpected error:', err);
       return { error: 'Une erreur inattendue est survenue', hasCompletedOnboarding: false };
     }
   }, [loadProfile]);
@@ -191,9 +182,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!session) {
         // Pas de session = confirmation email probablement requise
-        console.log('[AuthContext] signUp: User created but no session (email confirmation may be required)');
-      } else {
-        console.log('[AuthContext] signUp: User created with valid session');
       }
 
       // On met isAuthenticated à true si on a un user, même sans session

@@ -154,14 +154,12 @@ export default function ExportDataScreen() {
         );
       } catch (shareError) {
         // Si le partage échoue, afficher les données dans une alerte
-        console.log('Share failed, data size:', jsonData.length);
         Alert.alert(
           t('dataExport.exportSuccess'),
           t('dataExport.exportSuccessMessage') + '\n\n' + 'Vos données sont prêtes à être copiées.'
         );
       }
     } catch (error) {
-      console.error('Error exporting data:', error);
       Alert.alert(
         t('dataExport.exportError'),
         t('dataExport.exportErrorMessage')

@@ -23,21 +23,14 @@ export const verificationService = {
     verificationPhotoUris: string[]
   ): Promise<VerificationResult> {
     try {
-      console.log('[verificationService] Starting face verification');
-      console.log('[verificationService] Profile photo:', profilePhotoUrl);
-      console.log('[verificationService] Verification photos:', verificationPhotoUris.length);
-
       // 1. Upload profile photo if it's a local URI (not already a remote URL)
       let profilePhotoPublicUrl = profilePhotoUrl;
       if (!profilePhotoUrl.startsWith('http')) {
-        console.log('[verificationService] Profile photo is local URI, uploading first...');
         const { url, error } = await storageService.uploadVerificationPhoto(userId, profilePhotoUrl, 999);
         if (error || !url) {
-          console.error('[verificationService] Failed to upload profile photo:', error);
           throw new Error('Erreur lors de l\'upload de la photo de profil');
         }
         profilePhotoPublicUrl = url;
-        console.log('[verificationService] Profile photo uploaded:', profilePhotoPublicUrl);
       }
 
       // 2. Upload verification photos to storage
@@ -48,12 +41,10 @@ export const verificationService = {
         const { url, error } = await storageService.uploadVerificationPhoto(userId, uri, i);
 
         if (error || !url) {
-          console.error(`[verificationService] Failed to upload photo ${i}:`, error);
           throw new Error(`Erreur lors de l'upload de la photo ${i + 1}`);
         }
 
         uploadedUrls.push(url);
-        console.log(`[verificationService] Uploaded photo ${i + 1}:`, url);
       }
 
       // 3. Call the Edge Function for face comparison
@@ -66,11 +57,8 @@ export const verificationService = {
       });
 
       if (error) {
-        console.error('[verificationService] Edge function error:', error);
         throw new Error('Erreur lors de la vérification faciale');
       }
-
-      console.log('[verificationService] Verification result:', data);
 
       // 4. Clean up verification photos from storage (optional, for privacy)
       // We keep them for now in case of disputes/moderation
@@ -83,7 +71,6 @@ export const verificationService = {
         error: data.error,
       };
     } catch (err) {
-      console.error('[verificationService] Unexpected error:', err);
       return {
         verified: false,
         confidence: 0,
@@ -106,13 +93,11 @@ export const verificationService = {
         .single();
 
       if (error) {
-        console.error('[verificationService] Error checking verification status:', error);
         return false;
       }
 
       return data?.is_verified || false;
     } catch (err) {
-      console.error('[verificationService] Unexpected error:', err);
       return false;
     }
   },

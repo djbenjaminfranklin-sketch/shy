@@ -14,7 +14,7 @@ if (!isExpoGo) {
     Purchases = RevenueCatModule.default;
     LOG_LEVEL = RevenueCatModule.LOG_LEVEL;
   } catch (e) {
-    console.warn('RevenueCat module not available');
+    // RevenueCat module not available
   }
 }
 
@@ -77,7 +77,6 @@ class RevenueCatService {
 
     // Skip dans Expo Go
     if (!this.isAvailable) {
-      console.log('ℹ️ RevenueCat not available (Expo Go mode) - using mock data');
       this.initialized = true;
       return;
     }
@@ -95,9 +94,7 @@ class RevenueCatService {
 
       await Purchases.configure({ apiKey });
       this.initialized = true;
-      console.log('✅ RevenueCat initialized');
     } catch (error) {
-      console.error('❌ RevenueCat initialization error:', error);
       // Ne pas throw l'erreur, juste marquer comme non disponible
       this.isAvailable = false;
       this.initialized = true;
@@ -109,15 +106,12 @@ class RevenueCatService {
    */
   async login(userId: string): Promise<CustomerInfo | null> {
     if (!this.isAvailable) {
-      console.log('ℹ️ RevenueCat login skipped (not available)');
       return null;
     }
     try {
       const { customerInfo } = await Purchases.logIn(userId);
-      console.log('✅ RevenueCat user logged in:', userId);
       return customerInfo;
     } catch (error) {
-      console.error('❌ RevenueCat login error:', error);
       throw error;
     }
   }
@@ -127,14 +121,11 @@ class RevenueCatService {
    */
   async logout(): Promise<void> {
     if (!this.isAvailable) {
-      console.log('ℹ️ RevenueCat logout skipped (not available)');
       return;
     }
     try {
       await Purchases.logOut();
-      console.log('✅ RevenueCat user logged out');
     } catch (error) {
-      console.error('❌ RevenueCat logout error:', error);
       throw error;
     }
   }
@@ -150,7 +141,6 @@ class RevenueCatService {
       const customerInfo = await Purchases.getCustomerInfo();
       return customerInfo;
     } catch (error) {
-      console.error('❌ RevenueCat getCustomerInfo error:', error);
       throw error;
     }
   }
@@ -166,7 +156,6 @@ class RevenueCatService {
       const offerings = await Purchases.getOfferings();
       return offerings;
     } catch (error) {
-      console.error('❌ RevenueCat getOfferings error:', error);
       throw error;
     }
   }
@@ -185,7 +174,6 @@ class RevenueCatService {
         premium: offerings.all['default'] || null, // Premium est dans "default"
       };
     } catch (error) {
-      console.error('❌ RevenueCat getOfferings error:', error);
       return { plus: null, premium: null };
     }
   }
@@ -195,19 +183,12 @@ class RevenueCatService {
    */
   async purchasePackage(pkg: PurchasesPackage): Promise<CustomerInfo | null> {
     if (!this.isAvailable) {
-      console.warn('ℹ️ Purchases not available in Expo Go');
       throw new Error('Purchases not available in Expo Go');
     }
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      console.log('✅ Purchase successful');
       return customerInfo;
     } catch (error: any) {
-      if (error.userCancelled) {
-        console.log('ℹ️ User cancelled purchase');
-      } else {
-        console.error('❌ Purchase error:', error);
-      }
       throw error;
     }
   }
@@ -217,7 +198,6 @@ class RevenueCatService {
    */
   async purchaseProduct(productId: string): Promise<CustomerInfo | null> {
     if (!this.isAvailable) {
-      console.warn('Purchases not available in Expo Go');
       throw new Error('Purchases not available in Expo Go');
     }
     try {
@@ -230,14 +210,8 @@ class RevenueCatService {
 
       const product = products[0];
       const { customerInfo } = await Purchases.purchaseStoreProduct(product);
-      console.log('Purchase successful for product:', productId);
       return customerInfo;
     } catch (error: any) {
-      if (error.userCancelled) {
-        console.log('User cancelled purchase');
-      } else {
-        console.error('Purchase error:', error);
-      }
       throw error;
     }
   }
@@ -247,15 +221,12 @@ class RevenueCatService {
    */
   async restorePurchases(): Promise<CustomerInfo | null> {
     if (!this.isAvailable) {
-      console.warn('ℹ️ Restore not available in Expo Go');
       return null;
     }
     try {
       const customerInfo = await Purchases.restorePurchases();
-      console.log('✅ Purchases restored');
       return customerInfo;
     } catch (error) {
-      console.error('❌ Restore purchases error:', error);
       throw error;
     }
   }

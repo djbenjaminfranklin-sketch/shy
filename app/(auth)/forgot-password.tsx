@@ -15,10 +15,12 @@ import { colors } from '../../src/theme/colors';
 import { typography } from '../../src/theme/typography';
 import { spacing, borderRadius } from '../../src/theme/spacing';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { resetPassword } = useAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -26,7 +28,7 @@ export default function ForgotPasswordScreen() {
 
   const handleReset = async () => {
     if (!email) {
-      setError('Veuillez entrer votre email');
+      setError(t('forgotPasswordScreen.enterEmail'));
       return;
     }
 
@@ -41,7 +43,7 @@ export default function ForgotPasswordScreen() {
         setIsSuccess(true);
       }
     } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError(t('forgotPasswordScreen.errorOccurred'));
     } finally {
       setIsLoading(false);
     }
@@ -54,16 +56,21 @@ export default function ForgotPasswordScreen() {
           <View style={styles.iconContainer}>
             <Text style={styles.icon}>✓</Text>
           </View>
-          <Text style={styles.title}>Email envoyé !</Text>
+          <Text style={styles.title}>{t('forgotPasswordScreen.emailSent')}</Text>
           <Text style={styles.description}>
-            Si un compte existe avec cet email, vous recevrez un lien pour
-            réinitialiser votre mot de passe.
+            {t('forgotPasswordScreen.codeSentTo').replace('{email}', email)}
           </Text>
           <Pressable
             style={styles.primaryButton}
+            onPress={() => router.push({ pathname: '/(auth)/reset-password', params: { email } })}
+          >
+            <Text style={styles.primaryButtonText}>{t('forgotPasswordScreen.enterCode')}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
             onPress={() => router.replace('/(auth)/login')}
           >
-            <Text style={styles.primaryButtonText}>Retour à la connexion</Text>
+            <Text style={styles.secondaryButtonText}>{t('forgotPasswordScreen.backToLogin')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -79,22 +86,22 @@ export default function ForgotPasswordScreen() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Pressable style={styles.backButton} onPress={() => router.back()}>
-              <Text style={styles.backText}>← Retour</Text>
+              <Text style={styles.backText}>{t('forgotPasswordScreen.back')}</Text>
             </Pressable>
-            <Text style={styles.title}>Mot de passe oublié</Text>
+            <Text style={styles.title}>{t('forgotPasswordScreen.title')}</Text>
             <Text style={styles.subtitle}>
-              Entrez votre email pour recevoir un lien de réinitialisation
+              {t('forgotPasswordScreen.subtitle')}
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('forgotPasswordScreen.emailLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="votre@email.com"
+                placeholder={t('forgotPasswordScreen.emailPlaceholder')}
                 placeholderTextColor={colors.textTertiary}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -112,7 +119,7 @@ export default function ForgotPasswordScreen() {
               {isLoading ? (
                 <ActivityIndicator color={colors.textLight} />
               ) : (
-                <Text style={styles.primaryButtonText}>Envoyer le lien</Text>
+                <Text style={styles.primaryButtonText}>{t('forgotPasswordScreen.sendCode')}</Text>
               )}
             </Pressable>
           </View>
@@ -217,5 +224,14 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...typography.button,
     color: colors.textLight,
+  },
+  secondaryButton: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  secondaryButtonText: {
+    ...typography.body,
+    color: colors.textSecondary,
   },
 });

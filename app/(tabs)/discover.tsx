@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   Dimensions,
-  Image,
-  TouchableOpacity,
   Animated,
   PanResponder,
   GestureResponderEvent,
@@ -13,7 +11,6 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -34,11 +31,11 @@ import { useTravelMode } from '../../src/hooks/useTravelMode';
 import { ModeActivationModal } from '../../src/components/availability';
 import { PaywallModal } from '../../src/components/subscription/PaywallModal';
 import { FilterModal } from '../../src/components/discover/FilterModal';
-import { BoostIndicator } from '../../src/components/boost/BoostIndicator';
 import { useBoost } from '../../src/contexts/BoostContext';
 import { IceBreakerModal } from '../../src/components/icebreaker/IceBreakerModal';
-import { IntentionBadge } from '../../src/components/profile/IntentionBadge';
-import { AvailabilityBadge } from '../../src/components/profile/AvailabilityBadge';
+import { DiscoverHeader } from '../../src/components/discover/DiscoverHeader';
+import { ActionButtonsRow } from '../../src/components/discover/ActionButtonsRow';
+import { ProfileCardOverlay } from '../../src/components/discover/ProfileCardOverlay';
 import type { AvailabilityModeType, ModeDuration } from '../../src/types/availabilityMode';
 import type { TravelLocation } from '../../src/types/travelMode';
 import type { ProfileFilters } from '../../src/types/profile';
@@ -46,49 +43,6 @@ import type { ProfileFilters } from '../../src/types/profile';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25;
 const SWIPE_OUT_DURATION = 400;
-
-// Action Button Component
-interface ActionButtonProps {
-  icon?: keyof typeof Ionicons.glyphMap;
-  emoji?: string;
-  image?: any;
-  color?: string;
-  glowColor: string;
-  size?: number;
-  onPress: () => void;
-}
-
-const ActionButton: React.FC<ActionButtonProps> = ({
-  icon,
-  emoji,
-  image,
-  color,
-  glowColor,
-  size = 60,
-  onPress
-}) => (
-  <TouchableOpacity
-    style={[
-      styles.actionButton,
-      {
-        width: size,
-        height: size,
-        backgroundColor: colors.card,
-        shadowColor: glowColor,
-      }
-    ]}
-    onPress={onPress}
-    activeOpacity={0.8}
-  >
-    {emoji ? (
-      <Text style={{ fontSize: size * 0.45 }}>{emoji}</Text>
-    ) : image ? (
-      <Image source={image} style={{ width: size * 0.5, height: size * 0.5, resizeMode: 'contain' }} />
-    ) : icon ? (
-      <Ionicons name={icon} size={size * 0.45} color={color} />
-    ) : null}
-  </TouchableOpacity>
-);
 
 export default function DiscoverScreen() {
   const router = useRouter();
@@ -621,12 +575,12 @@ export default function DiscoverScreen() {
   }, [activateMode, t]);
 
   // Handle travel mode from FilterModal
-  const handleActivateTravelMode = useCallback(async (city: TravelLocation, arrivalDate: Date) => {
+  const handleActivateTravelMode = useCallback(async (travelCity: TravelLocation, arrivalDate: Date) => {
     return await activateTravelMode({
-      city: city.city,
-      country: city.country,
-      latitude: city.latitude,
-      longitude: city.longitude,
+      city: travelCity.city,
+      country: travelCity.country,
+      latitude: travelCity.latitude,
+      longitude: travelCity.longitude,
       arrivalDate,
     });
   }, [activateTravelMode]);
@@ -687,307 +641,9 @@ export default function DiscoverScreen() {
     outputRange: ['-15deg', '0deg', '15deg'],
   });
 
-  // If no more profiles - show header anyway
-  if (!profile) {
-    return (
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-        <LinearGradient
-          colors={['#1a1a2e', '#16213e', '#0f0f23']}
-          style={StyleSheet.absoluteFillObject}
-        />
-
-        {/* Header toujours visible */}
-        <SafeAreaView style={styles.header} edges={['top']} pointerEvents="box-none">
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowFilterModal(true)}
-          >
-            <Ionicons name="options" size={26} color={colors.white} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => setShowIceBreakerModal(true)}
-          >
-            <View>
-              <Ionicons name="flash" size={26} color={colors.boost} />
-              {boostsAvailable > 0 && !isBoostActive && (
-                <View style={styles.boostBadge}>
-                  <Text style={styles.boostBadgeText}>{boostsAvailable}</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        </SafeAreaView>
-
-        {/* Boost indicator when active */}
-        {isBoostActive && (
-          <View style={styles.boostIndicatorContainer}>
-            <BoostIndicator expiresAt={activeBoostExpiresAt} onExpire={refreshBoost} />
-          </View>
-        )}
-
-        {/* Empty state centre */}
-        <View style={styles.emptyContent}>
-          <Ionicons name="heart-dislike" size={80} color={colors.textSecondary} />
-          <Text style={styles.emptyTitle}>{t('discover.noMoreProfiles')}</Text>
-          <Text style={styles.emptyText}>{t('discover.comeBackLater')}</Text>
-        </View>
-
-        {/* Filter modal - also available in empty state */}
-        <FilterModal
-          visible={showFilterModal}
-          onClose={() => setShowFilterModal(false)}
-          filters={filters}
-          onApply={(newFilters) => {
-            setFilters(newFilters);
-          }}
-          travelMode={travelMode}
-          canUseTravelMode={canUseTravelMode}
-          canUseAllFilters={canUseAllFilters}
-          onActivateTravelMode={handleActivateTravelMode}
-          onDeactivateTravelMode={handleDeactivateTravelMode}
-          onUpgradeToPremium={() => {
-            setShowFilterModal(false);
-            router.push('/profile/subscription' as never);
-          }}
-        />
-
-        {/* Ice Breaker modal - also available in empty state */}
-        <IceBreakerModal
-          visible={showIceBreakerModal}
-          onClose={() => setShowIceBreakerModal(false)}
-        />
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      {/* Background gradient */}
-      <LinearGradient
-        colors={['#1a1a2e', '#16213e', '#0f0f23']}
-        style={StyleSheet.absoluteFillObject}
-      />
-
-      {/* Current card - key unique pour forcer le re-render propre */}
-      <Animated.View
-        key={`card-${profile.id}-${currentIndex}`}
-        style={[
-          styles.cardContainer,
-          {
-            transform: [
-              { translateX: swipeAnim.x },
-              { translateY: swipeAnim.y },
-              { rotate: cardRotate },
-            ],
-          }
-        ]}
-        {...panResponder.panHandlers}
-      >
-        {/* Photo plein ecran */}
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={handlePhotoTap}
-          style={styles.photoTouchable}
-        >
-          {imageError ? (
-            <View style={styles.imagePlaceholder}>
-              <Ionicons name="person" size={80} color="rgba(255,255,255,0.3)" />
-            </View>
-          ) : (
-            <Image
-              source={{ uri: profile.photos[currentPhotoIndex] }}
-              style={styles.fullScreenPhoto}
-              onError={() => setImageError(true)}
-            />
-          )}
-        </TouchableOpacity>
-
-        {/* Gradient overlay en bas */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.95)']}
-          style={styles.gradient}
-          pointerEvents="none"
-        />
-
-        {/* LIKE stamp */}
-        <Animated.View style={[styles.stampContainer, styles.likeStamp, { opacity: likeOpacity }]}>
-          <Text style={[styles.stampText, styles.likeStampText]}>💞</Text>
-        </Animated.View>
-
-        {/* NOPE stamp */}
-        <Animated.View style={[styles.stampContainer, styles.nopeStamp, { opacity: nopeOpacity }]}>
-          <Image
-            source={require('../../assets/nope-x.png')}
-            style={styles.nopeImage}
-          />
-        </Animated.View>
-
-        {/* SUPER LIKE stamp */}
-        <Animated.View style={[styles.stampContainer, styles.superLikeStamp, { opacity: superLikeOpacity }]}>
-          <Text style={[styles.stampText, styles.superLikeStampText]}>🫶</Text>
-        </Animated.View>
-
-        {/* Photo dots - seulement si plus d'une photo */}
-        {profile.photos.length > 1 && (
-          <View style={styles.dotsContainer} pointerEvents="none">
-            {profile.photos.map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  i === currentPhotoIndex && styles.dotActive,
-                  { width: (SCREEN_WIDTH - 32) / profile.photos.length - 4 }
-                ]}
-              />
-            ))}
-          </View>
-        )}
-
-        {/* City indicator - centré en haut */}
-        {city && (
-          <View style={styles.cityIndicator} pointerEvents="none">
-            <Ionicons name="location" size={14} color="rgba(255,255,255,0.8)" />
-            <Text style={styles.cityText}>{city}</Text>
-          </View>
-        )}
-
-        {/* Info profil */}
-        <View style={styles.profileInfo} pointerEvents="none">
-          {/* Badge en ligne - basé sur lastActiveAt */}
-          {profile.lastActiveAt && (
-            (() => {
-              const lastActive = new Date(profile.lastActiveAt);
-              const now = new Date();
-              const diffMinutes = Math.floor((now.getTime() - lastActive.getTime()) / 60000);
-              const isOnline = diffMinutes < 5;
-
-              if (isOnline) {
-                return (
-                  <View style={styles.onlineBadge}>
-                    <View style={styles.onlineDot} />
-                    <Text style={styles.onlineText}>Actif.ve</Text>
-                  </View>
-                );
-              } else if (diffMinutes < 60) {
-                return (
-                  <View style={styles.offlineBadge}>
-                    <Text style={styles.offlineText}>Il y a {diffMinutes} min</Text>
-                  </View>
-                );
-              } else if (diffMinutes < 1440) {
-                return (
-                  <View style={styles.offlineBadge}>
-                    <Text style={styles.offlineText}>Il y a {Math.floor(diffMinutes / 60)}h</Text>
-                  </View>
-                );
-              }
-              return null;
-            })()
-          )}
-
-          {/* Nom et age */}
-          <View style={styles.nameRow}>
-            <Text style={styles.name}>{profile.displayName}</Text>
-            <Text style={styles.age}>{profile.age}</Text>
-          </View>
-
-          {/* Distance */}
-          {profile.distance !== null && (
-            <View style={styles.distanceRow}>
-              <Ionicons name="location" size={14} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.distance}>a {profile.distance} km</Text>
-            </View>
-          )}
-
-          {/* Bio */}
-          {profile.bio && (
-            <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
-          )}
-
-          {/* Badges intention et disponibilité */}
-          <View style={styles.badgesRow}>
-            <IntentionBadge intention={profile.intention} size="medium" />
-            {profile.availability && (
-              <AvailabilityBadge availability={profile.availability} size="medium" />
-            )}
-          </View>
-        </View>
-      </Animated.View>
-
-      {/* Header transparent */}
-      <SafeAreaView style={styles.header} edges={['top']} pointerEvents="box-none">
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Ionicons name="options" size={26} color={colors.white} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => setShowIceBreakerModal(true)}
-        >
-          <View>
-            <Ionicons name="flash" size={26} color={colors.boost} />
-            {boostsAvailable > 0 && !isBoostActive && (
-              <View style={styles.boostBadge}>
-                <Text style={styles.boostBadgeText}>{boostsAvailable}</Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      </SafeAreaView>
-
-      {/* Boost indicator when active */}
-      {isBoostActive && (
-        <View style={styles.boostIndicatorContainer}>
-          <BoostIndicator expiresAt={activeBoostExpiresAt} onExpire={refreshBoost} />
-        </View>
-      )}
-
-      {/* Action buttons */}
-      <View style={styles.actionsContainer} pointerEvents="box-none">
-        <ActionButton
-          icon="refresh"
-          color="#FFFFFF"
-          glowColor={colors.rewindGlow}
-          size={64}
-          onPress={handleRewind}
-        />
-        <ActionButton
-          image={require('../../assets/nope-x.png')}
-          glowColor={colors.dislikeGlow}
-          size={64}
-          onPress={handleNope}
-        />
-        <ActionButton
-          emoji="🫶"
-          glowColor={colors.superLikeGlow}
-          size={64}
-          onPress={handleSuperLike}
-        />
-        <ActionButton
-          emoji="💞"
-          glowColor={colors.likeGlow}
-          size={64}
-          onPress={handleLike}
-        />
-        {/* Bouton message : visible seulement si message direct autorisé */}
-        {canDirectMessage && (
-          <ActionButton
-            icon="chatbubble"
-            color={colors.primary}
-            glowColor={colors.shadowPink}
-            size={52}
-            onPress={handleSendMessage}
-          />
-        )}
-      </View>
-
+  // Shared modals rendered in both states
+  const renderModals = () => (
+    <>
       {/* Mode activation modal */}
       <ModeActivationModal
         visible={showModeModal}
@@ -1033,7 +689,6 @@ export default function DiscoverScreen() {
         filters={filters}
         onApply={(newFilters) => {
           setFilters(newFilters);
-          // TODO: Save filters to profile and reload profiles
         }}
         travelMode={travelMode}
         canUseTravelMode={canUseTravelMode}
@@ -1051,6 +706,98 @@ export default function DiscoverScreen() {
         visible={showIceBreakerModal}
         onClose={() => setShowIceBreakerModal(false)}
       />
+    </>
+  );
+
+  // If no more profiles - show header anyway
+  if (!profile) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <LinearGradient
+          colors={['#1a1a2e', '#16213e', '#0f0f23']}
+          style={StyleSheet.absoluteFillObject}
+        />
+
+        <DiscoverHeader
+          onFilterPress={() => setShowFilterModal(true)}
+          onIceBreakerPress={() => setShowIceBreakerModal(true)}
+          boostsAvailable={boostsAvailable}
+          isBoostActive={isBoostActive}
+          activeBoostExpiresAt={activeBoostExpiresAt}
+          onBoostExpire={refreshBoost}
+        />
+
+        {/* Empty state centre */}
+        <View style={styles.emptyContent}>
+          <Ionicons name="heart-dislike" size={80} color={colors.textSecondary} />
+          <Text style={styles.emptyTitle}>{t('discover.noMoreProfiles')}</Text>
+          <Text style={styles.emptyText}>{t('discover.comeBackLater')}</Text>
+        </View>
+
+        {renderModals()}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      {/* Background gradient */}
+      <LinearGradient
+        colors={['#1a1a2e', '#16213e', '#0f0f23']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      {/* Current card - key unique pour forcer le re-render propre */}
+      <Animated.View
+        key={`card-${profile.id}-${currentIndex}`}
+        style={[
+          styles.cardContainer,
+          {
+            transform: [
+              { translateX: swipeAnim.x },
+              { translateY: swipeAnim.y },
+              { rotate: cardRotate },
+            ],
+          }
+        ]}
+        {...panResponder.panHandlers}
+      >
+        <ProfileCardOverlay
+          profile={profile}
+          currentPhotoIndex={currentPhotoIndex}
+          imageError={imageError}
+          city={city}
+          likeOpacity={likeOpacity}
+          nopeOpacity={nopeOpacity}
+          superLikeOpacity={superLikeOpacity}
+          onPhotoTap={handlePhotoTap}
+          onImageError={() => setImageError(true)}
+        />
+      </Animated.View>
+
+      {/* Header transparent */}
+      <DiscoverHeader
+        onFilterPress={() => setShowFilterModal(true)}
+        onIceBreakerPress={() => setShowIceBreakerModal(true)}
+        boostsAvailable={boostsAvailable}
+        isBoostActive={isBoostActive}
+        activeBoostExpiresAt={activeBoostExpiresAt}
+        onBoostExpire={refreshBoost}
+      />
+
+      {/* Action buttons */}
+      <ActionButtonsRow
+        onRewind={handleRewind}
+        onNope={handleNope}
+        onSuperLike={handleSuperLike}
+        onLike={handleLike}
+        onSendMessage={handleSendMessage}
+        canDirectMessage={canDirectMessage}
+      />
+
+      {renderModals()}
     </View>
   );
 }
@@ -1064,265 +811,8 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0f0f23',
   },
-  photoTouchable: {
-    flex: 1,
-  },
-  fullScreenPhoto: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    resizeMode: 'cover',
-  },
-  imagePlaceholder: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-    backgroundColor: '#2a2a4a',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: SCREEN_HEIGHT * 0.55,
-  },
-
-  // Stamps - Style Tinder: centré, gros, sans bordure
-  stampContainer: {
-    position: 'absolute',
-    top: '35%',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stampText: {
-    fontSize: 150,
-    textAlign: 'center',
-  },
-  likeStamp: {
-    top: 120,
-    left: 30,
-    right: 'auto',
-    alignItems: 'flex-start',
-    transform: [{ rotate: '-15deg' }],
-  },
-  likeStampText: {
-    // Emoji seul
-  },
-  nopeStamp: {
-    top: 120,
-    right: 30,
-    left: 'auto',
-    alignItems: 'flex-end',
-    transform: [{ rotate: '15deg' }],
-  },
-  nopeImage: {
-    width: 90,
-    height: 90,
-    resizeMode: 'contain',
-  },
-  superLikeStamp: {
-    // Centré
-  },
-  superLikeStampText: {
-    // Emoji seul
-  },
-
-  // Header
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    zIndex: 10,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  boostBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: colors.boost,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  boostBadgeText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  boostIndicatorContainer: {
-    position: 'absolute',
-    top: 100,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  // Photo dots
-  dotsContainer: {
-    position: 'absolute',
-    top: 145,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  dot: {
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-  },
-  dotActive: {
-    backgroundColor: colors.white,
-  },
-
-  // City indicator
-  cityIndicator: {
-    position: 'absolute',
-    top: 70,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  cityText: {
-    color: 'rgba(255,255,255,0.95)',
-    fontSize: 20,
-    fontWeight: '700',
-  },
-
-  // Profile info - au dessus des boutons d'action
-  profileInfo: {
-    position: 'absolute',
-    bottom: 200,
-    left: 20,
-    right: 20,
-  },
-  onlineBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 230, 118, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-    gap: 6,
-  },
-  onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.online,
-  },
-  onlineText: {
-    color: colors.online,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  offlineBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-  },
-  offlineText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  name: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  age: {
-    fontSize: 28,
-    fontWeight: '400',
-    color: colors.white,
-  },
-  verifiedBadge: {
-    marginLeft: 4,
-  },
-  distanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  distance: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  bio: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 10,
-    lineHeight: 22,
-  },
-  badgesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-
-  // Actions - au dessus de la tab bar
-  actionsContainer: {
-    position: 'absolute',
-    bottom: 110,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 14,
-    zIndex: 10,
-  },
-  actionButton: {
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-  },
 
   // Empty state
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
   emptyContent: {
     flex: 1,
     alignItems: 'center',
