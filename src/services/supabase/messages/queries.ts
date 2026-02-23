@@ -165,6 +165,30 @@ export async function getConversationByMatchId(connectionId: string): Promise<{ 
 /**
  * Récupérer l'autre utilisateur d'une conversation
  */
+/**
+ * Supprimer un message (uniquement si l'utilisateur est l'expéditeur)
+ */
+export async function deleteMessage(messageId: string, userId: string): Promise<{ error: string | null }> {
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', messageId)
+      .eq('sender_id', userId);
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { error: null };
+  } catch (err) {
+    return { error: 'Une erreur inattendue est survenue' };
+  }
+}
+
+/**
+ * Récupérer l'autre utilisateur d'une conversation
+ */
 export async function getOtherUserInConversation(conversationId: string, currentUserId: string): Promise<{ userId: string | null; error: string | null }> {
   try {
     const { data: conversation, error } = await supabase

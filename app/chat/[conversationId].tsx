@@ -190,6 +190,17 @@ export default function ChatScreen() {
     [user, conversationId, messagesUsed, messagesTotal]
   );
 
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!user) return;
+      const { error } = await messagesService.deleteMessage(messageId, user.id);
+      if (!error) {
+        setMessages((prev) => prev.filter((m) => m.id !== messageId));
+      }
+    },
+    [user]
+  );
+
   const handleClosePaywall = useCallback(() => setShowPaywall(false), []);
 
   const handleUpgrade = useCallback(() => {
@@ -253,7 +264,11 @@ export default function ChatScreen() {
             data={messages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <MessageBubble message={item} isMine={item.senderId === user?.id} />
+              <MessageBubble
+                message={item}
+                isMine={item.senderId === user?.id}
+                onDelete={item.senderId === user?.id ? () => handleDeleteMessage(item.id) : undefined}
+              />
             )}
             contentContainerStyle={styles.messagesList}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd()}

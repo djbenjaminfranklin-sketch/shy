@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Message } from '../../types/message';
 import { colors } from '../../theme/colors';
@@ -12,9 +12,10 @@ import { IceBreakerBadge } from '../icebreaker/IceBreakerBadge';
 interface MessageBubbleProps {
   message: Message;
   isMine: boolean;
+  onDelete?: () => void;
 }
 
-export function MessageBubble({ message, isMine }: MessageBubbleProps) {
+export function MessageBubble({ message, isMine, onDelete }: MessageBubbleProps) {
   const { language, t } = useLanguage();
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -83,12 +84,29 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
     }
   };
 
+  const handleLongPress = () => {
+    if (!isMine || !onDelete) return;
+    Alert.alert(
+      t('chat.deleteConfirmTitle'),
+      t('chat.deleteConfirmMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('chat.deleteMessage'), style: 'destructive', onPress: onDelete },
+      ]
+    );
+  };
+
   const displayText = translatedText && !showOriginal
     ? translatedText
     : message.content;
 
   return (
-    <View style={[styles.container, isMine && styles.containerMine]}>
+    <TouchableOpacity
+      activeOpacity={isMine && onDelete ? 0.7 : 1}
+      onLongPress={handleLongPress}
+      disabled={!isMine || !onDelete}
+      style={[styles.container, isMine && styles.containerMine]}
+    >
       {/* Ice Breaker badge for received messages */}
       {!isMine && message.isIceBreaker && (
         <View style={styles.iceBreakerBadgeContainer}>
@@ -135,7 +153,7 @@ export function MessageBubble({ message, isMine }: MessageBubbleProps) {
           <Text style={styles.translatedLabel}>{t('chat.translated')}</Text>
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

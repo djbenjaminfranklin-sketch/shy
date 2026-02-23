@@ -366,6 +366,9 @@ export const he: TranslationKeys = {
     seeOriginal: 'ראה מקור',
     seeTranslation: 'ראה תרגום',
     translated: 'מתורגם',
+    deleteMessage: 'מחק',
+    deleteConfirmTitle: 'מחק הודעה',
+    deleteConfirmMessage: 'האם אתה בטוח שברצונך למחוק הודעה זו?',
   },
 
   // Direct Messaging

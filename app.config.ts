@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: "SHY",
   slug: "shy",
-  version: "1.0.3",
+  version: "1.0.4",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "automatic",
@@ -19,6 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: "eu.shydating.app",
+    buildNumber: "33",
     config: {
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY_IOS
     },

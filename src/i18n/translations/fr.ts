@@ -364,6 +364,9 @@ export const fr = {
     seeOriginal: 'Voir original',
     seeTranslation: 'Voir traduction',
     translated: 'Traduit',
+    deleteMessage: 'Supprimer',
+    deleteConfirmTitle: 'Supprimer le message',
+    deleteConfirmMessage: 'Voulez-vous vraiment supprimer ce message ?',
   },
 
   // Direct Messaging

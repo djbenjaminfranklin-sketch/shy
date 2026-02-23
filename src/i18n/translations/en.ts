@@ -366,6 +366,9 @@ export const en: TranslationKeys = {
     seeOriginal: 'See original',
     seeTranslation: 'See translation',
     translated: 'Translated',
+    deleteMessage: 'Delete',
+    deleteConfirmTitle: 'Delete message',
+    deleteConfirmMessage: 'Are you sure you want to delete this message?',
   },
 
   // Direct Messaging
