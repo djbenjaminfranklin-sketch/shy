@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import type { User, Session } from '@supabase/supabase-js';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/supabase/auth';
 import { profilesService } from '../services/supabase/profiles';
 import { supabase } from '../services/supabase/client';
@@ -201,6 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Déconnexion
   const signOut = useCallback(async () => {
     await authService.signOut();
+    await AsyncStorage.removeItem('@shy_feature_showcase_seen');
 
     setState({
       user: null,

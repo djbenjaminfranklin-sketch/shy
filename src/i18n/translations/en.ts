@@ -47,9 +47,9 @@ export const en: TranslationKeys = {
     terms: 'Terms',
     privacy: 'Privacy',
     features: {
-      verified: 'Verified profiles',
-      nearby: 'Near you',
-      connections: 'Real connections',
+      intentions: 'Clear intentions',
+      comfortLevels: 'Comfort levels',
+      availabilityModes: 'Availability modes',
     },
   },
 
@@ -850,6 +850,8 @@ export const en: TranslationKeys = {
     comfortTitle: 'Comfort levels',
     comfortDesc: 'Progress at your own pace. Features unlock only when you\'re both ready.',
     comfortTag: 'Your pace, your rules',
+    // Unique badge
+    uniqueToShy: 'ONLY ON SHY',
     // CTA
     getStarted: 'Let\'s go!',
   },

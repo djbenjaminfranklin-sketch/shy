@@ -44,6 +44,14 @@ export const ProfileInfoOverlay: React.FC<ProfileInfoOverlayProps> = ({ profile 
       })()
     )}
 
+    {/* Badges intention et disponibilité - EN PREMIER */}
+    <View style={styles.badgesRow}>
+      <IntentionBadge intention={profile.intention} size="large" />
+      {profile.availability && (
+        <AvailabilityBadge availability={profile.availability} size="large" />
+      )}
+    </View>
+
     {/* Nom et age */}
     <View style={styles.nameRow}>
       <Text style={styles.name}>{profile.displayName}</Text>
@@ -62,14 +70,6 @@ export const ProfileInfoOverlay: React.FC<ProfileInfoOverlayProps> = ({ profile 
     {profile.bio && (
       <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
     )}
-
-    {/* Badges intention et disponibilité */}
-    <View style={styles.badgesRow}>
-      <IntentionBadge intention={profile.intention} size="medium" />
-      {profile.availability && (
-        <AvailabilityBadge availability={profile.availability} size="medium" />
-      )}
-    </View>
   </View>
 );
 
@@ -150,6 +150,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 12,
+    marginBottom: 10,
   },
 });

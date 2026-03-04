@@ -47,9 +47,9 @@ export const pt: TranslationKeys = {
     terms: 'Termos',
     privacy: 'Privacidade',
     features: {
-      verified: 'Perfis verificados',
-      nearby: 'Perto de voce',
-      connections: 'Conexoes reais',
+      intentions: 'Intenções claras',
+      comfortLevels: 'Níveis de conforto',
+      availabilityModes: 'Modos de dispo',
     },
   },
 
@@ -840,6 +840,7 @@ export const pt: TranslationKeys = {
     comfortTitle: 'Níveis de conforto',
     comfortDesc: 'Avance ao seu ritmo. As funcionalidades desbloqueiam-se quando ambos estiverem prontos.',
     comfortTag: 'O seu ritmo, as suas regras',
+    uniqueToShy: 'SÓ NO SHY',
     getStarted: 'Vamos!',
   },
 };

@@ -117,21 +117,21 @@ export default function WelcomeScreen() {
           <View style={styles.features}>
             <View style={styles.featureItem}>
               <View style={[styles.featureIcon, { backgroundColor: colors.like + '20' }]}>
-                <Ionicons name="shield-checkmark" size={24} color={colors.like} />
+                <Ionicons name="flag-outline" size={24} color={colors.like} />
               </View>
-              <Text style={styles.featureText}>{t('welcome.features.verified')}</Text>
+              <Text style={styles.featureText}>{t('welcome.features.intentions')}</Text>
             </View>
             <View style={styles.featureItem}>
               <View style={[styles.featureIcon, { backgroundColor: colors.superLike + '20' }]}>
-                <Ionicons name="location" size={24} color={colors.superLike} />
+                <Ionicons name="shield-half-outline" size={24} color={colors.superLike} />
               </View>
-              <Text style={styles.featureText}>{t('welcome.features.nearby')}</Text>
+              <Text style={styles.featureText}>{t('welcome.features.comfortLevels')}</Text>
             </View>
             <View style={styles.featureItem}>
               <View style={[styles.featureIcon, { backgroundColor: colors.primary + '20' }]}>
-                <Ionicons name="heart" size={24} color={colors.primary} />
+                <Ionicons name="flash-outline" size={24} color={colors.primary} />
               </View>
-              <Text style={styles.featureText}>{t('welcome.features.connections')}</Text>
+              <Text style={styles.featureText}>{t('welcome.features.availabilityModes')}</Text>
             </View>
           </View>
 

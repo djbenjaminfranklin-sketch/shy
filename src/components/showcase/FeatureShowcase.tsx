@@ -107,6 +107,12 @@ export function FeatureShowcase({ onComplete }: FeatureShowcaseProps) {
         </LinearGradient>
       </View>
 
+      <View style={[styles.uniqueBadge, { backgroundColor: item.color + '20' }]}>
+        <Text style={[styles.uniqueBadgeText, { color: item.color }]}>
+          {(t as Function)('featureShowcase.uniqueToShy')}
+        </Text>
+      </View>
+
       <Text style={styles.slideTitle}>
         {(t as Function)(`featureShowcase.${item.titleKey}`)}
       </Text>
@@ -143,6 +149,7 @@ export function FeatureShowcase({ onComplete }: FeatureShowcaseProps) {
           keyExtractor={(item) => item.id}
           horizontal
           pagingEnabled
+          scrollEnabled={false}
           showsHorizontalScrollIndicator={false}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
@@ -155,6 +162,11 @@ export function FeatureShowcase({ onComplete }: FeatureShowcaseProps) {
 
         {/* Footer */}
         <View style={styles.footer}>
+          {/* Slide counter */}
+          <Text style={styles.slideCounter}>
+            {currentIndex + 1}/{SLIDES.length}
+          </Text>
+
           {/* Dots */}
           <View style={styles.dots}>
             {SLIDES.map((slide, index) => (
@@ -187,13 +199,6 @@ export function FeatureShowcase({ onComplete }: FeatureShowcaseProps) {
             </Pressable>
           </LinearGradient>
 
-          {currentIndex < SLIDES.length - 1 && (
-            <Pressable style={styles.skipButton} onPress={onComplete}>
-              <Text style={styles.skipButtonText}>
-                {(t as Function)('common.skip')}
-              </Text>
-            </Pressable>
-          )}
         </View>
       </SafeAreaView>
     </View>
@@ -314,11 +319,21 @@ const styles = StyleSheet.create({
     ...typography.button,
     color: colors.white,
   },
-  skipButton: {
-    paddingVertical: spacing.sm,
+  uniqueBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    marginBottom: spacing.md,
   },
-  skipButtonText: {
+  uniqueBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  slideCounter: {
     ...typography.bodySmall,
     color: colors.textSecondary,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
   },
 });

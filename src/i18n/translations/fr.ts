@@ -45,9 +45,9 @@ export const fr = {
     terms: 'CGU',
     privacy: 'Confidentialité',
     features: {
-      verified: 'Profils vérifiés',
-      nearby: 'Près de chez toi',
-      connections: 'Connexions réelles',
+      intentions: 'Intentions claires',
+      comfortLevels: 'Niveaux de confort',
+      availabilityModes: 'Modes de dispo',
     },
   },
 
@@ -848,6 +848,8 @@ export const fr = {
     comfortTitle: 'Niveaux de confort',
     comfortDesc: 'Progressez à votre rythme. Les fonctionnalités se débloquent quand vous êtes tous les deux prêts.',
     comfortTag: 'Votre rythme, vos règles',
+    // Unique badge
+    uniqueToShy: 'UNIQUE SUR SHY',
     // CTA
     getStarted: 'C\'est parti !',
   },
