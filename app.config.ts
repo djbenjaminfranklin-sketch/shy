@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: "eu.shydating.app",
-    buildNumber: "33",
+    buildNumber: "34",
     config: {
       googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY_IOS
     },
